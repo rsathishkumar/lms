@@ -192,7 +192,7 @@ app-root.dashboard button.manage-dashboard:hover {
 .sidebar-block {
   background-color: #f0f0f0;
   margin-bottom: 30px;
-
+  border-radius: 5px;
 }
 
 .sidebar-block form {
@@ -309,10 +309,10 @@ div#block-dashboard-views-block-opigno-calendar-month-block h3 {
 
 .view-recommended-for-you .views-field-label {
   font-weight: 600;
-  padding: 25px;
+  padding: 25px 25px 0px 25px
 }
 
 .view-recommended-for-you .views-field-field-learning-path-description {
-  padding: 25px;
+  padding: 5px 25px 0px 25px
 }
 
