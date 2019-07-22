@@ -1,0 +1,185 @@
+/**
+ * If using a CSS pre-processor, tell it to overwrite this file. If not, place
+ * your custom CSS modifications here.
+ */
+
+h1 {
+  color: #008583;
+  text-transform: none;
+  border: none;
+  font-size: 45px;
+}
+
+.dashboard-drupal-block h2 {
+  background-color: #008583;
+  border-radius: 10px 10px 0px 0px;
+  padding: .7rem 1.5rem;
+  font-size: 18px;
+}
+
+.dashboard-drupal-block>.views-element-container>div:not(.contextual) {
+  padding: 1rem 1.5rem 1rem 2.5rem;
+}
+
+div#block-dashboard-views-block-latest-active-trainings-block .views-row:after {
+  background-color: #008583;
+}
+
+div#block-dashboard-views-block-latest-active-trainings-block .view-content ul li a:after, div#block-dashboard-views-block-opigno-group-members-block-pending .view-content ul li a:after, div#block-dashboard-views-block-opigno-notifications-block-unread-dashboard .view-content ul li a:after, div#block-dashboard-views-block-private-message-block-dashboard .view-content ul li a:after {
+  background-color: #008583;
+}
+
+html body header#site-header {
+  margin-bottom: 0px;
+}
+
+.region.region-menu {
+  background-color: #FFF;
+  border-bottom: 6px solid #f8f7f5;
+}
+
+nav#mobile-menu ul:not(.contextual-links), nav.block-system_menu_block-main ul:not(.contextual-links) {
+  margin-bottom: -5px;
+}
+
+nav.block-system_menu_block-main li a {
+  background-size: 50px !important;
+  padding: 3.5rem 3rem !important;
+  background-repeat: no-repeat;
+  display: block !important;
+  font-size: 1.2rem !important;
+  text-transform: uppercase;
+  color: #000 !important;
+  font-weight: 600;
+}
+
+nav.block-system_menu_block-main li a:hover {
+  color: #008583 !important;
+}
+
+nav.block-system_menu_block-main li a.messages {
+  background-image: url(../img/message_icon.png) !important;
+}
+
+nav.block-system_menu_block-main li a.courses {
+  background-image: url(../img/courses_icon.png);
+  background-position: top;
+  background-size: 40px !important;
+}
+
+
+nav.block-system_menu_block-main li a.home {
+  background-image: url(../img/home.png) !important;
+}
+
+
+nav.block-system_menu_block-main li a.achievements {
+  background-image: url(../img/award_icon.png) !important;
+}
+
+
+nav.block-system_menu_block-main li a.profile {
+  background-image: url(../img/profile_icon.png) !important;
+  background-position: top;
+  background-size: 40px !important;
+}
+
+
+app-root.dashboard button.manage-dashboard {
+  background-color: #008583 !important;
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-top: 25px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  text-transform: capitalize;
+}
+
+app-root.dashboard button.manage-dashboard:hover {
+  background-color: #008583 !important;
+}
+
+#main-content {
+  position: relative;
+}
+
+.sidebar-block h2 {
+  background-color: #008583;
+  color: #FFF;
+  border-radius: 10px 10px 0px 0px;
+  font-size: 1.3rem;
+  padding: 10px 20px;
+}
+
+.sidebar-block {
+  background-color: #f0f0f0;
+}
+
+.sidebar-block form {
+  padding: 10px 20px;
+
+}
+
+body.page-catalogue div#main-content .sidebar-block fieldset legend {
+  padding: 0px;
+  background: none !important;
+  color: #008583 !important;
+  font-weight: 500 !important;
+  padding-left: 0px !important;
+}
+
+.sidebar-block .fieldset-wrapper {
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+}
+
+.sidebar-block .fieldset-wrapper label {
+  color: #000 !important;
+  margin: 0px !important;
+  padding: 0px !important;
+  background: #f0f0f0 !important;
+}
+
+.course_row {
+  clear: both;
+  overflow: auto;
+  border-top: 5px solid #008583;
+  border-radius: 5px;
+  background-color: #f0f0f0;
+  padding: 25px 10px;
+  margin-bottom: 25px;
+  min-height: 150px;
+}
+
+.course_row .left {
+  width: 25%;
+  float: left;
+  text-align: center;
+}
+
+.course_row .left img {
+  margin: auto;
+  width: 75%;
+}
+
+.course_row .right {
+  width: 75%;
+  float: left;
+}
+
+.calendar-month-table tbody tr td.date-box.today, .view-id-opigno_calendar table tbody tr td.date-box.today, .view-opigno-calendar .calendar-calendar .month-view table tbody tr td.date-box.today, div#block-dashboard-views-block-opigno-calendar-month-block table tbody tr td.date-box.today {
+  background-color: #008583;
+}
+
+.calendar-month-table tbody tr td .inner div.day, .calendar-month-table tbody tr td .inner div.day a, .view-id-opigno_calendar table tbody tr td .inner div.day, .view-id-opigno_calendar table tbody tr td .inner div.day a, .view-opigno-calendar .calendar-calendar .month-view table tbody tr td .inner div.day, .view-opigno-calendar .calendar-calendar .month-view table tbody tr td .inner div.day a, div#block-dashboard-views-block-opigno-calendar-month-block table tbody tr td .inner div.day, div#block-dashboard-views-block-opigno-calendar-month-block table tbody tr td .inner div.day a {
+  font-size: 18px;
+}
+
+div#block-dashboard-views-block-opigno-calendar-month-block h3 {
+  color: #008583;
+  border-bottom: 1px solid #008583;
+  font-weight: 600;
+}

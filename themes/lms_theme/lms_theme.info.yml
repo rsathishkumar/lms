@@ -1,0 +1,21 @@
+core: 8.x
+type: theme
+base theme: platon
+
+name: 'LMS Custom theme'
+description: 'A Drupal Opigno based sub-theme.'
+package: 'opigno_lms'
+
+regions:
+  help: 'Help'
+  branding: 'Branding'
+  menu: 'Menu'
+  admin_opigno: 'Admin opigno menu'
+  status_messages: 'Status messages'
+  top: 'Top'
+  sidebar_first: 'Sidebar first'
+  content: 'Content'
+  footer: 'Footer'
+
+libraries:
+  - lms_theme/global-styling
