@@ -94,6 +94,7 @@ div#block-dashboard-views-block-latest-active-trainings-block .view-content ul l
 
 nav#mobile-menu ul:not(.contextual-links), nav.block-system_menu_block-main ul:not(.contextual-links) {
   margin-bottom: -5px;
+  
 }
 
 nav.block-system_menu_block-main li a {
@@ -109,6 +110,7 @@ nav.block-system_menu_block-main li a {
 
 nav.block-system_menu_block-main li a:hover {
   color: #008583 !important;
+  border-bottom: 3px solid #008583 !important;
 }
 
 nav.block-system_menu_block-main li a.messages {
@@ -209,12 +211,22 @@ body.page-catalogue div#main-content .sidebar-block fieldset legend {
 .course_row {
   clear: both;
   overflow: auto;
-  border-top: 5px solid #008583;
+  border-top: 8px solid #008583;
   border-radius: 5px;
   background-color: #f0f0f0;
   padding: 25px 10px;
-  margin-bottom: 25px;
   min-height: 150px;
+}
+
+.course_row2 {
+  margin-bottom: 25px;
+  background-color: #f0f0f0;
+  padding: 25px 10px;
+}
+
+.course_row2 .col-md-6:first-child {
+  padding-top: 18px;
+  padding-left: 40px;
 }
 
 .course_row .left {
@@ -223,9 +235,15 @@ body.page-catalogue div#main-content .sidebar-block fieldset legend {
   text-align: center;
 }
 
+.course_row .right strong {
+  color: #008583;
+  font-weight: 600;
+}
+
 .course_row .left img {
   margin: auto;
-  width: 75%;
+  width: 80%;
+  border-radius: 5px;
 }
 
 .course_row .right {
@@ -246,3 +264,15 @@ div#block-dashboard-views-block-opigno-calendar-month-block h3 {
   border-bottom: 1px solid #008583;
   font-weight: 600;
 }
+
+.course-button a {
+  background-color: #008583;
+  color: #FFF;
+  text-align: center;
+  padding: 12px 20px;
+  height: 48px;
+  display: block;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
