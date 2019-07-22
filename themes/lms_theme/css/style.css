@@ -316,3 +316,62 @@ div#block-dashboard-views-block-opigno-calendar-month-block h3 {
   padding: 5px 25px 0px 25px
 }
 
+.statistics-table {
+  margin-top: 25px;
+}
+
+.statistics-table tbody td .details {
+  background-size: 50%;
+  width: 30px;
+  background-color: #008583;
+  border-radius: 15px;
+  background-position: 50% 50%;
+}
+
+.statistics-table thead th {
+  background-color: #008583;
+  font-style: normal;
+}
+
+table.statistics-table tr th:first-child {
+  border-radius: 5px 0 0 0;
+}
+
+table.statistics-table tr th:last-child {
+  border-radius: 0 5px 0 0;
+}
+
+.score-bar {
+  margin-top: -15px;
+  width: 80%;
+  height: 5px;
+}
+
+.user-info {
+  margin-bottom: 25px;
+  padding: 0px;
+  max-width: 500px;
+}
+
+.user-info-text-wrapper .user-info-name, .user-info-text-wrapper .user-info-email {
+  display: none;
+}
+
+.user-info-name, .user-info-email {
+  margin-bottom: 0px;
+  background-color: #008583;
+}
+
+.user-info-name {
+  border-radius: 5px 5px 0px 0px;
+}
+
+.user-info-photo-wrapper {
+  padding: 20px;
+  margin-right: 3rem;
+}
+
+.user-info-text-wrapper {
+  padding: 10px;
+  background-color: #FFFFFF;
+}
