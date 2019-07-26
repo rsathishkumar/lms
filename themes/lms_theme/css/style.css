@@ -386,8 +386,21 @@ table.statistics-table tr th:last-child {
 }
 
 /************************ Dashboard page *****************************/
+.page-statistics-dashboard h1 {
+  position: absolute;
+  line-height: 0.8;
+}
+
 #statistics-trainings-progress {
   text-align: right;
+}
+
+#statistics-trainings-progress .form-item-year select.form-control, #statistics-trainings-progress .form-item-month select.form-control {
+  background-color: #008583;
+  color: #FFF;
+  background-image: linear-gradient(45deg,transparent 50%,#FFF 0),linear-gradient(135deg,#FFF 50%,transparent 0);
+  background-position: calc(100% - 25px) calc(1em + -2px),calc(100% - 15px) calc(1em + -2px);
+  background-size: 10px 10px;
 }
 
 .page-statistics-dashboard .trainings-progress {
@@ -443,4 +456,19 @@ form .popover-help .popover {
 .user-metric-label {
   font-size: 24px;
   text-transform: uppercase;
+}
+
+.opigno-statistics-dashboard-form .trainings-progress .value-indicator-wrapper {
+  margin-right: 20px;
+}
+
+.trainings-progress .value-wrapper {
+  margin-right: 10px;
+  width: 130px;
+  text-align: center;
+}
+
+.trainings-progress .label {
+  font-size: 14px;
+  font-weight: 600;
 }

@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * @file
+ *
+ * Integration with Model3D library.
+ */
+
+use Drupal\Core\Datetime;
+use Drupal\Core\Entity\EntityFormBuilderInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\NodeInterface;
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function lms_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if($form_id == 'opigno_statistics_dashboard_form') {
+    $skill_table = $form['content_statistics']['skills_list'];
+    $training_table = $form['content_statistics']['trainings_list'];
+    $skill_table[0]['#header'] = [ t('Data Assesment'), t('Score'), t('Progress') ];
+    $form['content_statistics']['skills_list'] = $skill_table;
+    $training_table['#header'] = [ t('Training Progocols'), t('# of users'), t('# completed'), t('Ave time spent'), t('Details') ];
+    $form['content_statistics']['trainings_list'] = $training_table;
+  }
+}
