@@ -149,6 +149,15 @@ nav.block-system_menu_block-main li a.achievements:hover {
   background-image: url(../img/award_icon_hover.png) !important;
 }
 
+nav.block-system_menu_block-main li a.statistics {
+  background-image: url(../img/dashboard.png) !important;
+}
+
+nav.block-system_menu_block-main li a.statistics:hover {
+  background-image: url(../img/dashboard_hover.png) !important;
+}
+
+
 
 nav.block-system_menu_block-main li a.profile {
   background-image: url(../img/profile_icon.png) !important;
@@ -334,11 +343,11 @@ div#block-dashboard-views-block-opigno-calendar-month-block h3 {
 }
 
 table.statistics-table tr th:first-child {
-  border-radius: 5px 0 0 0;
+  border-radius: 8px 0 0 0;
 }
 
 table.statistics-table tr th:last-child {
-  border-radius: 0 5px 0 0;
+  border-radius: 0 8px 0 0;
 }
 
 .score-bar {
@@ -374,4 +383,64 @@ table.statistics-table tr th:last-child {
 .user-info-text-wrapper {
   padding: 10px;
   background-color: #FFFFFF;
+}
+
+/************************ Dashboard page *****************************/
+#statistics-trainings-progress {
+  text-align: right;
+}
+
+.page-statistics-dashboard .trainings-progress {
+  text-align: left;
+  -webkit-border-radius: 5px 5px 0px 0px;
+  -moz-border-radius: 5px 5px 0px 0px;
+  border-radius: 5px 5px 0px 0px;
+}
+
+.user-metrics {
+  -webkit-border-radius: 0px 0px 5px 5px;
+  -moz-border-radius: 0px 0px 5px 5px;
+  border-radius: 0px 0px 5px 5px;
+}
+
+.trainings-progress .value {
+  color: #008583;
+}
+
+.trainings-progress .indicator path, .users-per-day circle {
+  fill: #008583;
+}
+
+.users-per-day path {
+  stroke: #008583;
+}
+
+.user-metrics-content {
+  background-color: #f6f6f6;
+}
+
+.user-metric, form .popover-help {
+  background-color: #008583 !important;
+}
+
+form .popover-help .popover {
+  border-color: #008583;
+}
+
+.user-metric {
+  padding: 50px;
+}
+
+.user-metric-value {
+  font-size: 70px;
+  font-weight: 600;
+}
+
+.user-metric+.user-metric {
+  margin-left: 25px;
+}
+
+.user-metric-label {
+  font-size: 24px;
+  text-transform: uppercase;
 }
