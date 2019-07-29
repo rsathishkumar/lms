@@ -99,7 +99,7 @@ nav#mobile-menu ul:not(.contextual-links), nav.block-system_menu_block-main ul:n
 
 nav.block-system_menu_block-main li a {
   background-size: 50px !important;
-  padding: 3.5rem 3rem !important;
+  padding: 3.5rem 2.8rem !important;
   background-repeat: no-repeat;
   display: block !important;
   font-size: 1.2rem !important;
@@ -157,8 +157,6 @@ nav.block-system_menu_block-main li a.statistics:hover {
   background-image: url(../img/dashboard_hover.png) !important;
 }
 
-
-
 nav.block-system_menu_block-main li a.profile {
   background-image: url(../img/profile_icon.png) !important;
   background-position: top;
@@ -167,6 +165,13 @@ nav.block-system_menu_block-main li a.profile {
 
 nav.block-system_menu_block-main li a.profile:hover {
   background-image: url(../img/profile_icon_hover.png) !important;
+}
+
+nav#mobile-menu ul:not(.contextual-links) li a.is-active,
+nav#mobile-menu ul:not(.contextual-links) li a:hover,
+nav.block-system_menu_block-main ul:not(.contextual-links) li a.is-active,
+nav.block-system_menu_block-main ul:not(.contextual-links) li a:hover {
+  border-bottom-color: #008583;
 }
 
 
@@ -471,4 +476,37 @@ form .popover-help .popover {
 .trainings-progress .label {
   font-size: 14px;
   font-weight: 600;
+}
+
+@media (max-width: 1199px) {
+  nav.block-system_menu_block-main li a {
+    padding: 3.5rem 1.6rem !important;
+  }
+}
+
+@media (max-width: 991px) {
+  nav.block-system_menu_block-main li a {
+    padding: 3.5rem 0.8rem !important;
+    font-size: 1rem !important;
+    background-size: 40px !important;
+  }
+
+  nav#mobile-menu ul:not(.contextual-links) li a, nav.block-system_menu_block-main ul:not(.contextual-links) li a {
+    min-width: 70px;
+  }
+}
+
+@media (max-width: 767px) {
+  nav.block-system_menu_block-main li a {
+    padding: 1.5rem 3rem !important;
+  }
+
+  .users-per-day-title, .users-per-day {
+    width: 100%;
+    display: table;
+  }
+
+  .user-metric+.user-metric {
+    margin-left: 0px;
+  }
 }
