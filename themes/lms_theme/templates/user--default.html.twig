@@ -1,0 +1,55 @@
+{#
+/**
+ * @file
+ * Default theme implementation to present all user data.
+ *
+ * This template is used when viewing a registered user's page,
+ * e.g., example.com/user/123. 123 being the user's ID.
+ *
+ * Available variables:
+ * - content: A list of content items. Use 'content' to print all content, or
+ *   print a subset such as 'content.field_example'. Fields attached to a user
+ *   such as 'user_picture' are available as 'content.user_picture'.
+ * - attributes: HTML attributes for the container element.
+ * - user: A Drupal User entity.
+ *
+ * @see template_preprocess_user()
+ *
+ * @ingroup themeable
+ */
+#}
+<div class="form-container">
+    <div class="container">
+<article{{ attributes }}>
+    {% if content %}
+        <div class="col-md-2">
+            {{ content.user_picture }}
+            <h1>{{ user.field_first_name.value }} {{ user.field_last_name.value }}</h1>
+        </div>
+        <div class="col-md-10">
+            <div class="row spacing">
+            <div class="col-md-2"><label for="about-me">About me</label></div>
+            <div class="col-md-10">{{ user.field_about_me.value }}</div>
+            </div>
+            <div class="row spacing">
+            <div class="col-md-2"><label for="organization">Organization</label></div>
+            <div class="col-md-10">{{ user.field_organization.value }}</div>
+            </div>
+            <div class="row spacing">
+            <div class="col-md-2"><label for="job-title">Job title</label></div>
+            <div class="col-md-10">{{ user.field_job_title.value }}</div>
+            </div>
+            <div class="row spacing">
+            <div class="col-md-2"><label for="social-media">Social Media</label></div>
+            <div class="col-md-10"><p class="facebook">{{ user.field_facebook.value }}</p> <p class="instagram">{{ user.field_instagram.value }}</p> <p class="twitter">{{ user.field_twitter.value }}</p></div>
+            </div>
+            <div class="row spacing">
+            <div class="col-md-2"><label for="project-focus">Project Focus</label></div>
+            <div class="col-md-10">{{ user.field_project_focus.value }}</div>
+            </div>
+        </div>
+
+    {% endif %}
+</article>
+    </div>
+</div>

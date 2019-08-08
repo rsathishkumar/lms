@@ -11,7 +11,6 @@ html body header#site-header {
   margin-bottom: 0px;
 }
 
-
 h1 {
   color: #008583;
   text-transform: none;
@@ -24,6 +23,26 @@ h1 {
   border-radius: 10px 10px 0px 0px;
   padding: .7rem 1.5rem;
   font-size: 18px;
+}
+
+.anonymous-slider {
+  background: url('../img/ETS.gif');
+  background-repeat: no-repeat;
+  background-position: top right;
+  background-size: 20%;
+}
+
+body.anonymous-slider div#main div#page-branding a img {
+  width: 210px;
+}
+
+body.anonymous-slider div#main div#main-content .anonymous-slider .slider-item .slider-markup {
+  color: #008583;
+  text-shadow: none;
+}
+
+body.anonymous-slider div#main #user-sidebar h1 {
+  color: #008583;
 }
 
 .dashboard-drupal-block>.views-element-container>div:not(.contextual) {
