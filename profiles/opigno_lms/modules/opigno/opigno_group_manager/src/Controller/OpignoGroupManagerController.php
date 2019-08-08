@@ -849,6 +849,8 @@ class OpignoGroupManagerController extends ControllerBase {
 //      }
     }
 
+    if (!$group) return FALSE;
+
     $guidedNavigation = $group->hasField('field_guided_navigation') ? $group->get('field_guided_navigation')->value : NULL;
     return $guidedNavigation ? FALSE : TRUE;
   }
