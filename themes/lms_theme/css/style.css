@@ -25,11 +25,13 @@ h1 {
   font-size: 18px;
 }
 
-.anonymous-slider {
+.anonymous-slider #page-branding {
   background: url('../img/ETS.gif');
   background-repeat: no-repeat;
   background-position: top right;
-  background-size: 20%;
+  background-size: 25%;
+  width: 50%;
+  height: 200px;
 }
 
 body.anonymous-slider div#main div#page-branding a img {
@@ -37,8 +39,7 @@ body.anonymous-slider div#main div#page-branding a img {
 }
 
 body.anonymous-slider div#main div#main-content .anonymous-slider .slider-item .slider-markup {
-  color: #008583;
-  text-shadow: none;
+  color: #FFFFFF;
 }
 
 body.anonymous-slider div#main #user-sidebar h1 {

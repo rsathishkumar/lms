@@ -18,11 +18,7 @@
 {% block content %}
   {% if site_logo %}
     <a href="{{ path('<front>') }}" title="{{ 'Home'|t }}" rel="home">
-      {% if logged_in %}
-          <img src="{{ site_logo }}" alt="{{ 'Home'|t }}" />
-      {% else %}
-          <img src="/themes/lms_theme/img/logo.png" alt="{{ 'Home'|t }}" />
-      {% endif %}
+        <img src="{{ site_logo }}" alt="{{ 'Home'|t }}" />
     </a>
   {% endif %}
   {% if false %}
