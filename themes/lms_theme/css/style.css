@@ -26,12 +26,12 @@ h1 {
 }
 
 .anonymous-slider #page-branding {
-  background: url(../img/ETS.gif);
+  background: url(../img/ETS.png);
   background-repeat: no-repeat;
   background-position: 100% 0%;
-  background-size: 15%;
+  background-size: 13%;
   width: 57%;
-  height: 83px;
+  height: 75px;
 }
 
 body.anonymous-slider div#main div#page-branding a img {
