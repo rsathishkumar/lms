@@ -26,12 +26,12 @@ h1 {
 }
 
 .anonymous-slider #page-branding {
-  background: url('../img/ETS.gif');
+  background: url(../img/ETS.gif);
   background-repeat: no-repeat;
-  background-position: top right;
-  background-size: 25%;
-  width: 50%;
-  height: 200px;
+  background-position: 100% 0%;
+  background-size: 15%;
+  width: 57%;
+  height: 83px;
 }
 
 body.anonymous-slider div#main div#page-branding a img {
@@ -56,6 +56,19 @@ div#block-dashboard-views-block-latest-active-trainings-block .views-row:after {
 
 div#block-dashboard-views-block-latest-active-trainings-block .view-content ul li a:after, div#block-dashboard-views-block-opigno-group-members-block-pending .view-content ul li a:after, div#block-dashboard-views-block-opigno-notifications-block-unread-dashboard .view-content ul li a:after, div#block-dashboard-views-block-private-message-block-dashboard .view-content ul li a:after {
   background-color: #008583;
+}
+
+body.anonymous-slider div#main #user-sidebar form.user-login-form .form-actions .form-submit,
+body.anonymous-slider div#main #user-sidebar form.user-pass .form-actions .form-submit,
+body.anonymous-slider div#main #user-sidebar form.user-register-form .form-actions .form-submit {
+  background-color: #008583 !important;
+  color: #FFF;
+}
+
+body.anonymous-slider div#main #user-sidebar form.user-login-form .form-actions .form-submit:hover,
+body.anonymous-slider div#main #user-sidebar form.user-pass .form-actions .form-submit:hover,
+body.anonymous-slider div#main #user-sidebar form.user-register-form .form-actions .form-submit:hover {
+  box-shadow: none;
 }
 
 .view-opigno-score-modules .view-content ul {
