@@ -18,7 +18,11 @@
 {% block content %}
   {% if site_logo %}
     <a href="{{ path('<front>') }}" title="{{ 'Home'|t }}" rel="home">
-        <img src="{{ site_logo }}" alt="{{ 'Home'|t }}" />
+        {% if logged_in %}
+            <img src="{{ site_logo }}" alt="{{ 'Home'|t }}" />
+        {% else %}
+            <img src="/themes/lms_theme/img/Safal_apps.png" alt="{{ 'Home'|t }}" />
+        {% endif %}
     </a>
   {% endif %}
   {% if false %}
