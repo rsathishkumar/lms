@@ -513,6 +513,24 @@ form .popover-help .popover {
   font-weight: 600;
 }
 
+.user-register-form .form-element-wrapper {
+  width: 100% !important;
+}
+
+.user-register-form .description {
+  display: none;
+}
+
+.user-register-form label {
+  display: none;
+}
+
+body.anonymous-slider div#main #user-sidebar form.user-register-form .form-control {
+  border: 0;
+  padding: .5rem;
+  min-height: 30px;
+}
+
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
     padding: 3.5rem 1.6rem !important;
