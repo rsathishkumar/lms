@@ -39,7 +39,16 @@ body.anonymous-slider div#main div#page-branding a img {
 }
 
 body.anonymous-slider div#main div#main-content .anonymous-slider .slider-item .slider-markup {
-  color: #FFFFFF;
+  color: #008583;
+  text-align: center;
+  margin-top: 450px;
+  width: 100%;
+  left: inherit;
+  text-shadow: none;
+}
+
+body.anonymous-slider div#main div#main-content .anonymous-slider .slider-item {
+  background-position: 50% -75px;
 }
 
 body.anonymous-slider div#main #user-sidebar h1 {
@@ -63,6 +72,7 @@ body.anonymous-slider div#main #user-sidebar form.user-pass .form-actions .form-
 body.anonymous-slider div#main #user-sidebar form.user-register-form .form-actions .form-submit {
   background-color: #008583 !important;
   color: #FFF;
+  font-style: normal;
 }
 
 body.anonymous-slider div#main #user-sidebar form.user-login-form .form-actions .form-submit:hover,
