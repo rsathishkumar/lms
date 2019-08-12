@@ -517,6 +517,11 @@ form .popover-help .popover {
   width: 100% !important;
 }
 
+.user-register-form .js-form-type-password {
+  width: 100% !important;
+  float: none !important;
+}
+
 .user-register-form .description {
   display: none;
 }
