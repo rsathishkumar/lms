@@ -25,4 +25,15 @@ function lms_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state
     $training_table['#header'] = [ t('Training Progocols'), t('# of users'), t('# completed'), t('Ave time spent'), t('Details') ];
     $form['content_statistics']['trainings_list'] = $training_table;
   }
+  if($form_id == 'user_register_form') {
+    $form['account']['pass']['#process'][] = 'lms_form_user_register_form_process_pass';
+  }
+}
+
+function lms_form_user_register_form_process_pass(&$element, \Drupal\Core\Form\FormStateInterface $form_state, &$complete_form) {
+  $element = \Drupal\Core\Render\Element\PasswordConfirm::processPasswordConfirm($element, $form_state, $complete_form);
+  $element['pass1']['#placeholder'] = t('Password');
+  $element['pass2']['#placeholder'] = t('Confirm Password');
+
+  return $element;
 }
