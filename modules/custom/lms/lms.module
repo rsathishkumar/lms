@@ -37,3 +37,18 @@ function lms_form_user_register_form_process_pass(&$element, \Drupal\Core\Form\F
 
   return $element;
 }
+
+
+function lms_entity_access(\Drupal\Core\Entity\EntityInterface $entity, $operation, \Drupal\Core\Session\AccountInterface $account) {
+  if ($entity->getEntityTypeId() == 'node') {
+    $type = $entity->get('type')->target_id;
+
+    if ($type == 'page') {
+      $user = \Drupal\user\Entity\User::load($account->id());
+      $roles = $user->getRoles();
+      if (!in_array('administrator', $roles)) {
+        return \Drupal\Core\Access\AccessResult::forbidden();
+      }
+    }
+  }
+}
