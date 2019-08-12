@@ -171,6 +171,8 @@ nav.block-system_menu_block-main li a.achievements:hover {
 
 nav.block-system_menu_block-main li a.statistics {
   background-image: url(../img/dashboard.png) !important;
+  background-position: top;
+  text-align: center;
 }
 
 nav.block-system_menu_block-main li a.statistics:hover {
