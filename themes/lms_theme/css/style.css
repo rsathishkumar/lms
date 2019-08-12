@@ -55,6 +55,21 @@ body.anonymous-slider div#main #user-sidebar h1 {
   color: #008583;
 }
 
+.btn-success, .view-private-message .new-message, #private-message-add-form #edit-actions input,
+#private-message-add-form #edit-actions input:hover, .lp_progress_admin_continue,
+body.lp-iframe input[type=checkbox]:checked,
+body.lp-iframe input[type=checkbox]:disabled:checked,
+body.lp-iframe input[type=radio]:checked,
+body.lp-iframe input[type=radio]:disabled:checked,
+input[type=checkbox]:checked,
+input[type=checkbox]:disabled:checked,
+input[type=radio]:checked,
+input[type=radio]:disabled:checked, body.admin-learning-path mat-button-toggle.add-link,
+body.admin-learning-path mat-button-toggle.guided-navigation {
+  background-color: #94D6E2 !important;
+  border-color: #94D6E2;
+}
+
 .dashboard-drupal-block>.views-element-container>div:not(.contextual) {
   padding: 1rem 1.5rem 1rem 2.5rem;
 }
