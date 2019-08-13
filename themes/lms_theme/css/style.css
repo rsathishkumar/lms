@@ -55,7 +55,7 @@ body.anonymous-slider div#main #user-sidebar h1 {
   color: #008583;
 }
 
-.btn-success, .view-private-message .new-message, #private-message-add-form #edit-actions input,
+.btn-success, .bg-success, .view-private-message .new-message, #private-message-add-form #edit-actions input,
 #private-message-add-form #edit-actions input:hover, .lp_progress_admin_continue,
 body.lp-iframe input[type=checkbox]:checked,
 body.lp-iframe input[type=checkbox]:disabled:checked,
@@ -65,7 +65,12 @@ input[type=checkbox]:checked,
 input[type=checkbox]:disabled:checked,
 input[type=radio]:checked,
 input[type=radio]:disabled:checked, body.admin-learning-path mat-button-toggle.add-link,
-body.admin-learning-path mat-button-toggle.guided-navigation {
+body.admin-learning-path mat-button-toggle.guided-navigation,
+#site-header #header-right .dropdown .btn-group.operations .dropdown-menu>a.primary:hover,
+#site-header #header-right .dropdown .dropdown-menu a.dropdown-item.primary:hover,
+.btn-group.operations #site-header #header-right .dropdown .dropdown-menu>a.primary:hover,
+a.bg-success:focus, a.bg-success:hover,
+button.bg-success:focus, button.bg-success:hover {
   background-color: #94D6E2 !important;
   border-color: #94D6E2;
 }
@@ -560,6 +565,170 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   padding: .5rem;
   min-height: 30px;
 }
+
+/******* Achievements page *********/
+.lp_info {
+  position: absolute;
+  right: 0;
+  top: 0;
+  background: none;
+}
+
+.lp_info .lp_icon_info {
+  right: 0px;
+  left: initial;
+}
+
+.page-achievements h1 {
+  margin-bottom: 0px;
+}
+
+.page-achievements .lp_wrapper h2 {
+  margin: 0px;
+  padding: 20px 30px !important;
+  font-size: 20px;
+  background-color: #008583;
+  color: #FFF;
+  border-radius: 5px 5px 0px 0px;
+}
+
+.lp_timeline_step_label {
+  color: #000;
+  width: 150%;
+}
+
+.lp_timeline_step_label_title {
+  margin-top: 40px;
+  font-size: 18px;
+}
+
+.lp_timeline_step_label_completed_on {
+  display: none;
+}
+
+.lp_timeline_info {
+  background-color: #555555;
+  color: #FFF;
+  text-transform: uppercase;
+}
+
+.lp_summary_content {
+  text-align: center;
+}
+
+.lp_summary_content .lp_step_summary_title {
+  color: #008583;
+  padding-bottom: 15px;
+}
+
+.lp_summary_content .lp_step_summary_score {
+  font-size: 30px;
+  color: #555555;
+  font-weight: bold;
+}
+
+.justify-content-center {
+  font-size: 14px;
+}
+.lp_summary_certificate_text {
+  position: absolute;
+  bottom: 85px;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.lp_summary_certificate_icon {
+  background-repeat: no-repeat;
+  background-position: 60% 50%;
+  background-size: 75%;
+}
+
+.lp_step_title_wrapper {
+  background-color: #90c5c5;
+  color: #000;
+  border-radius: 5px 5px 5px 5px;
+}
+
+.lp_step_title_wrapper.open {
+  background: #008583;
+  color: #FFF;
+  border-radius: 5px 5px 0px 0px;
+  border-bottom: 1px solid #FFF;
+}
+
+.lp_step_summary_wrapper {
+  background-color: #008583 !important;
+  color: #FFF;
+}
+
+.lp_step_summary .lp_step_summary_title {
+  position: absolute;
+  bottom: 25px;
+  text-transform: uppercase;
+  font-size: 16px;
+  margin-left: 100px;
+  color: #000;
+}
+
+.lp_step_summary .lp_summary_step_state_passed {
+  margin-left: 100px !important;
+  height: 65px;
+  background-repeat: no-repeat;
+}
+
+.lp_step_summary .pull-left .h4 {
+  color: #FFF;
+  font-size: 50px;
+}
+
+.lp_step_summary .pull-left div:nth-child(2) {
+  margin-top: 20px;
+  color: #000;
+  font-weight: 600;
+}
+
+.lp_step_summary_completion_chart, .lp_step_summary_approved_chart {
+  display: none;
+}
+
+.lp_step_summary .justify-content-center {
+  font-weight: 600;
+  font-size: 16px;
+  justify-content: inherit !important;
+}
+
+.lp_step_summary .justify-content-center .text-italic {
+  color: #000;
+}
+
+.lp_step_summary .justify-content-center .h5 {
+  color: #FFF;
+}
+
+.lp_step_summary .justify-content-center div {
+  margin-left: 5rem !important;
+  text-align: center;
+}
+
+.lp_step_summary_clickable {
+  padding: 8px;
+  margin: 0px;
+  text-align: right;
+  background-position: right;
+  padding-right: 22px;
+  background-size: 15px;
+  margin-right: 10px;
+  font-weight: normal;
+  text-transform: capitalize;
+  font-style: italic;
+  background-color: #008583;
+}
+
+.lp_details_show:hover, .lp_details_hide:hover, .lp_details_show, .lp_details_hide {
+  background-color: #888787;
+  color: #FFF;
+}
+
 
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
