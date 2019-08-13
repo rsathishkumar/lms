@@ -769,6 +769,27 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   display: none;
 }
 
+#private-message-page .private-message-thread {
+  padding: 25px;
+}
+
+#private-message-page .private-message-thread .private-message-add-form {
+  padding: 20px 0px;
+}
+
+form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
+  margin-left: 0px;
+  float: none;
+}
+
+.private-message-add-form #edit-actions {
+  margin: 0px !important;
+}
+
+.private-message-add-form .form-wrapper>.js-text-format-wrapper {
+  margin-left: 0px;
+}
+
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
     padding: 3.5rem 1.6rem !important;
