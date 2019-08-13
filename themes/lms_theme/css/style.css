@@ -743,6 +743,21 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   margin-bottom: 10px;
 }
 
+.views-field-opigno-lp-take-link {
+  position: absolute;
+  bottom: 10px;
+  right: 30px;
+  padding: 10px 25px;
+  background-color: #008583;
+}
+
+.views-field-opigno-lp-take-link a {
+  color: #FFF;
+}
+
+.view-training-catalogue .catalog-view {
+  position: relative;
+}
 
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {

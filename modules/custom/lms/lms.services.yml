@@ -1,0 +1,6 @@
+services:
+  lms.twig.extension:
+    class: Drupal\lms\TwigExtension\DefaultTwigExtension
+    arguments: []
+    tags:
+      - { name: twig.extension }
