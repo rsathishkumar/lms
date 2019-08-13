@@ -790,6 +790,11 @@ form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
   margin-left: 0px;
 }
 
+.lp_progress {
+  border: 1px solid #008583;
+  background-color: #FFF;
+}
+
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
     padding: 3.5rem 1.6rem !important;
