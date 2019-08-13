@@ -641,6 +641,8 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   background-repeat: no-repeat;
   background-position: 60% 50%;
   background-size: 75%;
+  position: relative;
+  bottom: inherit;
 }
 
 .lp_step_title_wrapper {
@@ -721,6 +723,10 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   font-weight: normal;
   text-transform: capitalize;
   font-style: italic;
+  background-color: #008583;
+}
+
+.lp_step_summary_clickable:hover {
   background-color: #008583;
 }
 
