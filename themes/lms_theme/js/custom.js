@@ -4,5 +4,4 @@ jQuery(document).ready(function() {
     var email = jQuery('.user-info-email').text();
     jQuery('.user-info').prepend('<p class="user-info-name">'+name+'</p><p class="user-info-email">'+email+'</p>');
   }
-  
 });
