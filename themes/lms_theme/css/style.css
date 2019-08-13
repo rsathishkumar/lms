@@ -729,6 +729,15 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   color: #FFF;
 }
 
+#private-message-page .field-pm-subject .label,
+#private-message-page .private-message-recipients .label,
+#private-message-page .private-message .owner .username a,
+#private-message-page .field-pm-subject .content,
+#private-message-page .private-message-recipients .content,
+#private-message-page .private-message-recipients .content a {
+  color: #212529;
+}
+
 
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
