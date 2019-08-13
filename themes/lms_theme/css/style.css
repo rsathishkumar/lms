@@ -738,6 +738,11 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   color: #212529;
 }
 
+.add-button {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
 
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
