@@ -53,6 +53,7 @@ body.anonymous-slider div#main div#main-content .anonymous-slider .slider-item {
 
 body.anonymous-slider div#main #user-sidebar h1 {
   color: #008583;
+  margin-bottom: 15px;
 }
 
 .btn-success, .bg-success, .view-private-message .new-message, #private-message-add-form #edit-actions input,
@@ -793,6 +794,10 @@ form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
 .lp_progress {
   border: 1px solid #008583;
   background-color: #FFF;
+}
+
+.manager-view .bundle {
+  display: none;
 }
 
 @media (max-width: 1199px) {
