@@ -52,3 +52,27 @@ function lms_entity_access(\Drupal\Core\Entity\EntityInterface $entity, $operati
     }
   }
 }
+
+/**
+ * Implements hook_entity_presave().
+ */
+function lms_entity_presave(EntityInterface $entity) {
+  if ($entity->bundle() == 'opigno_notification') {
+    /** @var \Drupal\group\Entity\GroupContentInterface $entity */
+
+    if ($entity->isNew()) {
+      $message = $entity->get('message')->value;
+      $string = $message->getUntranslatedString();
+      $argument = $message->getArguments();
+
+      if (strpos($string, "Enrolled to a new training") !== false) {
+        $string = str_replace('@name', "\"@name\"", $string);
+        $entity->setMessage(t($string, $argument));
+      }
+    }
+  }
+}
+
+function lms_js_alter(&$javascript) {
+  $javascript['profiles/opigno_lms/modules/opigno/opigno_group_manager/ng/dist/main.bundle.js']['data'] = drupal_get_path('module', 'lms') . '/js/main.bundle.js';
+}

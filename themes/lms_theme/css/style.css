@@ -796,9 +796,6 @@ form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
   background-color: #FFF;
 }
 
-.manager-view .bundle {
-  display: none;
-}
 
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
