@@ -667,6 +667,8 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
 
 .lp_step_summary_wrapper .lp_summary_step_state_in_progress {
   margin-left: 6rem !important;
+  background-image: url('../img/progress_white.png');
+  background-repeat: no-repeat;
 }
 
 .lp_summary_certificate_inactive .lp_summary_certificate_icon {
