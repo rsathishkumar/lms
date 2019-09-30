@@ -615,6 +615,7 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
 
 .lp_summary_content {
   text-align: center;
+  margin-right: 6rem;
 }
 
 .lp_summary_content .lp_step_summary_title {
@@ -631,6 +632,10 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
 .justify-content-center {
   font-size: 14px;
 }
+
+.lp_summary_certificate {
+  margin-left: 6rem;
+}
 .lp_summary_certificate_text {
   position: absolute;
   bottom: 85px;
@@ -646,6 +651,59 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   bottom: inherit;
 }
 
+.lp_step_title_wrapper .lp_step_required {
+  background-image: url(../img/required_green.png);
+  background-size: 75%;
+}
+
+.lp_step_title_wrapper.open .lp_step_required {
+  background-image: url(../img/required_white.png);
+  background-size: 75%;
+}
+
+.lp_summary_step_state_in_progress {
+  background-image: url(../img/in_progress.png);
+}
+
+.lp_step_summary_wrapper .lp_summary_step_state_in_progress {
+  margin-left: 6rem !important;
+}
+
+.lp_summary_certificate_inactive .lp_summary_certificate_icon {
+  background-image: url(../img/cert_uncheked.png);
+}
+
+.lp_step_title_wrapper span.view_trigger::after {
+  background-image: url(../img/open_view.png);
+}
+
+.lp_summary_certificate_icon {
+  background-image: url(../img/required_green.png);
+}
+
+.lp_summary_step_state_passed {
+  background-image: url('../img/green_passed.png');
+}
+
+.lp_step_summary .lp_summary_step_state_passed {
+  background-image: url('../img/passed_white.png');
+}
+
+.lp_details_show_text::after {
+  background-image: url(../img/show.png);
+  background-size: 100%;
+}
+
+.lp_details_hide_text::after, .lp_details_hide:hover .lp_details_hide_text::after {
+  background-image: url(../img/hide.png);
+  -webkit-background-size: 100%;
+  background-size: 100%;;
+}
+
+.lp_step_title_wrapper.open span.view_trigger::after {
+  background-image: url(../img/hide.png);
+}
+
 .lp_step_title_wrapper {
   background-color: #90c5c5;
   color: #000;
@@ -653,14 +711,14 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
 }
 
 .lp_step_title_wrapper.open {
-  background: #008583;
+  background: #3e9e9b;
   color: #FFF;
   border-radius: 5px 5px 0px 0px;
   border-bottom: 1px solid #FFF;
 }
 
 .lp_step_summary_wrapper {
-  background-color: #008583 !important;
+  background-color: #3e9e9b !important;
   color: #FFF;
 }
 
@@ -724,16 +782,45 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   font-weight: normal;
   text-transform: capitalize;
   font-style: italic;
-  background-color: #008583;
+  background-color: #3e9e9b;
 }
 
 .lp_step_summary_clickable:hover {
-  background-color: #008583;
+  background-color: #3e9e9b;
 }
 
 .lp_details_show:hover, .lp_details_hide:hover, .lp_details_show, .lp_details_hide {
   background-color: #888787;
   color: #FFF;
+}
+
+.lp_timeline_not_empty .lp_timeline_begin {
+  background-image: url('../img/timeline_begin.png');
+}
+
+.lp_timeline_not_empty .lp_timeline_end {
+  background-image: url('../img/timeline_end.png');
+}
+
+.lp_timeline_step.passed {
+  background-image: url(../img/timeline_checked.png);
+  -webkit-background-size: 100%;
+  background-size: 100%;
+}
+
+.lp_timeline_icon {
+  background-image: url(../img/timeline_icon.png);
+  background-size: 90%;
+}
+
+.lp_icon_info, .lp_timeline_info:hover .lp_timeline_icon {
+  background-image: url(../img/icon_info.png);
+  background-size: 90%;
+}
+
+.lp_timeline_step {
+  background-image: url(../img/timeline_unchecked.png);
+  background-size: 100%;
 }
 
 #private-message-page .field-pm-subject .label,
@@ -796,6 +883,9 @@ form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
   background-color: #FFF;
 }
 
+.lp_steps_block_table td:nth-child(1) {
+  border-left: 5px solid #008583;
+}
 
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
