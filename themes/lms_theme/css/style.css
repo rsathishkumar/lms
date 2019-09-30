@@ -796,6 +796,9 @@ form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
   background-color: #FFF;
 }
 
+.lp_steps_block_table td:nth-child(1) {
+  border-left: 5px solid #008583;
+}
 
 @media (max-width: 1199px) {
   nav.block-system_menu_block-main li a {
