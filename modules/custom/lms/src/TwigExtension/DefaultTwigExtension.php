@@ -128,9 +128,10 @@ class DefaultTwigExtension extends \Twig_Extension {
       $attributes['class'][] = 'start-link';
     }
     elseif ($completed) {
-      $text =t('Review');
-      $route = 'opigno_learning_path.steps.start';
-      $attributes['class'][] = 'use-ajax';
+      $text =t('Completed');
+      return $text;
+    //  $route = 'opigno_learning_path.steps.start';
+    //  $attributes['class'][] = 'use-ajax';
     }
     elseif (!$group->getMember($account)) {
       if ($group->hasPermission('join group', $account)) {
