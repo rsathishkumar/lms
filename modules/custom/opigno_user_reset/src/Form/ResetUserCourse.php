@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\group\Entity\Group;
 use Drupal\node\Entity\Node;
@@ -52,35 +53,41 @@ class ResetUserCourse extends FormBase {
     $user = $form_state->get('user');
     $group = $form_state->get('group_id');
 
-    $connection = \Drupal::database();
-    $connection->delete('opigno_learning_path_step_achievements')
-      ->condition('uid', $user)
-      ->condition('gid', $group)
-      ->execute();
+    $button = $form_state->getValue('op');
+    $button_text = $button->render();
+    if($button_text == "Confirm") {
+      $connection = \Drupal::database();
+      $connection->delete('opigno_learning_path_step_achievements')
+        ->condition('uid', $user)
+        ->condition('gid', $group)
+        ->execute();
 
-    $connection->delete('opigno_learning_path_achievements')
-      ->condition('uid', $user)
-      ->condition('gid', $group)
-      ->execute();
+      $connection->delete('opigno_learning_path_achievements')
+        ->condition('uid', $user)
+        ->condition('gid', $group)
+        ->execute();
 
-    $connection->delete('user_module_status')
-      ->condition('user_id', $user)
-      ->condition('learning_path', $group)
-      ->execute();
+      $connection->delete('user_module_status')
+        ->condition('user_id', $user)
+        ->condition('learning_path', $group)
+        ->execute();
 
-    $connection->update('opigno_learning_path_group_user_status')
-      ->fields([
-        'status' => 1
-      ])
-      ->condition('uid', $user)
-      ->condition('gid', $group)
-      ->execute();
+      $connection->update('opigno_learning_path_group_user_status')
+        ->fields([
+          'status' => 1
+        ])
+        ->condition('uid', $user)
+        ->condition('gid', $group)
+        ->execute();
 
-    $group_object = Group::load($group);
-    $user_object = User::load($user);
-    $group_object->removeMember($user_object);
+      $group_object = Group::load($group);
+      $user_object = User::load($user);
+      if($group_object) {
+        $group_object->removeMember($user_object);
+      }
+    }
 
-    $url = Url::fromRoute('view.user_courses.page_1', ['arg_0' => $user, 'arg_1' => $group]);
+    $url = Url::fromRoute('entity.user.canonical', ['user' => $user]);
     $form_state->setRedirectUrl($url);
   }
 
