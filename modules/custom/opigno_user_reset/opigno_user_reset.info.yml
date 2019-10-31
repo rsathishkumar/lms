@@ -1,0 +1,5 @@
+name: 'Opigno User progress reset'
+description: 'Module to reset the user progress for all courses.'
+package: Custom
+core: 8.x
+type: module

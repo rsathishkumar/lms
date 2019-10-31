@@ -1,0 +1,9 @@
+edtx_upload_school.form:
+  path: /user/{user}/course_reset/{group}
+  defaults:
+    _title: 'User Course reset confirmation form'
+    _form: \Drupal\opigno_user_reset\Form\ResetUserCourse
+  requirements:
+    _permission: 'access content'
+    user: \d+
+    group: \d+
