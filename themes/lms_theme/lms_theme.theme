@@ -10,8 +10,11 @@
 function lms_theme_preprocess_table(&$variables) {
   $current_path = \Drupal::service('path.current')->getPath();
   $path_args = explode('/', $current_path);
+  $user = \Drupal::currentUser();
+  $roles = $user->getRoles();
 
-  if($variables && $path_args[1] == 'user' && $variables['attributes']['class'][0] == 'statistics-table') {
+  if($variables && $path_args[1] == 'user' && $variables['attributes']['class'][0] == 'statistics-table' &&
+  in_array('administrator', $roles)) {
     $variables['header'][5] = [
       'tag' => 'th',
       'content' => t('Reset Link')
