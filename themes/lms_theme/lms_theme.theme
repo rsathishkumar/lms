@@ -7,3 +7,33 @@
  * Place your custom PHP code in this file.
  */
 
+function lms_theme_preprocess_table(&$variables) {
+  $current_path = \Drupal::service('path.current')->getPath();
+  $path_args = explode('/', $current_path);
+
+  if($variables && $path_args[1] == 'user' && $variables['attributes']['class'][0] == 'statistics-table') {
+    $variables['header'][5] = [
+      'tag' => 'th',
+      'content' => t('Reset Link')
+    ];
+    $var = $variables;
+    foreach($var['rows'] as $key => $val ) {
+      $cells = $val['cells'];
+      $attr = $cells[4];
+      $group = $attr['content']['#attributes']['data-training'];
+
+      $url = \Drupal\Core\Url::fromRoute('opigno_user_reset.form', ['user' => $attr['content']['#attributes']['data-user'], 'group' => $attr['content']['#attributes']['data-training']]);
+
+      $cells[5] = [
+        'tag' => 'td',
+        'content' => [
+          '#type' => 'link',
+          '#url' => $url,
+          '#title' => 'Reset Course'
+        ]
+      ];
+      $variables['rows'][$key]['cells'] = $cells;
+    }
+  }
+
+}

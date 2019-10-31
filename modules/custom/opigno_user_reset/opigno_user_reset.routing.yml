@@ -1,4 +1,4 @@
-edtx_upload_school.form:
+opigno_user_reset.form:
   path: /user/{user}/course_reset/{group}
   defaults:
     _title: 'User Course reset confirmation form'
