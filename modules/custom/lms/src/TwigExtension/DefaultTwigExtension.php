@@ -107,6 +107,7 @@ class DefaultTwigExtension extends \Twig_Extension {
     $required_trainings = LearningPathAccess::hasUncompletedRequiredTrainings($group, $account);
 
     $completed = opigno_learning_path_completed_on($group->id(), $account->id());
+    $progress = opigno_learning_path_progress($group->id(), $account->id());
 
     if (
       $module_commerce_enabled
@@ -152,6 +153,9 @@ class DefaultTwigExtension extends \Twig_Extension {
     }
     else {
       $text = opigno_learning_path_started($group, $account) ? t('Resume') : t('Start');
+      if ($progress == 0) {
+        $text = t('Start');
+      }
       $route = 'opigno_learning_path.steps.start';
       $attributes['class'][] = 'use-ajax';
 
