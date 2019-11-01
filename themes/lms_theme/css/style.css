@@ -595,13 +595,13 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
 
 .lp_timeline_step_label {
   color: #000;
-  width: 200px;
-  left: -50px;
+  width: 130px;
 }
 
 .lp_timeline_step_label_title {
-  margin-top: 40px;
-  font-size: 16px;
+  margin-top: 10px;
+  font-size: 15px;
+  font-weight: normal;
 }
 
 .lp_timeline_step_label_completed_on {
