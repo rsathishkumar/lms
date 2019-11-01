@@ -29,9 +29,9 @@ h1 {
   background: url(../img/ETS.png);
   background-repeat: no-repeat;
   background-position: 100% 0%;
-  background-size: 13%;
+  background-size: 12%;
   width: 57%;
-  height: 75px;
+  height: 100px;
 }
 
 body.anonymous-slider div#main div#page-branding a img {
