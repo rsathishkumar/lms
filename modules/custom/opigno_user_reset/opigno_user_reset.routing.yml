@@ -4,6 +4,6 @@ opigno_user_reset.form:
     _title: 'User Course reset confirmation form'
     _form: \Drupal\opigno_user_reset\Form\ResetUserCourse
   requirements:
-    _permission: 'access content'
+    _permission: 'administer'
     user: \d+
     group: \d+
