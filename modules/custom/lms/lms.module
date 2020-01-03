@@ -76,3 +76,9 @@ function lms_entity_presave(EntityInterface $entity) {
 function lms_js_alter(&$javascript) {
   $javascript['profiles/opigno_lms/modules/opigno/opigno_group_manager/ng/dist/main.bundle.js']['data'] = drupal_get_path('module', 'lms') . '/js/main.bundle.js';
 }
+
+function lms_views_pre_render(\Drupal\views\ViewExecutable $view) {
+  if (isset($view) && ($view->storage->id() == 'training_catalogue')) {
+    $view->element['#attached']['library'][] = 'core/drupal.dialog.ajax';
+  }
+}
