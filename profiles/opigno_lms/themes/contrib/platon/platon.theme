@@ -192,6 +192,10 @@ function platon_preprocess_page(&$variables)
     $moduleHandler = \Drupal::service('module_handler');
     $variables['route_name'] = $route;
 
+    $account_settings = \Drupal::config('user.settings');
+    $register = $account_settings->get('register');
+    $variables['register'] = $register;
+
     /** About opigno version */
     if (function_exists('opigno_lms_check_opigno_lms_updates')) {
         $variables['opigno_lms_updates'] = opigno_lms_check_opigno_lms_updates() ? 'nok' : 'ok';

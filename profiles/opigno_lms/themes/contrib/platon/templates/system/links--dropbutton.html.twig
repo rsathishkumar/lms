@@ -34,7 +34,7 @@
  */
 
 #}
-{% if links|slice(1) -%}
+{% if links|slice(0) -%}
   <div class="btn-group actions">
     {%- for item in links|slice(0,1) -%}
       {%- if item.link -%}
@@ -45,26 +45,28 @@
         {{ item.text }}
       {%- endif -%}
     {%- endfor -%}
-    <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown"></button>
-    <div class="dropdown-menu dropdown-menu-right py-0">
-      {%- if heading -%}
-        {%- if heading.level -%}
-          <{{ heading.level }}{{ heading.attributes }}>{{ heading.text }}</{{ heading.level }}>
-        {%- else -%}
-          <h2{{ heading.attributes }}>{{ heading.text }}</h2>
-        {%- endif -%}
-      {%- endif -%}
-      {%- for item in links|slice(1) -%}
-        <div{{ item.attributes }}>
-          {%- if item.link -%}
-            {{ item.link }}
-          {%- elseif item.text_attributes -%}
-            <span{{ item.text_attributes }}>{{ item.text }}</span>
+    {% if links|slice(1) -%}
+      <button class="btn btn-success dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown"></button>
+      <div class="dropdown-menu dropdown-menu-right py-0">
+        {%- if heading -%}
+          {%- if heading.level -%}
+            <{{ heading.level }}{{ heading.attributes }}>{{ heading.text }}</{{ heading.level }}>
           {%- else -%}
-            {{ item.text }}
+            <h2{{ heading.attributes }}>{{ heading.text }}</h2>
           {%- endif -%}
-        </div>
-      {%- endfor -%}
-    </div>
+        {%- endif -%}
+        {%- for item in links|slice(1) -%}
+          <div{{ item.attributes }}>
+            {%- if item.link -%}
+              {{ item.link }}
+            {%- elseif item.text_attributes -%}
+              <span{{ item.text_attributes }}>{{ item.text }}</span>
+            {%- else -%}
+              {{ item.text }}
+            {%- endif -%}
+          </div>
+        {%- endfor -%}
+      </div>
+    {%- endif -%}
   </div>
 {%- endif %}

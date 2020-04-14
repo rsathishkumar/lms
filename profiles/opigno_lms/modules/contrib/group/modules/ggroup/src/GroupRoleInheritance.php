@@ -2,9 +2,11 @@
 
 namespace Drupal\ggroup;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\ggroup\Graph\GroupGraphStorageInterface;
+use Drupal\group\Entity\GroupContentType;
 
 /**
  * Provides all direct and indirect group relations and the inherited roles.
@@ -74,30 +76,46 @@ class GroupRoleInheritance implements GroupRoleInheritanceInterface {
   /**
    * {@inheritdoc}
    */
-  public function getAllInheritedGroupRoleIds() {
-    if (!empty($this->roleMap)) {
-      return $this->roleMap;
+  public function getAllInheritedGroupRoleIds($group) {
+    $group_id = $group->id();
+    if (!empty($this->roleMap[$group_id])) {
+      return $this->roleMap[$group_id];
     }
+    $cid = GroupRoleInheritanceInterface::ROLE_MAP_CID . ':' . $group_id;
 
-    $cache = $this->cache->get(GroupRoleInheritanceInterface::ROLE_MAP_CID);
+    $cache = $this->cache->get($cid);
     if ($cache && $cache->valid) {
-      $this->roleMap = $cache->data;
-      return $this->roleMap;
+      $this->roleMap[$group_id] = $cache->data;
+      return $this->roleMap[$group_id];
     }
 
-    $this->roleMap = $this->build();
-    $this->cache->set(GroupRoleInheritanceInterface::ROLE_MAP_CID, $this->roleMap);
+    $this->roleMap[$group_id] = $this->build($group_id);
 
-    return $this->build();
+    $cache_tags = ["group:$group_id"];
+    // Add group content types to cache tags.
+    $plugins = $group->getGroupType()->getInstalledContentPlugins();
+    foreach ($plugins as $plugin) {
+      if ($plugin->getEntityTypeId() == 'group') {
+        $group_content_types = GroupContentType::loadByContentPluginId($plugin->getPluginId());
+        foreach ($group_content_types as $group_content_type) {
+          $cache_tags[] = "config:group.content_type.{$group_content_type->id()}";
+        }
+      }
+    }
+
+    $this->cache->set($cid, $this->roleMap[$group_id], Cache::PERMANENT, $cache_tags);
+
+    return $this->roleMap[$group_id];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function rebuild() {
-    $this->cache->delete(GroupRoleInheritanceInterface::ROLE_MAP_CID);
-    $this->roleMap = $this->build();
-    $this->cache->set(GroupRoleInheritanceInterface::ROLE_MAP_CID, $this->roleMap);
+  public function rebuild($group_id) {
+    $cid = GroupRoleInheritanceInterface::ROLE_MAP_CID . ':' . $group_id;
+    $this->cache->delete($cid);
+    $this->roleMap[$group_id] = $this->build($group_id);
+    $this->cache->set($cid, $this->roleMap[$group_id], Cache::PERMANENT, ["group:$group_id"]);
   }
 
   /**
@@ -108,9 +126,10 @@ class GroupRoleInheritance implements GroupRoleInheritanceInterface {
    *   relations. The array is in the form of:
    *   $map[$group_a_id][$group_b_id][$group_b_role_id] = $group_a_role_id;
    */
-  protected function build() {
+  protected function build($gid) {
     $role_map = [];
-    $group_relations = array_reverse($this->groupGraphStorage->getGraph());
+    $group_relations = array_reverse($this->groupGraphStorage->getGraph($gid));
+
     foreach ($group_relations as $group_relation) {
       $group_id = $group_relation->start_vertex;
       $subgroup_id = $group_relation->end_vertex;
@@ -136,7 +155,6 @@ class GroupRoleInheritance implements GroupRoleInheritanceInterface {
           // Get mapped roles for relation type. Filter array to remove
           // unmapped roles.
           $relation_config = $this->getSubgroupRelationConfig($path_supergroup_id, $path_subgroup_id);
-
           $path_role_map[$path_supergroup_id][$path_subgroup_id] = array_filter($relation_config['child_role_mapping']);
           $path_role_map[$path_subgroup_id][$path_supergroup_id] = array_filter($relation_config['parent_role_mapping']);
         }
@@ -150,7 +168,7 @@ class GroupRoleInheritance implements GroupRoleInheritanceInterface {
       }
     }
 
-    return array_replace_recursive(...$role_map);
+    return !empty($role_map) ? array_replace_recursive(...$role_map) : [];
   }
 
   /**
@@ -176,7 +194,7 @@ class GroupRoleInheritance implements GroupRoleInheritanceInterface {
    *   groups. The array is in the form of:
    *   $map[$group_a_id][$group_b_id][$group_b_role_id] = $group_a_role_id;
    */
-  protected function mapIndirectPathRoles($path, $path_role_map) {
+  protected function mapIndirectPathRoles(array $path, array $path_role_map) {
     $indirect_role_map = [];
     foreach ($path as $from_group_key => $path_from_group_id) {
       $inherited_roles_map = [];
@@ -251,11 +269,12 @@ class GroupRoleInheritance implements GroupRoleInheritanceInterface {
     // We need the type of each relation to fetch the configuration. We create
     // a static cache for the types of all subgroup relations since fetching
     // each relation independently has a big impact on performance.
-    if (!$this->subgroupRelations) {
+    if (!$this->subgroupRelations || empty($this->subgroupRelations[$group_id])) {
       // Get all  type between the supergroup and subgroup.
       $group_contents = $this->entityTypeManager->getStorage('group_content')
         ->loadByProperties([
           'type' => array_keys($subgroup_relations_config),
+          'gid' => [$group_id],
         ]);
       foreach ($group_contents as $group_content) {
         $this->subgroupRelations[$group_content->gid->target_id][$group_content->entity_id->target_id] = $group_content->bundle();

@@ -155,7 +155,7 @@ class DefaultTwigExtension extends \Twig_Extension {
       }
 
       if ($visibility == 'semiprivate' && $validation) {
-        $joinLabel = t('Request group membership');
+        $joinLabel = t('Request subscription to the training');
       }
       else {
         $joinLabel = t('Subscribe to training');
@@ -218,8 +218,8 @@ class DefaultTwigExtension extends \Twig_Extension {
       $group = Group::load($group);
     }
 
-    if (empty($group)) {
-      return[];
+    if (empty($group) || (!is_object($group)) || (is_object($group) && $group->bundle() !== 'learning_path')) {
+      return [];
     }
 
     $current_route = \Drupal::routeMatch()->getRouteName();
@@ -229,7 +229,11 @@ class DefaultTwigExtension extends \Twig_Extension {
     $is_anonymous = $account->id() === 0;
 
     if ($is_anonymous && $visibility != 'public') {
-      return[];
+      if ($visibility != 'semiprivate'
+            || (!$group->hasField('field_lp_price')
+            || $group->get('field_lp_price')->value == 0)) {
+        return [];
+      }
     }
 
     $member_pending = $visibility === 'semiprivate' && $validation
@@ -258,7 +262,13 @@ class DefaultTwigExtension extends \Twig_Extension {
     }
     elseif (!$group->getMember($account)) {
       if ($group->hasPermission('join group', $account)) {
-        $text = ($current_route == 'entity.group.canonical') ? t('Subscribe to training') : t('Learn more');
+        if ($current_route == 'entity.group.canonical') {
+          $text = $validation ?  t('Request subscription to the training') : t('Subscribe to training');
+        }
+        else {
+          $text = t('Learn more');
+        }
+
         $route = ($current_route == 'entity.group.canonical') ? 'entity.group.join' : 'entity.group.canonical';
         if ($current_route == 'entity.group.canonical') {
           $attributes['class'][] = 'join-link';

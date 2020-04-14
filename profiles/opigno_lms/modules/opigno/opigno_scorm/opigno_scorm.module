@@ -358,7 +358,7 @@ function _opigno_scorm_save_interaction($interaction, OpignoAnswer $answer) {
     // Save SCORM interaction data.
     $db_connection->insert('opigno_scorm_user_answer_results')
       ->fields([
-        'interaction_id' => _opigno_scorm_format_string_length($interaction->id, 255),
+        'interaction_id' => _opigno_scorm_format_string_length($interaction->id, 191),
         'question_id' => $activity->id(),
         'question_vid' => $activity->getLoadedRevisionId(),
         'answer_id' => $answer->id(),
@@ -393,4 +393,16 @@ function _opigno_scorm_format_string_length($string, $length) {
     return substr($string, 0, $length);
   }
   return $string;
+}
+
+/**
+ * Implements hook_entity_bundle_field_info_alter().
+ */
+function opigno_scorm_entity_bundle_field_info_alter(&$fields, \Drupal\Core\Entity\EntityTypeInterface $entity_type, $bundle) {
+  if ($bundle === 'opigno_scorm') {
+    if (isset($fields['opigno_scorm_package'])) {
+      // Use the ID as defined in the annotation of the constraint definition
+      $fields['opigno_scorm_package']->addConstraint('ScormPackage', []);
+    }
+  }
 }

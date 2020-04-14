@@ -5,7 +5,7 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 ## Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
-Run `ng serve --delete-output-path false` for a dev server and keep dist folder.
+Run `ng serve --delete-output-path false --host opignod8` for a dev server and keep dist folder.
 Run `ng build -prod --output-hashing none` for drupal production build.
 
 ## Code scaffolding

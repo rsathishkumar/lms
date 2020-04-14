@@ -455,23 +455,34 @@ class DashboardForm extends FormBase {
       '#rows' => [],
     ];
 
+    // Groups ids of existing groups.
+    $gids = $this->database->select('groups', 'g')
+      ->fields('g', ['id'])
+      ->execute()->fetchCol();
+
     foreach ($data as $row) {
       $time = max(0, round($row->time));
       $time_str = $time > 0
         ? $this->date_formatter->formatInterval($time)
         : '-';
 
-      $details_link = Link::createFromRoute(
-        '',
-        'opigno_statistics.training',
-        [
-          'group' => $row->gid,
-        ]
-      )->toRenderable();
-      $details_link['#attributes']['class'][] = 'details';
-      $details_link = [
-        'data' => $details_link,
-      ];
+      // Set links only for existing trainings, empty link otherwise.
+      if (in_array($row->gid, $gids)) {
+        $details_link = Link::createFromRoute(
+          '',
+          'opigno_statistics.training',
+          [
+            'group' => $row->gid,
+          ]
+        )->toRenderable();
+        $details_link['#attributes']['class'][] = 'details';
+        $details_link = [
+          'data' => $details_link,
+        ];
+      }
+      else {
+        $details_link = [];
+      }
 
       $table['#rows'][] = [
         $row->name,

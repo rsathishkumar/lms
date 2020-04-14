@@ -514,10 +514,10 @@ display:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
-        - url.query_args
         - user.permissions
       tags:
         - 'config:field.storage.media.field_media_image'
+        - extensions
   media_browser_all:
     display_plugin: entity_browser
     id: media_browser_all
@@ -531,7 +531,7 @@ display:
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
-        - url.query_args
         - user.permissions
       tags:
         - 'config:field.storage.media.field_media_image'
+        - extensions

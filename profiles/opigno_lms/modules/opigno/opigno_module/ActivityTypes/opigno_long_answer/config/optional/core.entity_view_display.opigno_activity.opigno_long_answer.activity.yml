@@ -3,6 +3,7 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.opigno_activity.activity
+    - field.field.opigno_activity.opigno_long_answer.opigno_evaluation_method
     - field.field.opigno_activity.opigno_long_answer.opigno_body
     - opigno_module.opigno_activity_type.opigno_long_answer
   module:
@@ -20,5 +21,6 @@ content:
     type: text_default
     region: content
 hidden:
+  opigno_evaluation_method: true
   name: true
   uid: true

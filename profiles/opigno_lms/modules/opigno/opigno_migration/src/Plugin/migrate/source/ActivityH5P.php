@@ -3,9 +3,10 @@
 namespace Drupal\opigno_migration\Plugin\migrate\source;
 
 use Drupal\Core\Database\Query\SelectInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\State\StateInterface;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\h5p\H5PDrupal\H5PDrupal;
 use Drupal\h5peditor\H5PEditor\H5PEditorUtilities;
 use Drupal\migrate\Plugin\MigrationInterface;
@@ -36,7 +37,7 @@ class ActivityH5P extends FieldableEntity {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, StateInterface $state, EntityManagerInterface $entity_manager, ModuleHandlerInterface $module_handler) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, StateInterface $state, EntityTypeManagerInterface $entity_manager, ModuleHandlerInterface $module_handler) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $migration, $state, $entity_manager);
     $this->moduleHandler = $module_handler;
 
@@ -80,7 +81,8 @@ class ActivityH5P extends FieldableEntity {
             $response_data = (string) $response->getBody();
           }
           catch (\Exception $e) {
-            \Drupal::logger('opigno_groups_migration')->error($e->getMessage());
+            // If request failed do nothing
+            // as some libraries will be downloaded with "parent" library.
           }
 
           if (!empty($response_data) && empty($response->error)) {
@@ -88,11 +90,12 @@ class ActivityH5P extends FieldableEntity {
             $h5p_path = $interface->getOption('default_path', 'h5p');
             $temp_id = uniqid('h5p-');
             $temporary_file_path = "public://{$h5p_path}/temp/{$temp_id}";
-            file_prepare_directory($temporary_file_path, FILE_CREATE_DIRECTORY);
+            \Drupal::service('file_system')->prepareDirectory($temporary_file_path, FileSystemInterface::MODIFY_PERMISSIONS | FileSystemInterface::CREATE_DIRECTORY);
             $name = $temp_id . '.h5p';
             $target = $temporary_file_path . DIRECTORY_SEPARATOR . $name;
 
-            $file = file_unmanaged_save_data($response_data, $target);
+            $file = \Drupal::service('file_system')->saveData($response_data, $target, FileSystemInterface::EXISTS_REPLACE);
+
             if ($file) {
               $file_service = \Drupal::service('file_system');
               $dir = $file_service->realpath($temporary_file_path);
@@ -251,7 +254,8 @@ class ActivityH5P extends FieldableEntity {
    */
   public function prepareRow(Row $row) {
     $nid = $row->getSourceProperty('nid');
-    $vid = $row->getSourceProperty('vid');
+    $vid = $nid;
+    $row->setSourceProperty('vid', $vid);
     $type = $row->getSourceProperty('type');
 
     $entity_translatable = $this->isEntityTranslatable('node') && (int) $this->variableGet('language_content_type_' . $type, 0) === 4;

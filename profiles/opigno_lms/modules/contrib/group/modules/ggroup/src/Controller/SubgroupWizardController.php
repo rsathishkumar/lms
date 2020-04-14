@@ -125,19 +125,24 @@ class SubgroupWizardController extends ControllerBase {
         'gid' => $group->id(),
       ]);
       if (!$creation_wizard && $entity = $this->privateTempStore->get("$storage_id:group")) {
-         $entity->save();
-         $group->addContent($entity, $plugin_id);
+        $entity->save();
+        $group->addContent($entity, $plugin_id);
 
-          // We also clear the private store so we can start fresh next time around.
-          $this->privateTempStore->delete("$storage_id:step");
-          $this->privateTempStore->delete("$storage_id:group");
+        // We also clear the private store so we can start fresh next time
+        // around.
+        $this->privateTempStore->delete("$storage_id:step");
+        $this->privateTempStore->delete("$storage_id:group");
 
-         return $this->redirect('entity.group.canonical', ['group' => $entity ->id()]);
+        return $this->redirect('entity.group.canonical', ['group' => $entity->id()]);
       }
     }
 
     // Return the form with the group and storage ID added to the form state.
-    $extra = ['group' => $group, 'storage_id' => $storage_id, 'wizard' => $creation_wizard];
+    $extra = [
+      'group' => $group,
+      'storage_id' => $storage_id,
+      'wizard' => $creation_wizard,
+    ];
     return $this->entityFormBuilder()->getForm($entity, 'ggroup-form', $extra);
   }
 

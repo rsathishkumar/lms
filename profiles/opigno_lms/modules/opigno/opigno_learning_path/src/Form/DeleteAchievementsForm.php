@@ -149,7 +149,7 @@ class DeleteAchievementsForm extends ConfirmFormBase {
           if (isset($group)) {
             $modules = $group->getContentEntities('opigno_module_group');
             $module = reset($modules);
-            if (isset($module)) {
+            if (!empty($module)) {
               // Create new unfinished user module attempt on the first module
               // of training to disable the training resume.
               $attempt = UserModuleStatus::create([]);

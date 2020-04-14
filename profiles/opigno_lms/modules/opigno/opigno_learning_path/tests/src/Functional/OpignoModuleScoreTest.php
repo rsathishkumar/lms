@@ -50,7 +50,7 @@ class OpignoModuleScoreTest extends LearningPathBrowserTestBase {
     $this->assertSession()->pageTextContains('100%');
     $this->drupalGet('/achievements');
     $content = $this->getSession()->getPage()->find('css', '.lp_step_summary_score');
-    $this->assertEquals('Score: 100%', $content->getText(), 'Best score displays on achievements');
+    $this->assertEquals('100%', $content->getText(), 'Best score displays on achievements');
     $this->drupalGet('/statistics/training/' . $training->id());
     $content = $this->getSession()->getPage()->find('css', '.training-content-list');
     $this->assertEquals(1, substr_count($content->getText(), '100%'), 'Best score displays on statistics');
@@ -63,7 +63,7 @@ class OpignoModuleScoreTest extends LearningPathBrowserTestBase {
     $this->assertSession()->pageTextContains('100%');
     $this->drupalGet('/achievements');
     $content = $this->getSession()->getPage()->find('css', '.lp_step_summary_score', 'Best score still displays on achievements when user get a worse result');
-    $this->assertEquals('Score: 100%', $content->getText());
+    $this->assertEquals('100%', $content->getText());
     $this->drupalGet('/statistics/training/' . $training->id());
     $content = $this->getSession()->getPage()->find('css', '.training-content-list');
     $this->assertEquals(1, substr_count($content->getText(), '100%'), 'Best score still displays on statistics when user get a worse result');
@@ -82,7 +82,7 @@ class OpignoModuleScoreTest extends LearningPathBrowserTestBase {
     $this->assertSession()->pageTextContains('50%');
     $this->drupalGet('/achievements');
     $content = $this->getSession()->getPage()->find('css', '.lp_step_summary_score');
-    $this->assertEquals('Score: 50%', $content->getText(), 'Newest score displays on achievements');
+    $this->assertEquals('50%', $content->getText(), 'Newest score displays on achievements');
     $this->drupalGet('/statistics/training/' . $training->id());
     $content = $this->getSession()->getPage()->find('css', '.training-content-list');
     $this->assertEquals(1, substr_count($content->getText(), '50%'), 'Newest score displays on statistics');

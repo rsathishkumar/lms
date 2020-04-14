@@ -5,6 +5,7 @@ namespace Drupal\ggroup;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Entity\GroupContentInterface;
+use Drupal\group\GroupMembership;
 
 /**
  * An interface for the group hierarchy manager.
@@ -93,14 +94,18 @@ interface GroupHierarchyManagerInterface {
    * allowed to map. The result contains a list of all roles the user has have
    * inherited from 1 or more subgroups or supergroups.
    *
-   * @param \Drupal\group\Entity\GroupInterface $group
-   *   The group for which inherited roles will be loaded.
+   * @param \Drupal\group\GroupMembership $group_membership
+   *   The group membership for which inherited roles will be loaded.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   An account to map only the roles for a specific user.
    *
    * @return \Drupal\group\Entity\GroupRoleInterface[]
    *   An array of group roles inherited for the given group.
    */
-  public function getInheritedGroupRoleIdsByUser(GroupInterface $group, AccountInterface $account);
+  public function getInheritedGroupRoleIdsByMembership(GroupMembership $group_membership, AccountInterface $account);
+
+  public function getInheritedGroupOutsiderRoleIds(GroupInterface $group, AccountInterface $account);
+
+  public function getInheritedGroupAnonymousRoleIds(GroupInterface $group, array $groups);
 
 }

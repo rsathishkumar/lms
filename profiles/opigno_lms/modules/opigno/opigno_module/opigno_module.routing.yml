@@ -38,6 +38,66 @@ opigno_module.duplicate:
       account:
         type: entity:user
 
+opigno_module.export.module:
+  path: 'admin/structure/opigno_export/opigno_module/{opigno_module}'
+  defaults:
+    _controller: '\Drupal\opigno_module\Controller\LearningPathController::exportModule'
+    _title: 'Export module'
+  requirements:
+    _entity_access: 'opigno_module.update'
+  options:
+    parameters:
+      opigno_module:
+        type: entity:opigno_module
+      account:
+        type: entity:user
+
+opigno_module.import.module:
+  path: 'admin/structure/opigno_import/opigno_module'
+  defaults:
+    _title: 'Import module'
+    _form: '\Drupal\opigno_module\Form\ImportModuleForm'
+  requirements:
+    _entity_create_access: opigno_activity
+
+opigno_module.export.activity:
+  path: 'admin/structure/opigno_export/opigno_activity/{opigno_activity}'
+  defaults:
+    _controller: '\Drupal\opigno_module\Controller\LearningPathController::exportActivity'
+    _title: 'Export activity'
+  requirements:
+    _entity_access: 'opigno_activity.update'
+  options:
+    parameters:
+      opigno_activity:
+        type: entity:opigno_activity
+      account:
+        type: entity:user
+
+opigno_module.import.activity:
+  path: 'admin/structure/opigno_import/opigno_activity'
+  defaults:
+    _title: 'Import activity'
+    _form: '\Drupal\opigno_module\Form\ImportActivityForm'
+  requirements:
+    _entity_create_access: opigno_activity
+
+opigno_module.import.course:
+  path: 'admin/structure/opigno_import/opigno_course'
+  defaults:
+    _title: 'Course import'
+    _form: '\Drupal\opigno_module\Form\ImportCourseForm'
+  requirements:
+    _entity_create_access: group
+
+opigno_module.import.training:
+  path: 'admin/structure/opigno_import/opigno_training'
+  defaults:
+    _title: 'Training import'
+    _form: '\Drupal\opigno_module\Form\ImportTrainingForm'
+  requirements:
+    _entity_create_access: group
+
 opigno_module.modules:
   path: 'opigno_module/{opigno_module}/inner-modules'
   defaults:

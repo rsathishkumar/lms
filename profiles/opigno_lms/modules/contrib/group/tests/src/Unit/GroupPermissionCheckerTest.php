@@ -27,19 +27,11 @@ class GroupPermissionCheckerTest extends UnitTestCase {
   protected $permissionCalculator;
 
   /**
-   * The group permission checker.
-   *
-   * @var \Drupal\group\Access\GroupPermissionCheckerInterface
-   */
-  protected $permissionChecker;
-
-  /**
    * {@inheritdoc}
    */
   public function setUp() {
     parent::setUp();
     $this->permissionCalculator = $this->prophesize(ChainGroupPermissionCalculatorInterface::class);
-    $this->permissionChecker = new GroupPermissionChecker($this->permissionCalculator->reveal());
   }
 
   /**
@@ -86,7 +78,12 @@ class GroupPermissionCheckerTest extends UnitTestCase {
       ->calculatePermissions($account->reveal())
       ->willReturn($calculated_permissions);
 
-    $result = $this->permissionChecker->hasPermissionInGroup($permission, $account->reveal(), $group->reveal());
+    $event_dispatcher = $this->prophesize(EventDispatcherInterface::class);
+    $group_permission_event = new GroupPermissionEvent($permission, $group->reveal(), $account->reveal());
+    $event_dispatcher->dispatch(GroupEvents::PERMISSION, $group_permission_event)->willReturn($group_permission_event);
+    $permission_checker = new GroupPermissionChecker($this->permissionCalculator->reveal(), $event_dispatcher->reveal());
+    $result = $permission_checker->hasPermissionInGroup($permission, $account->reveal(), $group->reveal());
+
     $this->assertSame($has_permission, $result, $message);
   }
 

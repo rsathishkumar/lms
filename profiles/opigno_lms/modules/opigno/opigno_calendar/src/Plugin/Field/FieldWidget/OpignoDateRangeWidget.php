@@ -52,7 +52,7 @@ class OpignoDateRangeWidget extends WidgetBase {
       $value = DrupalDateTime::createFromFormat($storage_format, $value_str, $storage_timezone);
       $end_value = DrupalDateTime::createFromFormat($storage_format, $end_value_str, $storage_timezone);
 
-      $local_timezone = new \DateTimeZone(drupal_get_user_timezone());
+      $local_timezone = new \DateTimeZone(date_default_timezone_get());
       $value->setTimezone($local_timezone);
       $end_value->setTimezone($local_timezone);
 

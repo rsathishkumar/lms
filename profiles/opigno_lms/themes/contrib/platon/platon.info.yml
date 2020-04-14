@@ -4,7 +4,7 @@ type: theme
 name: Platon
 description: 'HTML5, SASS, Responsive grid base theme.'
 package: 'Platon'
-# core: 8.x
+core: 8.x
 
 regions:
   help: 'Help'
@@ -17,8 +17,7 @@ regions:
   content: 'Content'
   footer: 'Footer'
 
-# Information added by Drupal.org packaging script on 2019-06-05
-version: '8.x-1.3'
-core: '8.x'
+# Information added by Drupal.org packaging script on 2020-01-30
+version: '8.x-1.6'
 project: 'platon'
-datestamp: 1559752747
+datestamp: 1580377429

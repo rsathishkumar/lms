@@ -11,6 +11,7 @@ use Drupal\field\Entity\FieldConfig;
 use Drupal\group\Entity\GroupRole;
 use Drupal\user\Entity\Role;
 use Drupal\user\RoleInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
 
 /**
  * Implements hook_install().
@@ -78,4 +79,19 @@ function opigno_ilt_update_8002() {
   $role = GroupRole::load('learning_path-user_manager');
   $role->grantPermission('score ilt entities');
   $role->save();
+}
+
+/**
+ * Add "trainer" field to "opigno_ilt".
+ */
+function opigno_ilt_update_8003() {
+  // Add new field.
+  $definition = BaseFieldDefinition::create('entity_reference')
+    ->setLabel(t('Trainer'))
+    ->setDescription(t('The trainer of the ILT entity.'))
+    ->setSetting('target_type', 'user')
+    ->setSetting('handler', 'default');
+
+  \Drupal::entityDefinitionUpdateManager()
+    ->installFieldStorageDefinition('trainer', 'opigno_ilt', 'opigno_ilt', $definition);
 }

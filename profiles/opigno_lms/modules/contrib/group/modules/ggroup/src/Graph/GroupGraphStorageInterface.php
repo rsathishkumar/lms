@@ -14,7 +14,7 @@ interface GroupGraphStorageInterface {
    *   An array containing all relations between groups with the parent group as
    *   key and the child group as value.
    */
-  public function getGraph();
+  public function getGraph($group_id);
 
   /**
    * Relates the parent group and the child group.
@@ -70,7 +70,33 @@ interface GroupGraphStorageInterface {
   public function getAncestors($group_id);
 
   /**
-   * Checks if a group (group A) is the ancestor of another group (group B).
+   * Checks if a group (A) is the ancestor of another group (B).
+   *
+   * @param int $a
+   *   The group whose ancestry status will be checked.
+   * @param int $b
+   *   The group for which ancestry status will be checked against.
+   *
+   * @return bool
+   *   TRUE if group A is an ancestor of group B.
+   */
+  public function isDirectAncestor($a, $b);
+
+  /**
+   * Checks if a group (A) is the direct descendant of another group (B).
+   *
+   * @param int $a
+   *   The group whose descent status will be checked.
+   * @param int $b
+   *   The group for which descent status will be checked against.
+   *
+   * @return bool
+   *   TRUE if group A is a descendant of group B.
+   */
+  public function isDirectDescendant($a, $b);
+
+  /**
+   * Checks if a group (A) is the direct ancestor of another group (B).
    *
    * @param int $a
    *   The group whose ancestry status will be checked.
@@ -83,7 +109,7 @@ interface GroupGraphStorageInterface {
   public function isAncestor($a, $b);
 
   /**
-   * Checks if a group (group A) is the descendant of another group (group B).
+   * Checks if a group (A) is the descendant of another group (B).
    *
    * @param int $a
    *   The group whose descent status will be checked.
@@ -91,7 +117,7 @@ interface GroupGraphStorageInterface {
    *   The group for which descent status will be checked against.
    *
    * @return bool
-   *   TRUE if group A is an descendant of group B.
+   *   TRUE if group A is a descendant of group B.
    */
   public function isDescendant($a, $b);
 

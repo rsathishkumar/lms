@@ -53,6 +53,7 @@ function _opigno_ilt_upcoming(UserInterface $user) {
   $timestamp = \Drupal::time()->getRequestTime();
   $now = DrupalDateTime::createFromTimestamp($timestamp);
   $now_str = $now->format(DrupalDateTime::FORMAT);
+  $user_id = $user->id();
 
   // Load upcoming meeting.
   $ilts_ids = \Drupal::entityTypeManager()
@@ -60,42 +61,16 @@ function _opigno_ilt_upcoming(UserInterface $user) {
     ->getQuery()
     ->condition('date__value', $now_str, '>')
     ->execute();
-  $ilts = ILT::loadMultiple($ilts_ids);
+  $ilts_list = ILT::loadMultiple($ilts_ids);
 
-  // Load user groups.
-  $groups_ids = [];
-  $membership_service = \Drupal::service('group.membership_loader');
-  $memberships = $membership_service->loadByUser($user);
-  /** @var \Drupal\group\GroupMembership[] $memberships */
-  foreach ($memberships as $membership) {
-    $group = $membership->getGroup();
-    if ($group->getGroupType()->id() !== 'learning_path') {
-      continue;
+  foreach ($ilts_list as $ilt) {
+    $group = Group::load($ilt->getTrainingId());
+    if ($group instanceof Group && $group->getMember($user) && $ilt->isMember($user_id)) {
+      $ilts[$ilt->id()] = $ilt;
     }
-
-    $groups_ids[] = $group->id();
   }
 
-  $user_id = \Drupal::currentUser()->id();
-  $ilts = array_filter($ilts, function ($ilt) use (
-    $user_id,
-    $groups_ids
-  ) {
-    /** @var \Drupal\opigno_ilt\ILTInterface $ilt */
-    // Remove ILTs that are not related to the current user groups.
-    if (!in_array($ilt->getTrainingId(), $groups_ids)) {
-      return FALSE;
-    }
-
-    // Remove ILTs with the member restriction without the current user.
-    if (!$ilt->isMember($user_id)) {
-      return FALSE;
-    }
-
-    return TRUE;
-  });
-
-  return $ilts;
+  return $ilts ?? [];
 }
 
 /**
@@ -144,9 +119,7 @@ function opigno_ilt_cron() {
       return $user2->id() - $user1->id();
     });
 
-    $params['subject'] = $params['message'] = t('The Instructor-Led Training %ilt starts in less than 24 hours', [
-      '%ilt' => $ilt->getTitle(),
-    ]);
+    $params = [];
     if (\Drupal::hasService('opigno_calendar_event.iCal')) {
       $params['attachments'] = opigno_ilt_ical_prepare($ilt);
     }
@@ -154,6 +127,46 @@ function opigno_ilt_cron() {
     $module = 'opigno_ilt';
     $key = 'upcoming_ilt_notify';
     foreach ($not_notified as $user) {
+      $trainer_id = $ilt->getTrainerId();
+      $trainer_name = '';
+
+      if ($trainer_id) {
+        $trainer = \Drupal::entityTypeManager()
+          ->getStorage('user')
+          ->load($trainer_id);
+
+        if ($trainer) {
+          $trainer_name = $trainer->getAccountName();
+        }
+      }
+
+      $date_start_str = $ilt->getStartDate();
+      $date_start = DrupalDateTime::createFromFormat(DrupalDateTime::FORMAT, $date_start_str);
+
+      $date_end_str = $ilt->getEndDate();
+      $date_end = DrupalDateTime::createFromFormat(DrupalDateTime::FORMAT, $date_end_str);
+      $site_name = \Drupal::config('system.site')->get('name');
+
+      $params['message'] = t('Dear %username,<br /><br />
+                We kindly remind you that the Instructor-Led Training %ilt_title starts in less than 24 hours.<br /><br />
+                It will take place at: %ilt_place<br />
+                Start time: %ilt_start_time<br />
+                End time: %ilt_end_time<br />
+                Your trainer will be: %ilt_trainer<br /><br />
+                -- %site_name team', [
+                    '%username' => $user->getAccountName(),
+                    '%ilt_title' => $ilt->getTitle(),
+                    '%ilt_place' => $ilt->getPlace(),
+                    '%ilt_start_time' => $date_start->format('jS F Y - g:i A'),
+                    '%ilt_end_time' => $date_end->format('jS F Y - g:i A'),
+                    '%ilt_trainer' => $trainer_name,
+                    '%site_name' => $site_name,
+      ]);
+
+      $params['subject'] = t('The Instructor-Led Training %ilt starts in less than 24 hours', [
+        '%ilt' => $ilt->getTitle(),
+      ]);
+
       $to = $user->getEmail();
       $langcode = $user->getPreferredLangcode();
       $mail_service->mail($module, $key, $to, $langcode, $params, NULL, TRUE);
@@ -397,7 +410,7 @@ function opigno_ilt_preprocess_page(&$variables) {
           '#attributes' => [
             'class' => ['ilt-banner-text'],
           ],
-          '#value' => t('Up coming Instructor Led Training %training on %date !', [
+          '#value' => t('Upcoming Instructor Led Training %training on %date !', [
             '%training' => $link->toString(),
             '%date' => $date->format('jS F Y - g:i A'),
           ]),

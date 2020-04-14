@@ -4,6 +4,7 @@ namespace Drupal\opigno_module\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\group\Entity\Group;
 use Drupal\opigno_group_manager\Controller\OpignoGroupManagerController;
 use Drupal\opigno_group_manager\Entity\OpignoGroupManagedContent;
@@ -107,9 +108,32 @@ class OpignoModuleController extends ControllerBase {
 
       try {
         $insert_query->execute();
-      } catch (\Exception $e) {
+      }
+      catch (\Exception $e) {
         \Drupal::messenger()->addMessage($e->getMessage(), 'error');
         return FALSE;
+      }
+
+      // Set activities weight.
+      if (empty($e)) {
+        $activities = $module->getModuleActivities();
+        if ($activities) {
+          $weight = -1000;
+          foreach ($activities as $activity) {
+            if (!empty($activity->omr_id)) {
+              $connection->merge('opigno_module_relationship')
+                ->keys([
+                  'omr_id' => $activity->omr_id,
+                ])
+                ->fields([
+                  'weight' => $weight,
+                ])
+                ->execute();
+
+              $weight++;
+            }
+          }
+        }
       }
     }
     return TRUE;
@@ -122,11 +146,12 @@ class OpignoModuleController extends ControllerBase {
     /* @var $opigno_module \Drupal\opigno_module\Entity\OpignoModule */
     /* @var $query_options \Symfony\Component\HttpFoundation\ParameterBag */
     $query_options = $request->query;
-    // Check Module availability.
-    $availability = $opigno_module->checkModuleAvailability();
 
     // Set current ID of group
     OpignoGroupContext::setGroupId($group->id());
+
+    // Check Module availability.
+    $availability = $opigno_module->checkModuleAvailability();
 
     if (!$availability['open']) {
       // Module is not available. Based on availability time.
@@ -184,6 +209,10 @@ class OpignoModuleController extends ControllerBase {
       $depth_of_skills_tree = $skills_tree[0]->depth;
       $current_skills = [];
 
+      if (!isset($depth_of_skills_tree)) {
+        $depth_of_skills_tree = 0;
+      }
+
       // Set default successfully finished this skills tree for user.
       // If the system finds any skill which is not successfully finished then change this variable to FALSE.
       $successfully_finished = TRUE;
@@ -239,7 +268,7 @@ class OpignoModuleController extends ControllerBase {
       $attempt->setModule($opigno_module);
       $attempt->setFinished(0);
       $attempt->save();
-      }
+    }
 
     // Redirect to the module results page with message 'successfully finished'.
     if (isset($successfully_finished) && $successfully_finished) {
@@ -356,18 +385,9 @@ class OpignoModuleController extends ControllerBase {
             'opigno_module' => $opigno_module->id(),
           ]);
         }
-
         // Redirect to the module results page if there are no activities for the user.
-        if ($last_activity_id == $opigno_module->getModuleActivities()) {
-          $attempt->setFinished(\Drupal::time()->getRequestTime());
-          $attempt->save();
-
+        else {
           $_SESSION['successfully_finished'] = FALSE;
-
-          return $this->redirect('opigno_module.module_result', [
-            'opigno_module' => $opigno_module->id(),
-            'user_module_status' => $attempt->id(),
-          ]);
         }
       }
 
@@ -414,11 +434,13 @@ class OpignoModuleController extends ControllerBase {
       // Get group context.
       $cid = OpignoGroupContext::getCurrentGroupContentId();
       $gid = OpignoGroupContext::getCurrentGroupId();
-      $steps = $this->getAllStepsOnlyModules($gid);
-      foreach ($steps as $step) {
-        if ($step['id'] == $opigno_module->id() && $step['cid'] != $cid) {
-          // Update content cid.
-          OpignoGroupContext::setCurrentContentId($step['cid']);
+      if ($gid) {
+        $steps = $this->getAllStepsOnlyModules($gid);
+        foreach ($steps as $step) {
+          if ($step['id'] == $opigno_module->id() && $step['cid'] != $cid) {
+            // Update content cid.
+            OpignoGroupContext::setCurrentContentId($step['cid']);
+          }
         }
       }
       $activities_storage = static::entityTypeManager()->getStorage('opigno_activity');
@@ -489,29 +511,34 @@ class OpignoModuleController extends ControllerBase {
 
     // Check if user have access on this step of LP.
     $gid = OpignoGroupContext::getCurrentGroupId();
-    $current_cid = OpignoGroupContext::getCurrentGroupContentId();
-    $group_steps = opigno_learning_path_get_steps($gid, $uid);
+    if ($gid) {
+      $current_cid = OpignoGroupContext::getCurrentGroupContentId();
+      $group_steps = opigno_learning_path_get_steps($gid, $uid);
 
-    // Load group courses substeps.
-    array_walk($group_steps, function ($step) use ($uid, &$steps) {
-      if ($step['typology'] === 'Course') {
-        $course_steps = opigno_learning_path_get_steps($step['id'], $uid);
-        $last_course_step = end($course_steps);
-        $course_steps = array_map(function ($course_step) use ($step, $last_course_step) {
-          $course_step['parent'] = $step;
-          $course_step['is last child'] = $course_step['cid'] === $last_course_step['cid'];
-          return $course_step;
-        }, $course_steps);
+      // Load group courses substeps.
+      array_walk($group_steps, function ($step) use ($uid, &$steps) {
+        if ($step['typology'] === 'Course') {
+          $course_steps = opigno_learning_path_get_steps($step['id'], $uid);
+          $last_course_step = end($course_steps);
+          $course_steps = array_map(function ($course_step) use ($step, $last_course_step) {
+            $course_step['parent'] = $step;
+            $course_step['is last child'] = $course_step['cid'] === $last_course_step['cid'];
+            return $course_step;
+          }, $course_steps);
 
-        if (!isset($steps)) {
-          $steps = [];
+          if (!isset($steps)) {
+            $steps = [];
+          }
+          $steps = array_merge($steps, $course_steps);
         }
-        $steps = array_merge($steps, $course_steps);
-      }
-      else {
-        $steps[] = $step;
-      }
-    });
+        else {
+          $steps[] = $step;
+        }
+      });
+    }
+    else {
+      return [];
+    }
 
     // Check if user try to load activity from another module.
     $module_activities = opigno_learning_path_get_module_activities($opigno_module->id(), $uid);
@@ -772,8 +799,17 @@ class OpignoModuleController extends ControllerBase {
         }
 
         // Send notification about manual evaluation.
+        $module_id = $opigno_module->id();
         $is_evaluated = $user_module_status->get('evaluated')->getValue()[0]['value'];
         if (!$is_evaluated) {
+          $status_id = $user_module_status->id();
+          $message = $this->t('Module "@module" need manual evaluating.', ['@module' => $current_step['name']]);
+          $url = Url::fromRoute('opigno_module.module_result_form',
+            [
+              'opigno_module' => $module_id,
+              'user_module_status' => $status_id,
+            ]
+          )->toString();
           // Get user managers.
           $members = $group->getMembers('learning_path-user_manager');
           $members_entities = array_map(function ($member) {
@@ -784,21 +820,24 @@ class OpignoModuleController extends ControllerBase {
           // Get array of all users who must receive notification.
           $users = array_merge($members_entities, $admins);
           foreach ($users as $user) {
-            opigno_set_message($user->id(), $this->t("Module @module need manual evaluating.", [
-              '@module' => $current_step['name'],
-            ]));
+            opigno_set_message($user->id(), $message, $url);
           }
         };
 
         if ($score >= $current_step['required score']) {
-          opigno_set_message($uid, $this->t('Successfully completed module @name', [
-            '@name' => $current_step['name'],
-          ]));
+          $message = $this->t('Successfully completed module "@module" in "@name"', [
+            '@module' => $current_step['name'],
+            '@name' => $group->label(),
+          ]);
+          $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()])->toString();
+          opigno_set_message($uid, $message, $url);
 
           if ($is_last) {
-            opigno_set_message($uid, $this->t('Congratulations! You successfully finished the training @name', [
+            $message = $this->t('Congratulations! You successfully finished the training "@name"', [
               '@name' => $group->label(),
-            ]));
+            ]);
+            $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()])->toString();
+            opigno_set_message($uid, $message, $url);
           }
         }
 
@@ -844,9 +883,12 @@ class OpignoModuleController extends ControllerBase {
           }
 
           if ($badge_notification) {
-            opigno_set_message($uid, $this->t('You earned a badge "@name"', [
-              '@name' => $badge_notification,
-            ]));
+            $message = $this->t('You earned a badge "@badge" in "@name"', [
+              '@badge' => $badge_notification,
+              '@name' => $group->label(),
+            ]);
+            $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()])->toString();
+            opigno_set_message($uid, $message, $url);
           }
         }
 
@@ -885,9 +927,12 @@ class OpignoModuleController extends ControllerBase {
               }
 
               if ($badge_notification) {
-                opigno_set_message($uid, $this->t('You earned a badge "@name"', [
-                  '@name' => $badge_notification,
-                ]));
+                $message = $this->t('You earned a badge "@badge" in "@name"', [
+                  '@badge' => $badge_notification,
+                  '@name' => $group->label(),
+                ]);
+                $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()])->toString();
+                opigno_set_message($uid, $message, $url);
               }
             }
           }
@@ -948,7 +993,13 @@ class OpignoModuleController extends ControllerBase {
             }
           }
 
-          $target_skill_name = $term_storage->load($target_skill)->getName();
+          $target_skill_entity = $term_storage->load($target_skill);
+          if ($target_skill_entity) {
+            $target_skill_name = $target_skill_entity->getName();
+          }
+          else {
+            $target_skill_name = 'N/A';
+          }
 
           if (isset($_SESSION['successfully_finished'])) {
             if ($successfully_finished) {
@@ -976,8 +1027,6 @@ class OpignoModuleController extends ControllerBase {
             $content['#attached']['library'][] = 'opigno_skills_system/opigno_skills_entity';
           }
         }
-
-
 
         // Check if all activities has 0 score.
         // If has - immediately redirect to next step.

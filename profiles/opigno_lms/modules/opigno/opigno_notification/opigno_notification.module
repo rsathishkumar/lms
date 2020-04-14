@@ -15,13 +15,15 @@ use Drupal\Core\Entity\EntityInterface;
  *   Notification receiver user id.
  * @param string $message
  *   Notification message.
+ * @param string $url
+ *   Url to object mentioned in notification.
  *
  * @return \Drupal\opigno_notification\OpignoNotificationInterface
  *   Created notification.
  *
  * @throws \Drupal\Core\Entity\EntityStorageException
  */
-function opigno_set_message($uid, $message) {
+function opigno_set_message($uid, $message, $url = '/notifications') {
   $user = \Drupal::currentUser();
 
   if ($user->isAnonymous()) {
@@ -32,6 +34,7 @@ function opigno_set_message($uid, $message) {
     $notification = OpignoNotification::create();
     $notification->setUser($uid);
     $notification->setMessage($message);
+    $notification->setUrl($url);
     $notification->save();
     return $notification;
   }

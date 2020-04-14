@@ -8,7 +8,8 @@ html.inIframe .alert {
   display: none !important;
 }
 
-html.inIframe .lp-content-item-errors .alert {
+html.inIframe .lp-content-item-errors .alert,
+html.inIframe .opigno-alert-danger {
   display: block !important;
 }
 

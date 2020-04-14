@@ -10,7 +10,8 @@ source:
   plugin: opigno_activity_h5p
   node_type: h5p_content
 process:
-  id: vid
+  id: nid
+  vid: nid
   library_id: library_id
   parameters: json_content
   filtered_parameters: filtered

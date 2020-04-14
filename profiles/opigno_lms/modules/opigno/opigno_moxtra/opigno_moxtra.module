@@ -229,6 +229,9 @@ function _opigno_moxtra_upcoming_live_meetings(UserInterface $user) {
   $timestamp = \Drupal::time()->getRequestTime();
   $now = DrupalDateTime::createFromTimestamp($timestamp);
   $now_str = $now->format(DrupalDateTime::FORMAT);
+  $moxtra_api = _opigno_moxtra_get_moxtra_api();
+  $user_id = $user->id();
+  $meetings_list = [];
 
   // Load upcoming meeting.
   $meetings_ids = \Drupal::entityTypeManager()
@@ -238,57 +241,24 @@ function _opigno_moxtra_upcoming_live_meetings(UserInterface $user) {
     ->execute();
   $meetings = Meeting::loadMultiple($meetings_ids);
 
-  // Load user groups.
-  $groups_ids = [];
-  $membership_service = \Drupal::service('group.membership_loader');
-  $memberships = $membership_service->loadByUser($user);
-  /** @var \Drupal\group\GroupMembership[] $memberships */
-  foreach ($memberships as $membership) {
-    $group = $membership->getGroup();
-    if ($group->getGroupType()->id() !== 'learning_path') {
-      continue;
+  foreach ($meetings as $meeting) {
+    $group = Group::load($meeting->getTrainingId());
+    $members_ids = $meeting->getMembersIds();
+    $owner_id = $meeting->getOwnerId();
+    $session_key = $meeting->getSessionKey();
+
+    if (isset($session_key)) {
+      $info = $moxtra_api->getMeetingInfo($owner_id, $session_key);
+      $status = $info['data']['status'];
     }
 
-    $groups_ids[] = $group->id();
+    if ($group instanceof Group && $group->getMember($user) && isset($session_key)
+      && (empty($members_ids) || in_array($user_id, $members_ids)) && $status != 'SESSION_ENDED') {
+      $meetings_list[$meeting->id()] = $meeting;
+    }
   }
 
-  $moxtra_api = _opigno_moxtra_get_moxtra_api();
-  $user_id = \Drupal::currentUser()->id();
-  $meetings = array_filter($meetings, function ($meeting) use (
-    $moxtra_api,
-    $user_id,
-    $groups_ids
-  ) {
-    /** @var \Drupal\opigno_moxtra\MeetingInterface $meeting */
-    // Remove meetings that are not related to the current user groups.
-    if (!in_array($meeting->getTrainingId(), $groups_ids)) {
-      return FALSE;
-    }
-
-    // Remove meetings with the member restriction without the current user.
-    $members_ids = $meeting->getMembersIds();
-    if (!empty($members_ids) && !in_array($user_id, $members_ids)) {
-      return FALSE;
-    }
-
-    // Check the live meeting session key.
-    $session_key = $meeting->getSessionKey();
-    if (empty($session_key)) {
-      return FALSE;
-    }
-
-    // Check the live meeting status.
-    $owner_id = $meeting->getOwnerId();
-    $info = $moxtra_api->getMeetingInfo($owner_id, $session_key);
-    $status = $info['data']['status'];
-    if ($status === 'SESSION_ENDED') {
-      return FALSE;
-    }
-
-    return TRUE;
-  });
-
-  return $meetings;
+  return $meetings_list;
 }
 
 /**

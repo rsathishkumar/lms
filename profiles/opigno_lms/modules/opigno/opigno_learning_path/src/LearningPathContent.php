@@ -255,4 +255,26 @@ class LearningPathContent {
     return $timestamp;
   }
 
+  /**
+   * Returns Group memberships by types.
+   *
+   * @param int $gid
+   *   Group ID.
+   * @param mixed $types
+   *   Array of membership types.
+   *
+   * @return mixed
+   *   Group membership ids.
+   */
+  public static function getGroupMembershipIdsByType($gid, $types) {
+    $db_connection = \Drupal::service('database');
+    $ids = $db_connection->select('group_content_field_data', 'g_c_f_d')
+      ->fields('g_c_f_d', ['entity_id'])
+      ->condition('gid', $gid)
+      ->condition('type', $types, 'IN')
+      ->execute()->fetchCol();
+
+    return $ids;
+  }
+
 }

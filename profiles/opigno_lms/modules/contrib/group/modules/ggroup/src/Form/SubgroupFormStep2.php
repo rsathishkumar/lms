@@ -25,7 +25,7 @@ class SubgroupFormStep2 extends GroupContentForm {
    * Constructs a SubgroupFormStep2 object.
    *
    * @param \Drupal\user\PrivateTempStoreFactory $temp_store_factory
-   *    The temporary store factory.
+   *   The temporary store factory.
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager.
    */

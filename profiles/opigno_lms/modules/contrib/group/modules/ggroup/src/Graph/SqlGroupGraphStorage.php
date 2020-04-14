@@ -4,6 +4,7 @@ namespace Drupal\ggroup\Graph;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Database\Query\Condition;
+use Drupal\Core\Cache\Cache;
 
 /**
  * SQL based storage of the group relationship graph.
@@ -18,7 +19,7 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * @var int[][]
    *   An nested array containing all ancestor group IDs for a group.
    */
-  protected $ancestors;
+  protected $ancestors = [];
 
   /**
    * Static cache for descendant lookup.
@@ -28,7 +29,7 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * @var int[][]
    *   An nested array containing all ancestor group IDs for a group.
    */
-  protected $descendants;
+  protected $descendants = [];
 
   /**
    * Static cache for direct ancestor lookup.
@@ -38,7 +39,7 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * @var int[][]
    *   An nested array containing all ancestor group IDs for a group.
    */
-  protected $directAncestors;
+  protected $directAncestors = [];
 
   /**
    * Static cache for direct descendant lookup.
@@ -48,7 +49,7 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * @var int[][]
    *   An nested array containing all ancestor group IDs for a group.
    */
-  protected $directDescendants;
+  protected $directDescendants = [];
 
   /**
    * The database connection.
@@ -56,6 +57,8 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * @var \Drupal\Core\Database\Connection
    */
   protected $connection;
+
+  protected $loaded = [];
 
   /**
    * Contracts a new class instance.
@@ -65,27 +68,160 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    */
   public function __construct(Connection $connection) {
     $this->connection = $connection;
-    $this->updateStaticCache();
   }
 
   /**
-   * Fetch all records from graph and cache direct descendants and ancestors.
+   * Invalidate the cache tags for the groups provided.
+   */
+  protected function invalidate($gids) {
+    if (!empty($gids)) {
+      // Create a cache tag for all the groups passed in.
+      foreach ($gids as $gid) {
+        $cache_tags[] = 'group:' . $gid;
+
+        // @TODO: Should the cache be actively rebuilt instead?
+        // Indicate that this group needs to be reloaded.
+        $this->loaded[$gid] = FALSE;
+
+        // Remove all the values for this group since the values are no longer
+        // considered valid.
+        unset($this->ancestors[$gid]);
+        unset($this->descendants[$gid]);
+        unset($this->directAncestors[$gid]);
+        unset($this->directDescendants[$gid]);
+      }
+
+      // And invalidate the tags.
+      if (!empty($cache_tags)) {
+        Cache::invalidateTags($cache_tags);
+      }
+    }
+  }
+
+  /**
+   * Fetch the records from graph for the provided group and cache them.
    *
    * This is mostly done for performance reasons. When having lots of groups,
    * getting/checking the ancestors or descendants in separate queries is a lot
    * slower.
    */
-  protected function updateStaticCache() {
-    $query = $this->connection->select('group_graph', 'gg')
-      ->fields('gg', ['start_vertex', 'end_vertex']);
-    $this->descendants = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP);
-    $this->ancestors = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP, 1);
+  protected function loadGroupMapping($gid) {
+    $cid = 'ggroup_graph_map:' . $gid;
+    if ($cache = \Drupal::cache()->get($cid)) {
+      $mapping = $cache->data;
+    }
+    else {
+      $query = $this->connection->select('group_graph', 'gg')
+        ->fields('gg', ['start_vertex', 'end_vertex']);
 
-    $query = $this->connection->select('group_graph', 'gg')
-      ->fields('gg', ['start_vertex', 'end_vertex']);
-    $query->condition('hops', 0);
-    $this->directDescendants = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP);
-    $this->directAncestors = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP, 1);
+      // This Or Group is identical to the one used in the query below.
+      $or_group = $query->orConditionGroup();
+      $or_group->condition('gg.start_vertex', $gid)
+        ->condition('gg.end_vertex', $gid);
+
+      // Add the Or condition Group.
+      $query->condition($or_group);
+
+      $mapping['descendants'] = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP);
+      $mapping['ancestors'] = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP, 1);
+
+      // Now load direct relatives.
+      $query = $this->connection->select('group_graph', 'gg')
+        ->fields('gg', ['start_vertex', 'end_vertex']);
+
+      // Add conditions to restrict this to direct descendants for this group.
+      $query->condition('hops', 0)
+        ->condition($or_group);
+
+      $mapping['directDescendants'] = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP);
+      $mapping['directAncestors'] = $query->execute()->fetchAll(\PDO::FETCH_COLUMN | \PDO::FETCH_GROUP, 1);
+
+      // Descendants and Ancestors contain direct relatives as well.
+      // Combine ancestors and descendants to get a full list of all of the
+      // groups returned to tag this cache with.
+      $groups = array_merge($mapping['descendants'], $mapping['ancestors']);
+      $groups[] = $gid;
+
+      // Build the cache tags for all of the (deduped) groups.
+      $cache_tags = [];
+      $groups = $this->flattenGroups($groups);
+      $groups = array_unique($groups, SORT_NUMERIC);
+      foreach ($groups as $group_id) {
+        $cache_tags[] = 'group:' . $group_id;
+      }
+
+      \Drupal::cache()->set($cid, $mapping, Cache::PERMANENT, $cache_tags);
+    }
+
+    // Merge relatives with those already set.
+    $this->mergeMappings($mapping);
+
+    // Indicate that this group ID has been loaded.
+    $this->loaded[$gid] = TRUE;
+  }
+
+  /**
+   * Flattens an array of groups into a simple, single level array.
+   *
+   * @param array $groups
+   *   The groups that need to be flattened.
+   *
+   * @return array
+   *   An array of groups that were successfully flattened.
+   */
+  private function flattenGroups(array $groups) {
+    $flat_groups = [];
+    if (!empty($groups)) {
+      foreach ($groups as $group_val) {
+        if (is_array($group_val)) {
+          $flat_groups += $group_val;
+        }
+        else {
+          $flat_groups[] = $group_val;
+        }
+      }
+    }
+    return $flat_groups;
+  }
+
+  /**
+   * Merges a multi-dimentional mapping array with the existing mapping values.
+   *
+   * @param array $mapping
+   *   A multi-dimentional array of mappings keyed by the mapping relation.
+   *
+   * @return $this
+   */
+  private function mergeMappings(array $mapping) {
+    if (!empty($mapping)) {
+      // Loop through all the relations from the fetched mapping.
+      foreach ($mapping as $relation => $relatives) {
+
+        // Don't bother proceeding if there is nothing to map.
+        if (!empty($relatives)) {
+
+          // Grab the root mappings value for this relation.
+          $rootRelation = &$this->{$relation} ?: [];
+
+          // Merge each value of the relation with root.
+          foreach ($relatives as $parentGid => $groupMap) {
+
+            // Convert the map to an associative array so it merges cleanly.
+            $groupMap = array_combine($groupMap, $groupMap);
+
+            // Merge new and root mappings.
+            if (!empty($rootRelation[$parentGid])) {
+              $rootRelation[$parentGid] = $rootRelation[$parentGid] + $groupMap;
+            }
+            // Don't bother merging if the rootmap for this parent is empty.
+            else {
+              $rootRelation[$parentGid] = $groupMap;
+            }
+          }
+        }
+      }
+    }
+    return $this;
   }
 
   /**
@@ -228,7 +364,7 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
     // Since fields are added before expressions, all fields are added as
     // expressions to keep the field order intact.
     $query = $this->connection->select('group_graph', 'parent_gg');
-    $query->join('group_graph', 'child_gg');
+    $query->join('group_graph', 'child_gg', 'child_gg.end_vertex = parent_gg.start_vertex');
     $query->addExpression('parent_gg.id', 'entry_edge_id');
     $query->addExpression($edge_id, 'direct_edge_id');
     $query->addExpression('child_gg.id', 'exit_edge_id');
@@ -254,11 +390,19 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function getGraph() {
+  public function getGraph($group_id) {
     $query = $this->connection->select('group_graph', 'gg')
       ->fields('gg', ['start_vertex', 'end_vertex'])
       ->orderBy('hops')
       ->orderBy('start_vertex');
+
+    // This Or Group is identical to the one used in the query below.
+    $or_group = $query->orConditionGroup();
+    $or_group->condition('gg.start_vertex', $group_id)
+      ->condition('gg.end_vertex', $group_id);
+
+    // Add the Or Group.
+    $query->condition($or_group);
     return $query->execute()->fetchAll();
   }
 
@@ -291,7 +435,7 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
     $this->insertEdgesParentToChildOutgoing($new_edge_id, $parent_group_id, $child_group_id);
     $this->insertEdgesParentIncomingToChildOutgoing($new_edge_id, $parent_group_id, $child_group_id);
 
-    $this->updateStaticCache();
+    $this->invalidate([$parent_group_id, $child_group_id]);
 
     return $new_edge_id;
   }
@@ -343,13 +487,39 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
       ->condition('id', $edges_to_delete, 'IN')
       ->execute();
 
-    $this->updateStaticCache();
+    $this->invalidate([$parent_group_id, $child_group_id]);
+  }
+
+  /**
+   * Load the ancestry mapping for a group if it isn't loaded already.
+   */
+  private function loadMap($gid) {
+    if (empty($this->loaded[$gid])) {
+      $this->loadGroupMapping($gid);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDirectDescendants($group_id) {
+    $this->loadMap($group_id);
+    return isset($this->directDescendants[$group_id]) ? $this->directDescendants[$group_id] : [];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDirectAncestors($group_id) {
+    $this->loadMap($group_id);
+    return isset($this->directAncestors[$group_id]) ? $this->directAncestors[$group_id] : [];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getDescendants($group_id) {
+    $this->loadMap($group_id);
     return isset($this->descendants[$group_id]) ? $this->descendants[$group_id] : [];
   }
 
@@ -357,13 +527,31 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * {@inheritdoc}
    */
   public function getAncestors($group_id) {
+    $this->loadMap($group_id);
     return isset($this->ancestors[$group_id]) ? $this->ancestors[$group_id] : [];
   }
 
   /**
    * {@inheritdoc}
    */
+  public function isDirectDescendant($a, $b) {
+    $this->loadMap($b);
+    return isset($this->directDescendants[$b]) ? in_array($a, $this->directDescendants[$b]) : FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isDirectAncestor($a, $b) {
+    $this->loadMap($b);
+    return isset($this->directAncestors[$b]) ? in_array($a, $this->directAncestors[$b]) : FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function isDescendant($a, $b) {
+    $this->loadMap($b);
     return isset($this->descendants[$b]) ? in_array($a, $this->descendants[$b]) : FALSE;
   }
 
@@ -371,6 +559,7 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * {@inheritdoc}
    */
   public function isAncestor($a, $b) {
+    $this->loadMap($b);
     return isset($this->ancestors[$b]) ? in_array($a, $this->ancestors[$b]) : FALSE;
   }
 
@@ -378,10 +567,10 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
    * {@inheritdoc}
    */
   public function getPath($parent_group_id, $child_group_id) {
+
     if (!$this->isAncestor($parent_group_id, $child_group_id)) {
       return [];
     }
-
     $visited = [];
     $solutions = [];
 
@@ -397,6 +586,9 @@ class SqlGroupGraphStorage implements GroupGraphStorageInterface {
     // While queue is not empty and destination not found.
     while (!$queue->isEmpty() && $queue->bottom() != $parent_group_id) {
       $child_id = $queue->dequeue();
+
+      // Make sure the mapping info for the child is loaded.
+      $this->loadMap($child_id);
 
       // Get parents for child in queue.
       if (isset($this->directAncestors[$child_id])) {

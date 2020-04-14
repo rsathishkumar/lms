@@ -8,6 +8,7 @@
 
 use Drupal\Core\Config\FileStorage;
 use Drupal\file\Entity\File;
+use Drupal\media\Entity\MediaType;
 use Drupal\user\Entity\User;
 use Drupal\Core\StreamWrapper\PrivateStream;
 
@@ -152,3 +153,44 @@ function opigno_lms_update_8003() {
   }
 }
 
+/**
+ * Update content manager permissions.
+ */
+function opigno_lms_update_8004() {
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('user.role.content_manager');
+
+  // Add new permissions.
+  $config_permissions = &$config->get('permissions');
+  $issue_permissions = [
+    'message all groups',
+    'message anyone regardless of groups',
+  ];
+
+  foreach ($issue_permissions as $permission) {
+    if (!in_array($permission, $config_permissions)) {
+      $config_permissions[] = $permission;
+    }
+  }
+
+  $config->set('permissions', $config_permissions);
+  $config->save(TRUE);
+}
+
+/**
+ * Remove unnecessary media type 'file'.
+ */
+function opigno_lms_update_8005() {
+  try {
+    $media_type = MediaType::load('file');
+    if ($media_type) {
+      $media_type->delete();
+    }
+  }
+  catch (Exception $e) {
+    $message = t("Error removing media type 'file': ");
+    \Drupal::logger('opigno_lms')->error($message . $e->getMessage());
+    $messenger = \Drupal::messenger();
+    $messenger->addError($message . $e->getMessage());
+  }
+}

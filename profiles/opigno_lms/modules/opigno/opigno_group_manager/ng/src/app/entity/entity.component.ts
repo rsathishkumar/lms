@@ -34,6 +34,7 @@ export class EntityComponent implements OnInit {
   @Output() openAddPanel: EventEmitter<Entity> = new EventEmitter();
   @Output() openUpdatePanel: EventEmitter<Entity> = new EventEmitter();
   @Output() openManagePanel: EventEmitter<Entity> = new EventEmitter();
+  @Output() openMeetingsPanel: EventEmitter<Entity> = new EventEmitter();
   @Output() openDeletePanel: EventEmitter<Entity> = new EventEmitter();
   @Output() updateNextLinkEvent: EventEmitter<any> = new EventEmitter();
   @Output() removeInfoCardEvent: EventEmitter<any> = new EventEmitter();
@@ -169,6 +170,10 @@ export class EntityComponent implements OnInit {
 
   openUpdatePanel_(entity): void {
     this.openUpdatePanel.emit(entity);
+  }
+
+  openMeetingsPanel_(entity): void {
+    this.openMeetingsPanel.emit(entity);
   }
 
   openManagePanel_(entity): void {

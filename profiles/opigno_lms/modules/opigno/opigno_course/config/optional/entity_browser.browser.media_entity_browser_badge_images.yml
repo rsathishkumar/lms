@@ -25,7 +25,6 @@ widgets:
     settings:
       media_type: image_png
       upload_location: 'public://[date:custom:Y]-[date:custom:m]'
-      dropzone_description: 'Drop files here to upload them'
       max_filesize: 64M
       extensions: png
       clientside_resize: false

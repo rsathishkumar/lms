@@ -144,9 +144,7 @@ class View extends WidgetBase implements ContainerFactoryPluginInterface {
       }
     }
 
-    $form['view']['view'] = [
-      '#markup' => \Drupal::service('renderer')->render($form['view']['view']),
-    ];
+    unset($form['view']['view']['#children']);
 
     return $form;
   }

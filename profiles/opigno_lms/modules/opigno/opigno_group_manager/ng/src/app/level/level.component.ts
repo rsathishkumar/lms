@@ -37,6 +37,7 @@ export class LevelComponent implements OnInit, AfterViewInit {
   updateEntityPanel = false;
   deleteEntityPanel = false;
   addEntityPanel = false;
+  addEntityMeeting = false;
   manageEntityPanel = false;
   updateLinkPanel = false;
   selectedLink: any;
@@ -536,6 +537,7 @@ ${message}
   closePanels(): void {
     this.addEntityPanel = false;
     this.updateEntityPanel = false;
+    this.addEntityMeeting = false;
     this.deleteEntityPanel = false;
     this.manageEntityPanel = false;
     this.updateLinkPanel = false;
@@ -551,6 +553,11 @@ ${message}
   openAddPanel(entity: Entity): void {
     this.selectedEntity = entity;
     this.addEntityPanel = true;
+  }
+
+  openMeetingsPanel(entity: Entity): void {
+    this.selectedEntity = entity;
+    this.addEntityMeeting = true;
   }
 
   openManagePanel(entity: Entity): void {

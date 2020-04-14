@@ -2,9 +2,11 @@
 
 namespace Drupal\opigno_module\Controller;
 
+use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\file\Entity\File;
 use Drupal\h5p\H5PDrupal\H5PDrupal;
 use Drupal\opigno_module\Entity\OpignoActivity;
@@ -24,9 +26,37 @@ class ExternalPackageController extends ControllerBase {
   public static function ajaxFormExternalPackageCallback(&$form, FormStateInterface $form_state) {
     $response = new AjaxResponse();
 
-    // If errors, returns the form with errors and messages.
+    // If any errors - return form.
     if ($form_state->hasAnyErrors()) {
-      return $form;
+      if ($errors = $form_state->getErrors()) {
+        $errors_value = [];
+        foreach ($errors as $error) {
+          $errors_value[] = [
+            '#type' => 'html_tag',
+            '#tag' => 'li',
+            '#value' => $error,
+          ];
+        }
+        $form['errors'] = [
+          '#type' => 'container',
+          '#weight' => 99,
+          '#attributes' => [
+            'class' => ['alert', 'alert-danger', 'opigno-alert-danger'],
+            'role' => ['alert'],
+            'aria-label' => ['Error message'],
+          ],
+          'content' => [
+            '#type' => 'html_tag',
+            '#tag' => 'ul',
+            'content' => $errors_value,
+          ],
+        ];
+        // Delete errors to avoid duplication.
+        \Drupal::messenger()->deleteByType(MessengerInterface::TYPE_ERROR);
+      }
+      // Return form with ajax response.
+      $response->addCommand(new ReplaceCommand('.ajax-form-entity-external-package', $form));
+      return $response;
     }
 
     if ($entity = $form_state->getUserInput()['activity']) {
@@ -91,7 +121,8 @@ class ExternalPackageController extends ControllerBase {
           $storage = $form_state->getStorage();
           if (!empty($storage['mode']) && $storage['mode'] == 'ppt') {
             $ppt_dir = static::getPptConversionDir();
-            $public_files_real_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+            $file_default_scheme = \Drupal::config('system.file')->get('default_scheme');
+            $public_files_real_path = \Drupal::service('file_system')->realpath($file_default_scheme . "://");
             $ppt_dir_real_path = $public_files_real_path . '/' . $ppt_dir;
             // Clean up extra files.
             self::cleanDirectoryFiles($ppt_dir_real_path, [$file]);
@@ -162,7 +193,7 @@ class ExternalPackageController extends ControllerBase {
         $package_type = 'tincan';
       }
       // Delete extracted archive.
-      file_unmanaged_delete_recursive($extract_dir);
+      \Drupal::service('file_system')->deleteRecursive($extract_dir);
 
       if (isset($package_type)) {
         return $package_type;
@@ -348,7 +379,9 @@ class ExternalPackageController extends ControllerBase {
 
         \Drupal::logger('ppt_converter')->notice('Convert to jpg finished.');
 
-        $files = file_scan_directory($ppt_dir_real_path, '/.*\.(jpg)$/');
+        /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+        $file_system = \Drupal::service('file_system');
+        $files = $file_system->scanDirectory($ppt_dir_real_path, '/.*\.(jpg)$/');
 
         // Sort images by slides order.
         foreach ($files as &$f) {
@@ -481,11 +514,13 @@ class ExternalPackageController extends ControllerBase {
     }
 
     // Delete files in a directory.
-    $files = file_scan_directory($ppt_dir_real_path, '/.*\.*$/');
+    /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+    $file_system = \Drupal::service('file_system');
+    $files = $file_system->scanDirectory($ppt_dir_real_path, '/.*\.*$/');
     if ($files) {
       foreach ($files as $file) {
         if (file_exists($file->uri)) {
-          file_unmanaged_delete($file->uri);
+          \Drupal::service('file_system')->delete($file->uri);
         }
       }
     }

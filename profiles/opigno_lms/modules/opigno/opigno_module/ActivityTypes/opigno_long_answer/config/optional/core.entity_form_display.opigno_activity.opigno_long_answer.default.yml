@@ -2,6 +2,7 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.opigno_activity.opigno_long_answer.opigno_evaluation_method
     - field.field.opigno_activity.opigno_long_answer.opigno_body
     - opigno_module.opigno_activity_type.opigno_long_answer
   module:
@@ -17,6 +18,12 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
+  opigno_evaluation_method:
+    weight: 28
+    settings: {  }
+    third_party_settings: {  }
+    type: opigno_evaluation_method_widget
+    region: content
   name:
     type: string_textfield
     weight: -4

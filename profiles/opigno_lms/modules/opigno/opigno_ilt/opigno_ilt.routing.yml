@@ -23,6 +23,19 @@ opigno_ilt.opigno_ilt_members_autocomplete:
       account:
        type: entity:user
 
+opigno_ilt.opigno_ilt_trainer_autocomplete:
+  path: '/ilt/{group}/trainer/autocomplete'
+  defaults:
+    _controller: '\Drupal\opigno_ilt\Controller\ILTController::trainerAutocomplete'
+  requirements:
+    _entity_access: group.view
+  options:
+    parameters:
+      group:
+        type: entity:group
+      account:
+        type: entity:user
+
 entity.opigno_ilt.canonical:
   path: '/ilt/{opigno_ilt}'
   defaults:

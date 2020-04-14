@@ -193,6 +193,10 @@ function opigno_certificate_form_alter(&$form, FormStateInterface $form_state, $
   if (in_array($form_id, $array_form_ids)) {
     $form['uid']['widget'][0]['target_id']['#required'] = TRUE;
   };
+
+  unset($form["paper_orientation"]["widget"]["#options"]["_none"]);
+
+  $form["actions"]["#weight"] = 125;
 }
 
 /**

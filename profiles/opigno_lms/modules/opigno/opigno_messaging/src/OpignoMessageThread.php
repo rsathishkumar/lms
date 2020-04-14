@@ -46,26 +46,27 @@ class OpignoMessageThread {
   public static function getUnreadThreadCount($return_fields = '') {
     $pm_service = \Drupal::service('private_message.service');
     $uid = \Drupal::currentUser()->id();
+
     if ($uid > 0 && isset($pm_service)) {
+      $unread_count = \Drupal::service('private_message.service')->getUnreadThreadCount();
       $db_connection = \Drupal::service('database');
 
-      // Threads user last access timestamp.
-      $query = $db_connection->select('private_message_thread__last_access_time', 'pmtlat');
-      $query->join('pm_thread_access_time', 'pmtat', 'pmtat.id = pmtlat.last_access_time_target_id AND pmtat.owner = :uid', [':uid' => $uid]);
-      $query->join('private_message_threads', 'pmt', 'pmt.id = pmtlat.entity_id AND pmt.updated >= pmtat.access_time');
-      $query->join('private_message_thread__last_delete_time', 'pmtldt', 'pmtldt.entity_id = pmtlat.entity_id');
-      $query->join('pm_thread_delete_time', 'pmtdt', 'pmtdt.id = pmtldt.last_delete_time_target_id AND pmtdt.delete_time < pmt.updated');
-      $query->join('private_message_thread__members', 'pmtm', 'pmtm.entity_id = pmt.id AND pmtm.members_target_id = :uid', [':uid' => $uid]);
-      $query->join('private_message_thread__private_messages', 'pmtpm', 'pmtpm.entity_id = pmt.id');
-      $query->join('private_messages', 'pm', 'pm.id = pmtpm.private_messages_target_id AND NOT ((pm.owner = :uid) AND (pm.created = pmt.updated))', [':uid' => $uid]);
-      $query->fields('pmtlat', ['entity_id']);
-      $query->fields('pmtat', ['access_time', 'id']);
-      $query->fields('pmt', ['updated']);
-
-      $unread_thread = $query->execute()->fetchAllAssoc('entity_id');
-
-      if ($unread_thread) {
+      if ($unread_count > 0) {
         if ($return_fields) {
+          $query = $db_connection->select('private_message_thread__last_access_time', 'pmtlat');
+          $query->join('pm_thread_access_time', 'pmtat', 'pmtat.id = pmtlat.last_access_time_target_id AND pmtat.owner = :uid', [':uid' => $uid]);
+          $query->join('private_message_threads', 'pmt', 'pmt.id = pmtlat.entity_id AND pmt.updated >= pmtat.access_time');
+          $query->join('private_message_thread__last_delete_time', 'pmtldt', 'pmtldt.entity_id = pmtlat.entity_id');
+          $query->join('pm_thread_delete_time', 'pmtdt', 'pmtdt.id = pmtldt.last_delete_time_target_id AND pmtdt.delete_time < pmt.updated');
+          $query->join('private_message_thread__members', 'pmtm', 'pmtm.entity_id = pmt.id AND pmtm.members_target_id = :uid', [':uid' => $uid]);
+          $query->join('private_message_thread__private_messages', 'pmtpm', 'pmtpm.entity_id = pmt.id');
+          $query->join('private_messages', 'pm', 'pm.id = pmtpm.private_messages_target_id AND NOT ((pm.owner = :uid) AND (pm.created = pmt.updated))', [':uid' => $uid]);
+          $query->fields('pmtlat', ['entity_id']);
+          $query->fields('pmtat', ['access_time', 'id']);
+          $query->fields('pmt', ['updated']);
+
+          $unread_thread = $query->execute()->fetchAllAssoc('entity_id');
+
           foreach ($unread_thread as $unread) {
             $ids[] = $unread->{$return_fields};
           }
@@ -74,7 +75,7 @@ class OpignoMessageThread {
           }
         }
         else {
-          return count($unread_thread);
+          return $unread_count;
         }
       }
     }

@@ -37,13 +37,10 @@ export class AddActivitiesBankComponent implements OnInit {
 
   listenFormCallback(): void {
     const that = this;
-
     var intervalId = setInterval(function() {
-      if (typeof window['iframeFormValues'] !== 'undefined') {
+      if (typeof window['closeActivityBankPanel'] !== 'undefined') {
         clearInterval(intervalId);
-
-        const formValues = window['iframeFormValues'];
-        delete window['iframeFormValues'];
+        delete window['closeActivityBankPanel'];
         that.updateEvent.emit(this.module);
         that.close();
       }

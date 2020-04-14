@@ -67,9 +67,9 @@ class OpignoTincanApiSettingsForm extends FormBase {
 
     $config = \Drupal::configFactory()
       ->getEditable('opigno_tincan_api.settings');
-    $config->set('opigno_tincan_api_endpoint', $form_state->getValue('endpoint'));
-    $config->set('opigno_tincan_api_username', $form_state->getValue('username'));
-    $config->set('opigno_tincan_api_password', $form_state->getValue('password'));
+    $config->set('opigno_tincan_api_endpoint', trim($form_state->getValue('endpoint')));
+    $config->set('opigno_tincan_api_username', trim($form_state->getValue('username')));
+    $config->set('opigno_tincan_api_password', trim($form_state->getValue('password')));
     $config->save();
     // TODO(tincan): In D7 here opigno_tincan_api_stats is enabling.
     $messenger->addMessage($this->t('LRS settings saved successfully'));

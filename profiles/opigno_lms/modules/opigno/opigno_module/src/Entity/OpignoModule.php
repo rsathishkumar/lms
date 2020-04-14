@@ -9,6 +9,8 @@ use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\opigno_group_manager\OpignoGroupContext;
+use Drupal\opigno_learning_path\Entity\LPModuleAvailability;
 use Drupal\user\UserInterface;
 
 /**
@@ -64,6 +66,16 @@ use Drupal\user\UserInterface;
 class OpignoModule extends RevisionableContentEntityBase implements OpignoModuleInterface {
 
   use EntityChangedTrait;
+
+  /**
+   * Static cache of user attempts.
+   */
+  protected $userAttempts = [];
+
+  /**
+   * Static cache of user active attempt.
+   */
+  protected $userActiveAttempt = [];
 
   /**
    * {@inheritdoc}
@@ -162,27 +174,6 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
    */
   public function getBackwardsNavigation() {
     return (bool) $this->get('backwards_navigation')->value;
-  }
-
-  /**
-   * Get Module Always available setting.
-   */
-  public function getModuleAlways() {
-    return (bool) $this->get('module_always')->value;
-  }
-
-  /**
-   * Get Module open date.
-   */
-  public function getOpenDate() {
-    return $this->get('open_date')->value;
-  }
-
-  /**
-   * Get Module close date.
-   */
-  public function getCloseDate() {
-    return $this->get('close_date')->value;
   }
 
   /**
@@ -338,28 +329,48 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
       'message' => '',
     ];
 
-    if (!$this->getModuleAlways()) {
-      $quiz_open = \Drupal::time()->getRequestTime() >= $this->getOpenDate();
-      $quiz_closed = \Drupal::time()->getRequestTime() >= $this->getCloseDate();
-      if (!$quiz_open || $quiz_closed) {
-        // Load Config.
-        $config = \Drupal::config('opigno_module.settings');
+    $module_availability = 0;
+    $group_id = OpignoGroupContext::getCurrentGroupId();
+    $lp_module_availability = LPModuleAvailability::loadByProperties([
+      'group_id' => $group_id,
+      'entity_id' => $this->id(),
+    ]);
+    if ($lp_module_availability) {
+      $lp_module_availability = current($lp_module_availability);
+      $module_availability = $lp_module_availability->getAvailability();
+    }
 
-        if ($quiz_closed) {
-          $message = $config->get('availability_closed_message');
-        }
-        elseif (!$quiz_open) {
-          $message = $config->get('availability_unavailable_message');
-        }
+    if ($module_availability) {
+      $open_date = $lp_module_availability->getOpenDate();
+      $close_date = $lp_module_availability->getCloseDate();
+      if ($open_date && $close_date) {
+        $quiz_open = \Drupal::time()->getRequestTime() >= $open_date;
+        $quiz_closed = \Drupal::time()->getRequestTime() >= $close_date;
+      }
 
-        if (\Drupal::moduleHandler()->moduleExists('token')) {
-          $message = \Drupal::token()->replace($message, ['opigno_module' => $this]);
-        }
+      if (isset($quiz_open) && isset($quiz_closed)) {
+        if (!$quiz_open || $quiz_closed) {
+          $message = '';
 
-        $availability = [
-          'open' => FALSE,
-          'message' => $message,
-        ];
+          // Load Config.
+          $config = \Drupal::config('opigno_module.settings');
+
+          if ($quiz_closed) {
+            $message = $config->get('availability_closed_message');
+          }
+          elseif (!$quiz_open) {
+            $message = $config->get('availability_unavailable_message');
+          }
+
+          if (\Drupal::moduleHandler()->moduleExists('token')) {
+            $message = \Drupal::token()->replace($message, ['opigno_module' => $this]);
+          }
+
+          $availability = [
+            'open' => FALSE,
+            'message' => $message,
+          ];
+        }
       }
     }
 
@@ -369,14 +380,37 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
   /**
    * Get loaded statuses for specified user.
    */
-  public function getModuleAttempts(AccountInterface $user) {
+  public function getModuleAttempts(AccountInterface $user, $range = NULL) {
+    $key = $this->id() . '_' . $user->id();
+
+    if (isset($range)) {
+      $key .=  '_' . $range;
+    }
+
+    if (array_key_exists($key, $this->userAttempts)) {
+      return $this->userAttempts[$key];
+    }
+
     $status_storage = static::entityTypeManager()->getStorage('user_module_status');
     $query = $status_storage->getQuery();
-    $module_statuses = $query
-      ->condition('module', $this->id())
-      ->condition('user_id', $user->id())
-      ->execute();
-    return $status_storage->loadMultiple($module_statuses);
+    $query->condition('module', $this->id())
+      ->condition('user_id', $user->id());
+
+    if (!is_null($range)) {
+      if ($range == 'last') {
+        $query->sort('id', 'DESC')
+          ->range(0,1);
+      }
+      elseif ($range == 'best') {
+        $query->sort('score', 'DESC')
+          ->sort('id', 'DESC')
+          ->range(0,1);
+      }
+    }
+
+    $module_statuses = $query->execute();
+    $this->userAttempts[$key] = $status_storage->loadMultiple($module_statuses);
+    return $this->userAttempts[$key];
   }
 
   /**
@@ -392,14 +426,23 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function getModuleActiveAttempt(AccountInterface $user) {
+    $key = $this->id() . '_' . $user->id();
+
+    if (array_key_exists($key, $this->userActiveAttempt)) {
+      return $this->userActiveAttempt[$key];
+    }
+
     $status_storage = static::entityTypeManager()->getStorage('user_module_status');
     $query = $status_storage->getQuery();
     $module_statuses = $query
       ->condition('module', $this->id())
       ->condition('user_id', $user->id())
       ->condition('finished', 0)
+      ->range(0, 1)
       ->execute();
-    return !empty($module_statuses) ? $status_storage->load(key($module_statuses)) : NULL;
+
+    $this->userActiveAttempt[$key] = !empty($module_statuses) ? $status_storage->load(key($module_statuses)) : NULL;
+    return $this->userActiveAttempt[$key];
   }
 
   /**
@@ -411,7 +454,15 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
     /* @var $db_connection \Drupal\Core\Database\Connection */
     $db_connection = \Drupal::service('database');
     $query = $db_connection->select('opigno_activity', 'oa');
-    $query->fields('oafd', ['id', 'vid', 'type', 'name', 'usage_activity', 'skills_list', 'skill_level']);
+    $query->fields('oafd', [
+      'id',
+      'vid',
+      'type',
+      'name',
+      'usage_activity',
+      'skills_list',
+      'skill_level',
+    ]);
     $query->fields('omr', [
       'activity_status',
       'weight', 'max_score',
@@ -451,7 +502,15 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
     /* @var $db_connection \Drupal\Core\Database\Connection */
     $db_connection = \Drupal::service('database');
     $query = $db_connection->select('opigno_activity', 'oa');
-    $query->fields('oafd', ['id', 'vid', 'type', 'name', 'usage_activity', 'skills_list', 'skill_level']);
+    $query->fields('oafd', [
+      'id',
+      'vid',
+      'type',
+      'name',
+      'usage_activity',
+      'skills_list',
+      'skill_level',
+    ]);
     $query->addJoin('inner', 'opigno_activity_field_data', 'oafd', 'oa.id = oafd.id');
     $query->condition('oafd.status', 1);
 
@@ -470,9 +529,15 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
    * Get answers of the specific user within specified attempt.
    *
    * @param \Drupal\Core\Session\AccountInterface $user
+   *   User account.
    * @param \Drupal\opigno_module\Entity\UserModuleStatusInterface $attempt
+   *   User module attempt object.
    *
    * @return array|\Drupal\Core\Entity\EntityInterface|null
+   *   User answers objects.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function userAnswers(AccountInterface $user, UserModuleStatusInterface $attempt) {
     $answers_storage = static::entityTypeManager()->getStorage('opigno_answer');
@@ -508,15 +573,6 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
           }
           unset($activities[$answer_activity->id()]);
         }
-
-        if (\Drupal::moduleHandler()->moduleExists('token')) {
-          $message = \Drupal::token()->replace($message, ['opigno_module' => $this]);
-        }
-
-        $availability = [
-          'open' => FALSE,
-          'message' => $message,
-        ];
       }
     }
     if ($randomization == 2) {
@@ -795,37 +851,6 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
         'weight' => 6,
       ]);
 
-    $fields['module_always'] = BaseFieldDefinition::create('boolean')
-      ->setLabel(t('Always available'))
-      ->setDescription(t('Ignore the open and close dates.'))
-      ->setRevisionable(TRUE)
-      ->setTranslatable(TRUE)
-      ->setDisplayOptions('form', [
-        'type' => 'boolean_checkbox',
-        'weight' => 1,
-      ])
-      ->setDefaultValue(TRUE);
-
-    $fields['open_date'] = BaseFieldDefinition::create('timestamp')
-      ->setLabel(t('Open date'))
-      ->setDescription(t('The date this Module will become available.'))
-      ->setRevisionable(TRUE)
-      ->setTranslatable(TRUE)
-      ->setDisplayOptions('form', [
-        'type' => 'datetime_timestamp',
-        'weight' => 2,
-      ]);
-
-    $fields['close_date'] = BaseFieldDefinition::create('timestamp')
-      ->setLabel(t('Close date'))
-      ->setDescription(t('The date this Module will become unavailable.'))
-      ->setRevisionable(TRUE)
-      ->setTranslatable(TRUE)
-      ->setDisplayOptions('form', [
-        'type' => 'datetime_timestamp',
-        'weight' => 3,
-      ]);
-
     $fields['hide_results'] = BaseFieldDefinition::create('boolean')
       ->setLabel(t('Do not display results at the end of the module'))
       ->setDescription(t('If you check this option, the correct answers won’t be displayed to the users at the end of the module.'))
@@ -924,17 +949,17 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
       ->setRevisionable(TRUE)
       ->setTranslatable(TRUE)
       ->setDefaultValue(FALSE)
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'boolean_checkbox',
         'weight' => 1,
-      ));
+      ]);
 
     $term_storage = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
     $target_skills = $term_storage->loadTree('skills', 0, 1);
 
     $options = [];
     foreach ($target_skills as $row) {
-      $options [$row->tid] = $row->name;
+      $options[$row->tid] = $row->name;
     }
 
     $fields['skill_target'] = BaseFieldDefinition::create('list_string')
@@ -953,10 +978,10 @@ class OpignoModule extends RevisionableContentEntityBase implements OpignoModule
       ->setRevisionable(TRUE)
       ->setTranslatable(TRUE)
       ->setDefaultValue(FALSE)
-      ->setDisplayOptions('form', array(
+      ->setDisplayOptions('form', [
         'type' => 'boolean_checkbox',
         'weight' => 4,
-      ));
+      ]);
 
     return $fields;
   }

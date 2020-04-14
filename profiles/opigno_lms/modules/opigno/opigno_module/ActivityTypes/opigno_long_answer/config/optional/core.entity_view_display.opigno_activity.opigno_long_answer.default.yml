@@ -2,6 +2,7 @@ langcode: en
 status: true
 dependencies:
   config:
+    - field.field.opigno_activity.opigno_long_answer.opigno_evaluation_method
     - field.field.opigno_activity.opigno_long_answer.opigno_body
     - opigno_module.opigno_activity_type.opigno_long_answer
   module:
@@ -34,4 +35,5 @@ content:
     region: content
     settings: {  }
     third_party_settings: {  }
-hidden: {  }
+hidden:
+  opigno_evaluation_method: true

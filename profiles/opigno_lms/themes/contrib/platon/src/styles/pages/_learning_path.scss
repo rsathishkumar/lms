@@ -631,6 +631,24 @@ body.admin-learning-path {
         }
       }
 
+      &.error {
+        position: relative;
+
+        &::after {
+          content: '';
+          background-size: 100%;
+          @include svg-picto('picto-learning-path-error');
+          display: block;
+          width: 20px;
+          height: 20px;
+          position: absolute;
+          top: 6rem;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-left: 2.5rem;
+        }
+      }
+
       .title {
         color: #fff;
         max-width: 120px;

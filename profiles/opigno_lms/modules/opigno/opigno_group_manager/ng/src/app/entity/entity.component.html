@@ -38,6 +38,9 @@
     <button mat-menu-item (click)="openUpdatePanel_(entity)" class="update-link">
       <span i18n>update</span>
     </button>
+    <button *ngIf="entity.contentType=='ContentTypeILT' || entity.contentType=='ContentTypeMeeting'" mat-menu-item (click)="openMeetingsPanel_(entity)" class="manage-link">
+      <span i18n>score</span>
+    </button>
     <button mat-menu-item (click)="openDeletePanel_(entity)" class="delete-link">
       <span i18n>delete</span>
     </button>

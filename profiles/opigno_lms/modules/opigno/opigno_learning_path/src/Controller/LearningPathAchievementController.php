@@ -283,6 +283,13 @@ class LearningPathAchievementController extends ControllerBase {
         $max_score = 10;
       }
 
+      if ($answer && $activity->hasField('opigno_evaluation_method') && $activity->get('opigno_evaluation_method')->value && !$answer->isEvaluated()) {
+        $state_class = 'lp_step_state_pending';
+      }
+      else {
+        $state_class = isset($answer) ? 'lp_step_state_passed' : 'lp_step_state_failed';
+      }
+
       return [
         ['data' => $activity->getName()],
         [
@@ -295,10 +302,7 @@ class LearningPathAchievementController extends ControllerBase {
             '#type' => 'html_tag',
             '#tag' => 'span',
             '#attributes' => [
-              'class' => [isset($answer)
-                ? 'lp_step_state_passed'
-                : 'lp_step_state_failed',
-              ],
+              'class' => [$state_class],
             ],
             '#value' => '',
           ],
@@ -674,7 +678,7 @@ class LearningPathAchievementController extends ControllerBase {
       return TRUE;
     });
     $steps = array_map(function ($step) use ($uid) {
-      $step['status'] = opigno_learning_path_get_step_status($step, $uid);
+      $step['status'] = opigno_learning_path_get_step_status($step, $uid, TRUE);
       $step['attempted'] = opigno_learning_path_is_attempted($step, $uid);
       $step['progress'] = opigno_learning_path_get_step_progress($step, $uid);
       return $step;
@@ -1242,7 +1246,10 @@ class LearningPathAchievementController extends ControllerBase {
         return TRUE;
       });
       $steps = array_map(function ($step) use ($user) {
-        $step['passed'] = opigno_learning_path_is_passed($step, $user->id());
+        $status = opigno_learning_path_get_step_status($step, $user->id(), TRUE);
+        if ($status == 'passed') {
+          $step['passed'] = opigno_learning_path_is_passed($step, $user->id());
+        }
         return $step;
       }, $steps);
     }
@@ -1294,7 +1301,7 @@ class LearningPathAchievementController extends ControllerBase {
         ? $date_formatter->format($step['completed on'], 'custom', 'F d, Y')
         : '';
 
-      $status = opigno_learning_path_get_step_status($step, $user->id());
+      $status = opigno_learning_path_get_step_status($step, $user->id(), TRUE);
       $timeline[] = [
         '#type' => 'container',
         '#attributes' => [
@@ -1380,7 +1387,7 @@ class LearningPathAchievementController extends ControllerBase {
     $registration = $member->getCreatedTime();
     $registration = $date_formatter->format($registration, 'custom', 'F d, Y');
 
-    $validation = opigno_learning_path_completed_on($gid, $uid);
+    $validation = opigno_learning_path_completed_on($gid, $uid, TRUE);
     $validation = $validation > 0
       ? $date_formatter->format($validation, 'custom', 'F d, Y')
       : '';
@@ -1535,7 +1542,7 @@ class LearningPathAchievementController extends ControllerBase {
           '#type' => 'html_tag',
           '#tag' => 'div',
           '#attributes' => [
-            'class' => ['lp_step_summary_score'],
+            'class' => ['lp_step_summary_progress'],
           ],
           '#value' => t('@score%', ['@score' => $progress]),
         ],

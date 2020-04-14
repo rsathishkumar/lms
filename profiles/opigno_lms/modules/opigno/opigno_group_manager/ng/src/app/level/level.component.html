@@ -39,6 +39,7 @@
                     (updateSelectedEntity2)="selectedEntity2=$event"
                     (openAddPanel)="openAddPanel($event)"
                     (openUpdatePanel)="openUpdatePanel($event)"
+                    (openMeetingsPanel)="openMeetingsPanel($event)"
                     (openManagePanel)="openManagePanel($event)"
                     (openDeletePanel)="openDeletePanel($event)"
                     (updateNextLinkEvent)="updateNextLink()"
@@ -84,6 +85,12 @@
                [apiBaseUrl]="apiBaseUrl"
                (closed)="closePanels()"
                *ngIf="selectedEntity && updateEntityPanel"></entity-update>
+
+<meetings-list [selectedEntity]="selectedEntity"
+               [groupId]="groupId"
+               [apiBaseUrl]="apiBaseUrl"
+               (closed)="closePanels()"
+               *ngIf="selectedEntity && addEntityMeeting"></meetings-list>
 
 <entity-delete [selectedEntity]="selectedEntity"
                [entitiesPositions]="entitiesPositions"

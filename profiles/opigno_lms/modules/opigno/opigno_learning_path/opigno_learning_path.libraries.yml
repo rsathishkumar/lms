@@ -147,3 +147,9 @@ opigno_dropzonejs_widgets:
     - core/jquery
     - core/jquery.once
     - core/drupalSettings
+
+iframe_opigno_lp_manager:
+  version: VERSION
+  css:
+    theme:
+      css/iframe_opigno_lp_manager.css: {}

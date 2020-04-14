@@ -207,12 +207,12 @@ class OpignoUpgradeReviewForm extends MigrateUpgradeFormBase {
       'opigno_activity_long_answer' => 'Opigno: Migrate Long Answer questions',
       'opigno_activity_file_upload' => 'Opigno: Migrate File Upload questions',
       'opigno_activity_slide' => 'Opigno: Migrate Slide activity',
+      'opigno_activity_h5p' => 'Opigno: Migrate H5P questions',
       'opigno_events' => 'Opigno: Calendar Events',
       'opigno_pm_message' => 'Opigno: Private Messages',
       'opigno_pm_thread_delete_time' => 'Opigno: Private Messages Thread Delete Time',
       'opigno_pm_thread_access_time' => 'Opigno: Private Messages Thread Access Time',
       'opigno_pm_thread' => 'Opigno: Private Messages Thread',
-      'opigno_activity_h5p' => 'Opigno: Migrate H5P questions',
     ];
     // Fetch the system data at the first opportunity.
     $system_data = $this->store->get('system_data');

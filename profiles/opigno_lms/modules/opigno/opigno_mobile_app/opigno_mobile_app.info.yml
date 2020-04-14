@@ -1,7 +1,7 @@
 name: 'Opigno Mobile App'
 type: module
 description: 'Opigno Mobile App'
-# core: 8.x
+core: 8.x
 package: Opigno
 dependencies:
   - jwt:jwt
@@ -12,8 +12,7 @@ dependencies:
   - drupal:rest
   - drupal:hal
   - drupal:serialization
-# Information added by Drupal.org packaging script on 2019-07-09
-version: '8.x-1.1'
-core: '8.x'
+# Information added by Drupal.org packaging script on 2019-10-02
+version: '8.x-1.2'
 project: 'opigno_mobile_app'
-datestamp: 1562693329
+datestamp: 1570006111

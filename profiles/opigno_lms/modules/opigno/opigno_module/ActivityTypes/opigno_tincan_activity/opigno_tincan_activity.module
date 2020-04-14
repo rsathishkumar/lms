@@ -19,7 +19,7 @@ function opigno_tincan_activity_file_delete($file) {
   $tincan_content_service = \Drupal::service('opigno_tincan_activity.tincan');
   $len = strlen($tincan_content_service->PATH_PUBLIC_PACKAGE_FOLDER);
   if (substr($file->getFileUri(), 0, $len) === $tincan_content_service->PATH_PUBLIC_PACKAGE_FOLDER) {
-    file_unmanaged_delete_recursive($tincan_content_service->getExtractPath($file));
+    \Drupal::service('file_system')->deleteRecursive($tincan_content_service->getExtractPath($file));
   }
 }
 

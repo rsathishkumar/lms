@@ -22,13 +22,13 @@ class GroupIdDepth extends ArgumentPluginBase implements ContainerFactoryPluginI
   protected function defineOptions() {
     $options = parent::defineOptions();
 
-    $options['depth'] = ['default' => -1];
+    $options['depth'] = ['default' => [-1]];
 
     return $options;
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function buildOptionsForm(&$form, FormStateInterface $form_state) {
     $form['depth'] = [
@@ -54,11 +54,13 @@ class GroupIdDepth extends ArgumentPluginBase implements ContainerFactoryPluginI
     parent::submitOptionsForm($form, $form_state);
 
     $depth_value = $form_state->getValue(['options', 'depth']);
-    $form_state->setValue(['options', 'depth'], array_filter($depth_value, function ($value) { return $value !== 0; }));
+    $form_state->setValue(['options', 'depth'], array_filter($depth_value, function ($value) {
+      return $value !== 0;
+    }));
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   protected function defaultActions($which = NULL) {
     if ($which) {
@@ -76,7 +78,7 @@ class GroupIdDepth extends ArgumentPluginBase implements ContainerFactoryPluginI
   }
 
   /**
-   * @inheritdoc
+   * {@inheritdoc}
    */
   public function query($group_by = FALSE) {
     $table = $this->ensureMyTable();
@@ -103,7 +105,7 @@ class GroupIdDepth extends ArgumentPluginBase implements ContainerFactoryPluginI
           "group_graph.start_vertex = :gid AND group_graph.hops = :hops_$depth",
           [
             ':gid' => $this->argument,
-            ":hops_$depth" => $depth
+            ":hops_$depth" => $depth,
           ]
         );
       }

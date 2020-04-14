@@ -155,6 +155,21 @@ class ILT extends ContentEntityBase implements ILTInterface {
   /**
    * {@inheritdoc}
    */
+  public function getTrainerId() {
+    return $this->get('trainer')->target_id;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTrainerId($uid) {
+    $this->set('trainer', $uid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getTrainingId() {
     return $this->get('training')->target_id;
   }
@@ -379,6 +394,15 @@ class ILT extends ContentEntityBase implements ILTInterface {
       ->setRequired(TRUE)
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
+
+    $fields['trainer'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Trainer'))
+      ->setDescription(t('The trainer of the ILT entity.'))
+      ->setSettings([
+        'target_type' => 'user',
+        'handler' => 'default',
+      ])
+      ->setReadOnly(TRUE);
 
     $fields['training'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Related training'))

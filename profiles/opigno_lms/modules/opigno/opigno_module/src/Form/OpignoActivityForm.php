@@ -101,8 +101,12 @@ class OpignoActivityForm extends ContentEntityForm {
 
     // Get list of skills trees.
     $target_skills = $term_storage->loadTree('skills', 0, 1);
-    $default_target_skill = $target_skills[0]->tid;
+    $default_target_skill = FALSE;
     $options = [];
+
+    if ($target_skills) {
+      $default_target_skill = $target_skills[0]->tid;
+    }
 
     foreach ($target_skills as $row) {
       $options [$row->tid] = $row->name;
@@ -127,6 +131,10 @@ class OpignoActivityForm extends ContentEntityForm {
           'wrapper' => 'activity-wrapper',
         ],
       ];
+
+      if ($default_target_skill) {
+        $form['manual_management_tree']['#default_value'] = $default_target_skill;
+      }
     }
 
     $form['skills_list']['widget']['#ajax'] = [

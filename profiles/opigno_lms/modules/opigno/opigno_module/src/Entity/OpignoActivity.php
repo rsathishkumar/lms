@@ -69,6 +69,11 @@ class OpignoActivity extends RevisionableContentEntityBase implements OpignoActi
   use EntityChangedTrait;
 
   /**
+   * Static cache of user answers.
+   */
+  protected $userAnswers = [];
+
+  /**
    * {@inheritdoc}
    */
   public static function preCreate(EntityStorageInterface $storage_controller, array &$values) {
@@ -193,6 +198,11 @@ class OpignoActivity extends RevisionableContentEntityBase implements OpignoActi
    * Returns user answer.
    */
   public function getUserAnswer(OpignoModuleInterface $opigno_module, UserModuleStatusInterface $attempt, AccountInterface $account) {
+    $cid = $opigno_module->id() . '-' . $attempt->id() . '-' .  $account->id();
+    if (array_key_exists($cid, $this->userAnswers) && $this->userAnswers[$cid] instanceof OpignoAnswer) {
+      return $this->userAnswers[$cid];
+    }
+
     $answer_storage = static::entityTypeManager()->getStorage('opigno_answer');
     $query = $answer_storage->getQuery();
     $aid = $query->condition('user_id', $account->id())
@@ -202,7 +212,9 @@ class OpignoActivity extends RevisionableContentEntityBase implements OpignoActi
       ->range(0, 1)
       ->execute();
     $id = reset($aid);
-    return ($id) ? $answer_storage->load($id) : NULL;
+
+    $this->userAnswers[$cid] = $id ? $answer_storage->load($id) : NULL;
+    return $this->userAnswers[$cid];
   }
 
   /**

@@ -6,7 +6,7 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\migrate\Row;
 use Drupal\migrate_drupal\Plugin\migrate\source\d7\FieldableEntity;
 use Drupal\Core\Database\Query\SelectInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\migrate\Plugin\MigrationInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -30,7 +30,7 @@ class Forum extends FieldableEntity {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, StateInterface $state, EntityManagerInterface $entity_manager, ModuleHandlerInterface $module_handler) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, MigrationInterface $migration, StateInterface $state, EntityTypeManagerInterface $entity_manager, ModuleHandlerInterface $module_handler) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $migration, $state, $entity_manager);
     $this->moduleHandler = $module_handler;
   }
@@ -83,6 +83,9 @@ class Forum extends FieldableEntity {
       ->fields('fb', [
         'body_value',
         'body_format',
+      ])
+      ->fields('tf', [
+        'taxonomy_forums_tid',
       ]);
 
     $query->addField('n', 'uid', 'node_uid');
@@ -90,6 +93,7 @@ class Forum extends FieldableEntity {
     $query->addField('nr', 'uid', 'revision_uid');
     $query->innerJoin('node', 'n', static::JOIN);
     $query->innerJoin('field_data_body', 'fb', 'n.nid = fb.entity_id');
+    $query->innerJoin('field_revision_taxonomy_forums', 'tf', 'n.vid = tf.revision_id');
 
     // If the content_translation module is enabled, get the source langcode
     // to fill the content_translation_source field.
@@ -112,8 +116,8 @@ class Forum extends FieldableEntity {
     // Get Field API field values.
     foreach (array_keys($this->getFields('node', 'forum')) as $field) {
       $nid = $row->getSourceProperty('nid');
-      $vid = $row->getSourceProperty('vid');
-
+      $vid = $nid;
+      $row->setSourceProperty('vid', $vid);
       $row->setSourceProperty($field, $this->getFieldValues('node', $field, $nid, $vid));
     }
 

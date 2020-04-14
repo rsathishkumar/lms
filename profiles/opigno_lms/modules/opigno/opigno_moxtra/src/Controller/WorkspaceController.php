@@ -115,13 +115,13 @@ class WorkspaceController extends ControllerBase {
     $binder_id = $opigno_moxtra_workspace->getBinderId();
     $current_workspace_id = $opigno_moxtra_workspace->id();
 
-    return [
+    return $client_id && $org_id ? [
       '#type' => 'container',
       '#attributes' => [
         'class' => ['row'],
       ],
       // Attach libraries only if Moxtra credentials exist.
-      '#attached' => $client_id && $org_id ? [
+      '#attached' => [
       'library' => [
         'opigno_moxtra/moxtra.js',
         'opigno_moxtra/workspace',
@@ -135,7 +135,7 @@ class WorkspaceController extends ControllerBase {
           'binderId' => $binder_id,
         ],
       ],
-      ] : [],
+      ],
       [
         '#type' => 'html_tag',
         '#tag' => 'div',
@@ -151,7 +151,7 @@ class WorkspaceController extends ControllerBase {
           'class' => ['col-md-8'],
         ],
       ],
-    ];
+    ] : [];
   }
 
   /**

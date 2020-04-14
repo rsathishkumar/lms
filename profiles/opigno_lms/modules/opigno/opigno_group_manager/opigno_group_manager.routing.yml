@@ -227,6 +227,34 @@ opigno_group.course_duplicate:
       account:
         type: entity:user
 
+opigno_group.course_export:
+  path: '/admin/structure/opigno_export/opigno_course/{group}'
+  defaults:
+    _controller: '\Drupal\opigno_group_manager\Controller\OpignoGroupManagerController::courseExport'
+    _title: 'Course export'
+  requirements:
+    _entity_access: 'group.update'
+  options:
+    parameters:
+      group:
+        type: entity:group
+      account:
+        type: entity:user
+
+opigno_group.training_export:
+  path: '/admin/structure/opigno_export/opigno_training/{group}'
+  defaults:
+    _controller: '\Drupal\opigno_group_manager\Controller\OpignoGroupManagerController::trainingExport'
+    _title: 'Training export'
+  requirements:
+    _entity_access: 'group.update'
+  options:
+    parameters:
+      group:
+        type: entity:group
+      account:
+        type: entity:user
+
 opigno_group.training_duplicate:
   path: '/admin/structure/training-duplicate/{group}'
   defaults:

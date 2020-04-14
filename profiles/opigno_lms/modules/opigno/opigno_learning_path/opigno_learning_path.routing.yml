@@ -503,6 +503,23 @@ opigno_learning_path.membership.find_users_in_group_autocomplete:
       account:
        type: entity:user
 
+opigno_learning_path.membership.find_group_users:
+  path: '/group/{group}/{class_id}/member/{uid}/find-group-user'
+  defaults:
+    _controller: '\Drupal\opigno_learning_path\Controller\LearningPathMembershipController::findGroupMember'
+  requirements:
+    _entity_access: 'group.administer members'
+  options:
+    parameters:
+      group:
+        type: entity:group
+      class_id:
+        type: string
+      uid:
+        type: string
+      account:
+        type: entity:user
+
 opigno_learning_path.membership.create_member:
   path: '/group/{group}/learning-path/members/create-member'
   defaults:

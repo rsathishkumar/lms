@@ -59,7 +59,8 @@ class OpignoModuleListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   public function render() {
-    pager_default_initialize($this->getTotalCount(), $this->limit);
+    $pager_manager = \Drupal::service('pager.manager');
+    $pager_manager->createPager($this->getTotalCount(), $this->limit);
 
     $build = parent::render();
     return $build;

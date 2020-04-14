@@ -134,7 +134,7 @@ class GroupsMigrateSubscriber implements EventSubscriberInterface {
       }
     }
 
-    // Add relationships for Long answer activity.
+    // Add relationships for activities.
     if (in_array($migration_id, [
       'opigno_activity_long_answer',
       'opigno_activity_file_upload',
@@ -188,16 +188,15 @@ class GroupsMigrateSubscriber implements EventSubscriberInterface {
       $db_connection = Database::getConnection('default', 'legacy');
       $query = $db_connection->select('quiz_node_relationship', 'qr')
         ->fields('qr')
-        ->condition('child_nid', $nid)
-        ->condition('child_vid', $vid);
+        ->condition('child_nid', $nid);
       $result = $query->execute()->fetchAll();
       if ($result) {
         $relations = [];
+        $rels = [];
         foreach ($result as $item) {
           $relations[$item->parent_nid][] = $item;
         }
         if ($relations) {
-          $rels = [];
           foreach ($relations as $relation) {
             if (count($relation) == 1) {
               $rels[] = $relation[0];
@@ -259,6 +258,10 @@ class GroupsMigrateSubscriber implements EventSubscriberInterface {
     $completed = $event->getMigration()->allRowsProcessed();
     $params['source_count'] = $event->getMigration()->getSourcePlugin()->count();
     $params['processed_count'] = $event->getMigration()->getIdMap()->processedCount();
+
+    if ($completed) {
+      \Drupal::logger('opigno_migration')->info('Completed migration ' . $migration_id);
+    }
 
     // Set links between modules.
     if ($migration_id == 'opigno_module_lesson' && $completed) {
@@ -397,7 +400,7 @@ class GroupsMigrateSubscriber implements EventSubscriberInterface {
 
       $modules_ids = \Drupal::entityQuery('opigno_module')->execute();
       foreach ($modules_statistic as $module_stat) {
-        if (in_array($module_stat->entity_id, $modules_ids)) {
+        if (in_array($module_stat->entity_id, $modules_ids) && !is_null($lps_results[$module_stat->opigno_statistics_user_course_fk]['uid'])) {
           $uid = $lps_results[$module_stat->opigno_statistics_user_course_fk]['uid'];
           $module_id = $module_stat->entity_id;
 
@@ -505,7 +508,6 @@ class GroupsMigrateSubscriber implements EventSubscriberInterface {
 
           foreach ($h5p_results as $h5p_answer_result) {
             $query->values([
-              'id' => $h5p_answer_result->id,
               'parent_id' => $h5p_answer_result->parent_id,
               'question_id' => $h5p_answer_result->question_nid,
               'question_vid' => $h5p_answer_result->question_vid,

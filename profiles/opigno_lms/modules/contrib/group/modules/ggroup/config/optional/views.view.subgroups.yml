@@ -680,7 +680,7 @@ display:
           admin_label: ''
           operator: in
           value:
-            group: group
+            all: all
           group: 1
           exposed: true
           expose:
@@ -828,4 +828,3 @@ display:
         - url
         - url.query_args
       tags: {  }
-

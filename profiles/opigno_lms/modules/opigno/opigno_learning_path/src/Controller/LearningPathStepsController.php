@@ -8,6 +8,7 @@ use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Url;
 use Drupal\group\Entity\Group;
 use Drupal\opigno_group_manager\Controller\OpignoGroupManagerController;
 use Drupal\opigno_group_manager\Entity\OpignoGroupManagedContent;
@@ -16,6 +17,8 @@ use Drupal\opigno_group_manager\OpignoGroupContext;
 use Drupal\opigno_learning_path\Entity\LPResult;
 use Drupal\opigno_learning_path\LearningPathAccess;
 use Drupal\opigno_learning_path\LearningPathValidator;
+use Drupal\opigno_module\Entity\OpignoActivity;
+use Drupal\opigno_module\Entity\OpignoModule;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -425,16 +428,58 @@ class LearningPathStepsController extends ControllerBase {
             $gid
           );
 
+          // Message if current step score less than required.
+          $message = $this->t('<p>You should first get a minimum score of %required to the step %step before going further. <a href=":link">Try again.</a></p>', [
+            '%step' => $name,
+            '%required' => $required,
+            ':link' => $current_step_url->toString(),
+          ]);
+
+          // Check if current step is module and has activities
+          // with manual evaluation which haven't been evaluated yet.
+          if ($current_step['typology'] == 'Module') {
+            $module = OpignoModule::load($current_step['id']);
+            if (!empty($module)) {
+              $activities = $module->getModuleActivities();
+              $activities = array_map(function ($activity) {
+                return OpignoActivity::load($activity->id);
+              }, $activities);
+
+              $attempts = $module->getModuleAttempts($user);
+              if (!empty($attempts)) {
+                // If "newest" score - get the last attempt,
+                // else - get the best attempt.
+                $attempt = $this->getTargetAttempt($attempts, $module);
+              }
+              else {
+                $attempt = NULL;
+              }
+
+              if ($activities) {
+                foreach ($activities as $activity) {
+                  $answer = isset($attempt) ? $activity->getUserAnswer($module, $attempt, $user) : NULL;
+                  if ($answer && $activity->hasField('opigno_evaluation_method') && $activity->get('opigno_evaluation_method')->value && !$answer->isEvaluated()) {
+                    // Message if current step is module and has activities
+                    // with manual evaluation which haven't been evaluated yet.
+                    $training_url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()]);
+                    $message = $this->t('<p>One or several activities in module %step require a manual grading. You will be allowed to continue the training as soon as these activities have been graded and if you reach the minimum score %required.<br /><a href=":link">Back to training homepage.</a></p>', [
+                      '%step' => $name,
+                      '%required' => $required,
+                      ':link' => $training_url->toString(),
+                    ]);
+                    break;
+                  }
+                }
+              }
+            }
+          }
+
           OpignoGroupContext::setGroupId($group->id());
           OpignoGroupContext::setCurrentContentId($current_step['cid']);
 
           return [
             '#type' => 'markup',
-            '#markup' => $this->t('<p>You should first get a minimum score of %required to the step %step before going further. <a href=":link">Try again.</a></p>', [
-              '%step' => $name,
-              '%required' => $required,
-              ':link' => $current_step_url->toString(),
-            ]),
+            '#markup' => $message,
           ];
         }
       }
@@ -710,6 +755,35 @@ class LearningPathStepsController extends ControllerBase {
     }
 
     return AccessResult::allowed();
+  }
+
+  /**
+   * Get last or best user attempt for Module.
+   *
+   * @param array $attempts
+   *   User module attempts.
+   * @param \Drupal\opigno_module\Entity\OpignoModule $module
+   *   Module.
+   *
+   * @return \Drupal\opigno_module\Entity\UserModuleStatus
+   *   $attempt
+   */
+  protected function getTargetAttempt(array $attempts, OpignoModule $module) {
+    if ($module->getKeepResultsOption() == 'newest') {
+      $attempt = end($attempts);
+    }
+    else {
+      usort($attempts, function ($a, $b) {
+        /** @var \Drupal\opigno_module\Entity\UserModuleStatus $a */
+        /** @var \Drupal\opigno_module\Entity\UserModuleStatus $b */
+        $b_score = opigno_learning_path_get_attempt_score($b);
+        $a_score = opigno_learning_path_get_attempt_score($a);
+        return $b_score - $a_score;
+      });
+      $attempt = reset($attempts);
+    }
+
+    return $attempt;
   }
 
 }

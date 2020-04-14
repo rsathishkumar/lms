@@ -1229,23 +1229,62 @@ function opigno_module_update_8020() {
  * Update views: 'Activity list', 'Module list', 'Groups list' and 'Opigno Score Modules'.
  */
 function opigno_module_update_8021() {
-  $config_path = drupal_get_path('module', 'opigno_module')
-    . '/config/optional';
 
-  $storage = new FileStorage($config_path);
-  $config_storage = \Drupal::service('config.storage');
+  $config_factory = \Drupal::configFactory();
 
-  $data = $storage->read('views.view.activity_list');
-  $config_storage->write('views.view.activity_list', $data);
+  // Update activity_list view.
+  $config = $config_factory->getEditable('views.view.activity_list');
+  $module_dependencies = $config->get('dependencies');
+  $module_dependencies['module'][] = 'user';
+  $config->set('dependencies', $module_dependencies);
+  $access = [
+    'type' => 'perm',
+    'options' => [
+      'perm' => 'edit activity entities',
+    ]
+  ];
+  $config->set('display.default.display_options.access', $access);
+  $displays = $config->get('display');
+  foreach ($displays as &$display) {
+   $display['cache_metadata']['contexts'][] = 'user.permissions';
+  }
+  $config->set('display', $displays);
+  $config->save(TRUE);
 
-  $data = $storage->read('views.view.groups_list');
-  $config_storage->write('views.view.groups_list', $data);
+  // Update module_list view.
+  $config = $config_factory->getEditable('views.view.module_list');
+  $module_dependencies = $config->get('dependencies');
+  $module_dependencies['module'][] = 'user';
+  $config->set('dependencies', $module_dependencies);
+  $modules_list_access = [
+    'type' => 'perm',
+    'options' => [
+      'perm' => 'edit module entities',
+    ]
+  ];
+  $config->set('display.default.display_options.access', $modules_list_access);
+  $displays = $config->get('display');
+  foreach ($displays as &$display) {
+    $display['cache_metadata']['contexts'][] = 'user.permissions';
+  }
+  $config->set('display', $displays);
+  $config->save(TRUE);
 
-  $data = $storage->read('views.view.module_list');
-  $config_storage->write('views.view.module_list', $data);
+  // Update groups_list view.
+  $config = $config_factory->getEditable('views.view.groups_list');
+  $config->set('display.default.display_options.access', $modules_list_access);
+  $displays = $config->get('display');
+  foreach ($displays as &$display) {
+    $display['cache_metadata']['contexts'][] = 'user.permissions';
+  }
+  $config->set('display', $displays);
+  $config->save(TRUE);
 
-  $data = $storage->read('views.view.opigno_score_modules');
-  $config_storage->write('views.view.opigno_score_modules', $data);
+  // Update permissions for opigno_score_module view.
+  $config = $config_factory->getEditable('views.view.opigno_score_modules');
+  $config->set('display.default.display_options.access.options.perm', 'access content');
+  $config->set('display.default.display_options.cache.type', 'none');
+  $config->save(TRUE);
 }
 
 /**
@@ -1315,4 +1354,107 @@ function opigno_module_update_8023() {
     ];
     $schema->createTable($table_name, $table);
   }
+}
+
+/**
+ * Fix issue with mandatory field for Opigno Module.
+ */
+function opigno_module_update_8024() {
+  $moduleHandler = \Drupal::service('module_handler');
+  if (!$moduleHandler->moduleExists('opigno_skills_system')) {
+    return;
+  }
+  // Get issue Opigno Module entities.
+  $issue_modules = \Drupal::entityQuery('opigno_module')
+    ->condition('skills_active', NULL, 'IS NULL')
+    ->execute();
+  if (!empty($issue_modules)) {
+    $modules = \Drupal::entityTypeManager()
+      ->getStorage('opigno_module')
+      ->loadMultiple($issue_modules);
+    // Update "skills_active" field.
+    foreach ($modules as $module) {
+      /* @var \Drupal\opigno_module\Entity\OpignoModule $module */
+      $module->set('skills_active', 0);
+      $module->save();
+    }
+  }
+}
+
+/**
+ * Update Slide activity type display mode.
+ */
+function opigno_module_update_8025() {
+  $config_path = drupal_get_path('module', 'opigno_module')
+    . '/config/optional';
+
+  $storage = new FileStorage($config_path);
+  $config_storage = \Drupal::service('config.storage');
+
+  $data = $storage->read('core.entity_view_display.opigno_activity.opigno_slide.activity');
+  $config_storage->write('core.entity_view_display.opigno_activity.opigno_slide.activity', $data);
+}
+
+/**
+ * Update views: 'Opigno Score Modules (User module status)'.
+ */
+function opigno_module_update_8026() {
+  $config_path = drupal_get_path('module', 'opigno_module')
+    . '/config/optional';
+
+  $storage = new FileStorage($config_path);
+  $config_storage = \Drupal::service('config.storage');
+
+  $data = $storage->read('views.view.opigno_score_modules');
+  $config_storage->write('views.view.opigno_score_modules', $data);
+}
+
+/**
+ * Update views: 'Opigno Score Modules (User module status)'.
+ */
+function opigno_module_update_8027() {
+  $config_path = drupal_get_path('module', 'opigno_module')
+    . '/config/optional';
+
+  $storage = new FileStorage($config_path);
+  $config_storage = \Drupal::service('config.storage');
+
+  $data = $storage->read('views.view.opigno_score_modules');
+  $config_storage->write('views.view.opigno_score_modules', $data);
+}
+
+/**
+ * Add learning path progress block to top region
+ */
+function opigno_module_update_8029() {
+  $values = array(
+    'id' => 'learningpathprogress',
+    'plugin' => 'opigno_module_learning_path_progress_block',
+    'region' => 'top',
+    'settings' => array(
+      'id' => 'opigno_module_learning_path_progress_block',
+      'provider' => 'opigno_module',
+      'label' => 'Learning path progress',
+      'label_display' => '0',
+    ),
+    'theme' => 'platon',
+    'visibility' => array(),
+    'weight' => 0,
+  );
+  $block = \Drupal\block\Entity\Block::create($values);
+  $block->save();
+}
+
+/**
+ * Update view: 'Module list'.
+ */
+function opigno_module_update_8030() {
+  $config_path = drupal_get_path('module', 'opigno_module')
+    . '/config/optional';
+
+  $storage = new FileStorage($config_path);
+  $config_storage = \Drupal::service('config.storage');
+
+  $data = $storage->read('views.view.module_list');
+  $config_storage->write('views.view.module_list', $data);
 }

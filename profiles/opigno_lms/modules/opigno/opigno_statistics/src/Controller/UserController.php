@@ -434,6 +434,13 @@ class UserController extends ControllerBase {
         $max_score = 10;
       }
 
+      if ($answer && $activity->hasField('opigno_evaluation_method') && $activity->get('opigno_evaluation_method')->value && !$answer->isEvaluated()) {
+        $state_class = 'step_state_pending';
+      }
+      else {
+        $state_class = isset($answer) ? 'step_state_passed' : 'step_state_failed';
+      }
+
       return [
         ['data' => $activity->getName()],
         [
@@ -446,7 +453,7 @@ class UserController extends ControllerBase {
             '#type' => 'html_tag',
             '#tag' => 'span',
             '#attributes' => [
-              'class' => [isset($answer) ? 'step_state_passed' : 'step_state_failed'],
+              'class' => [$state_class],
             ],
             '#value' => '',
           ],

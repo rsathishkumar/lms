@@ -19,10 +19,7 @@ class OpignoScorm {
     $this->database = $database;
   }
 
-  /**
-   * Extract Scorm data from Scorm package.
-   */
-  public function scormExtract(File $file) {
+  public function unzipPackage(File $file) {
     $path = \Drupal::service('file_system')->realpath($file->getFileUri());
     $zip = new \ZipArchive();
     $result = $zip->open($path);
@@ -31,64 +28,7 @@ class OpignoScorm {
       $zip->extractTo($extract_dir);
       $zip->close();
 
-      // This is a standard: the manifest file will always be here.
-      $manifest_file = $extract_dir . '/imsmanifest.xml';
-
-      if (file_exists($manifest_file)) {
-        // Prepare the Scorm DB entry.
-        $scorm = (object) [
-          'fid' => $file->id(),
-          'extracted_dir' => $extract_dir,
-          'manifest_file' => $manifest_file,
-          'manifest_id' => '',
-          'metadata' => '',
-        ];
-
-        // Parse the manifest file and extract the data.
-        $manifest_data = $this->scormExtractManifestData($manifest_file);
-
-        // Get the manifest ID, if it's given.
-        if (!empty($manifest_data['manifest_id'])) {
-          $scorm->manifest_id = $manifest_data['manifest_id'];
-        }
-
-        // If the file contains (global) metadata, serialize it.
-        if (!empty($manifest_data['metadata'])) {
-          $scorm->metadata = serialize($manifest_data['metadata']);
-        }
-
-        // Try saving the SCORM to the DB.
-        if ($this->scormSave($scorm)) {
-          // Store each SCO.
-          if (!empty($manifest_data['scos']['items'])) {
-            foreach ($manifest_data['scos']['items'] as $i => $sco_item) {
-              $sco = (object) [
-                'scorm_id' => $scorm->id,
-                'organization' => $sco_item['organization'],
-                'identifier' => $sco_item['identifier'],
-                'parent_identifier' => $sco_item['parent_identifier'],
-                'launch' => $sco_item['launch'],
-                'type' => $sco_item['type'],
-                'scorm_type' => $sco_item['scorm_type'],
-                'title' => $sco_item['title'],
-                'weight' => empty($sco_item['weight']) ? $sco_item['weight'] : 0,
-                'attributes' => $sco_item['attributes'],
-              ];
-
-              if ($this->scormScoSave($sco)) {
-                // @todo Store SCO attributes.
-              }
-              else {
-                \Drupal::logger('opigno_scorm')->error('An error occured when saving an SCO.');
-              }
-            }
-          }
-          return TRUE;
-        }
-        else {
-          \Drupal::logger('opigno_scorm')->error('An error occured when saving the SCORM package data.');
-        }
-      }
+      return TRUE;
     }
     else {
       $error = 'none';
@@ -126,6 +66,78 @@ class OpignoScorm {
           break;
       }
       \Drupal::logger('opigno_scorm')->error("An error occured when unziping the SCORM package data. Error: !error", ['!error' => $error]);
+    }
+
+    return FALSE;
+  }
+
+  /**
+   * Extract and save Scorm data from Scorm package.
+   */
+  public function scormExtract(File $file) {
+    // Unzip Scorm package.
+    $this->unzipPackage($file);
+
+    $extract_dir = 'public://opigno_scorm_extracted/scorm_' . $file->id();
+    // This is a standard: the manifest file will always be here.
+    $manifest_file = $extract_dir . '/imsmanifest.xml';
+
+    if (file_exists($manifest_file)) {
+      // Prepare the Scorm DB entry.
+      $scorm = (object) [
+        'fid' => $file->id(),
+        'extracted_dir' => $extract_dir,
+        'manifest_file' => $manifest_file,
+        'manifest_id' => '',
+        'metadata' => '',
+      ];
+
+      // Parse the manifest file and extract the data.
+      $manifest_data = $this->scormExtractManifestData($manifest_file);
+
+      // Get the manifest ID, if it's given.
+      if (!empty($manifest_data['manifest_id'])) {
+        $scorm->manifest_id = $manifest_data['manifest_id'];
+      }
+
+      // If the file contains (global) metadata, serialize it.
+      if (!empty($manifest_data['metadata'])) {
+        $scorm->metadata = serialize($manifest_data['metadata']);
+      }
+
+      // Try saving the SCORM to the DB.
+      if ($this->scormSave($scorm)) {
+        // Store each SCO.
+        if (!empty($manifest_data['scos']['items'])) {
+          foreach ($manifest_data['scos']['items'] as $i => $sco_item) {
+            $sco = (object) [
+              'scorm_id' => $scorm->id,
+              'organization' => $sco_item['organization'],
+              'identifier' => $sco_item['identifier'],
+              'parent_identifier' => $sco_item['parent_identifier'],
+              'launch' => $sco_item['launch'],
+              'type' => $sco_item['type'],
+              'scorm_type' => $sco_item['scorm_type'],
+              'title' => $sco_item['title'],
+              'weight' => empty($sco_item['weight']) ? $sco_item['weight'] : 0,
+              'attributes' => $sco_item['attributes'],
+            ];
+
+            if ($this->scormScoSave($sco)) {
+              // @todo Store SCO attributes.
+            }
+            else {
+              \Drupal::logger('opigno_scorm')
+                ->error('An error occured when saving an SCO.');
+            }
+          }
+        }
+        return TRUE;
+      }
+      else {
+        \Drupal::logger('opigno_scorm')
+          ->error('An error occured when saving the SCORM package data.');
+      }
     }
 
     return FALSE;

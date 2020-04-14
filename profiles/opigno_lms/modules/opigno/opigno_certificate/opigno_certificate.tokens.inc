@@ -68,7 +68,7 @@ function opigno_certificate_tokens($type, $tokens, array $data, array $options, 
           if (!empty($target)) {
             $gid = $target['target_id'];
             $uid = \Drupal::currentUser()->id();
-            $completed_on = opigno_learning_path_completed_on($gid, $uid);
+            $completed_on = opigno_learning_path_completed_on($gid, $uid, TRUE);
             $date_formatter = \Drupal::service('date.formatter');
             $replacements[$original] = $date_formatter->format($completed_on);
           }

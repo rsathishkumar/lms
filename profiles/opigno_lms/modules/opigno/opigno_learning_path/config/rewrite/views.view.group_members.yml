@@ -749,7 +749,6 @@ display:
     cache_metadata:
       max-age: 0
       contexts:
-        - group_membership.roles.permissions
         - 'languages:language_content'
         - 'languages:language_interface'
         - url
@@ -777,7 +776,6 @@ display:
     cache_metadata:
       max-age: 0
       contexts:
-        - group_membership.roles.permissions
         - 'languages:language_content'
         - 'languages:language_interface'
         - url

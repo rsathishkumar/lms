@@ -30,16 +30,11 @@ function multiselect_help($route_name, RouteMatchInterface $route_match) {
 }
 
 /**
- * Implements hook_page_build().
+ * Implements hook_page_attachments().
  */
-function multiselect_page_build(&$page) {
+function multiselect_page_attachments(&$attachments) {
   $config = \Drupal::config('multiselect.settings');
-  $page['#attached']['js'][] = array(
-    'data' => array(
-      'multiselect' => array('widths' => $config->get('multiselect.widths')),
-    ),
-    'type' => 'setting',
-  );
+  $attachments['#attached']['drupalSettings']['multiselect'] = array('widths' => $config->get('multiselect.widths'));
 }
 
 /**

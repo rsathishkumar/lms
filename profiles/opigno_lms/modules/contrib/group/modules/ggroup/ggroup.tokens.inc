@@ -8,7 +8,6 @@
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\group\Entity\GroupContent;
 
-
 /**
  * Implements hook_token_info_alter().
  */
@@ -36,9 +35,9 @@ function ggroup_token_info() {
     ];
   }
 
-  return array(
-    'tokens' => array('group' => $tokens),
-  );
+  return [
+    'tokens' => ['group' => $tokens],
+  ];
 }
 
 /**
@@ -71,7 +70,7 @@ function ggroup_tokens($type, $tokens, array $data, array $options, BubbleableMe
 
   // [group:groups:*] chained tokens.
   if ($parents_tokens = \Drupal::token()->findWithPrefix($tokens, 'groups')) {
-    $replacements += \Drupal::token()->generate('array', $parents_tokens, array('array' => $groups), $options, $bubbleable_metadata);
+    $replacements += \Drupal::token()->generate('array', $parents_tokens, ['array' => $groups], $options, $bubbleable_metadata);
   }
 
   /** @var \Drupal\group\Entity\GroupContentInterface $group_content */
@@ -81,8 +80,11 @@ function ggroup_tokens($type, $tokens, array $data, array $options, BubbleableMe
     $replacements[$tokens['group']] = $group->label();
   }
 
+  $langcode = $data['group']->language()->getId();
+  $group = $group->getTranslation($langcode);
+
   if ($group_tokens = $token_service->findWithPrefix($tokens, 'group')) {
-    $replacements += $token_service->generate('group', $group_tokens, array('group' => $group), $options, $bubbleable_metadata);
+    $replacements += $token_service->generate('group', $group_tokens, ['group' => $group], $options, $bubbleable_metadata);
   }
 
   return $replacements;

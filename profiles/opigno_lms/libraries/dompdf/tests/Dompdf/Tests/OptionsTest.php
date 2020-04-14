@@ -11,10 +11,10 @@ class OptionsTest extends TestCase
         $root = realpath(__DIR__ . "/../../..");
         $option = new Options();
         $this->assertEquals(sys_get_temp_dir(), $option->getTempDir());
-        $this->assertEquals($root . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'fonts', $option->getFontDir());
-        $this->assertEquals($root . DIRECTORY_SEPARATOR . 'lib' . DIRECTORY_SEPARATOR . 'fonts', $option->getFontCache());
+        $this->assertEquals($root . '/lib/fonts', $option->getFontDir());
+        $this->assertEquals($root . '/lib/fonts', $option->getFontCache());
         $this->assertEquals($root, $option->getChroot());
-        $this->assertEquals(sys_get_temp_dir() . DIRECTORY_SEPARATOR . "log.htm", $option->getLogOutputFile());
+        $this->assertEquals(sys_get_temp_dir() . "/log.htm", $option->getLogOutputFile());
         $this->assertEquals('screen', $option->getDefaultMediaType());
         $this->assertEquals('letter', $option->getDefaultPaperSize());
         $this->assertEquals('serif', $option->getDefaultFont());
@@ -36,14 +36,14 @@ class OptionsTest extends TestCase
         $this->assertEquals('user', $option->getAdminUsername());
         $this->assertEquals('password', $option->getAdminPassword());
 
-        $option = new Options(array('tempDir' => 'test1'));
+        $option = new Options(['tempDir' => 'test1']);
         $this->assertEquals('test1', $option->getTempDir());
     }
 
     public function testSetters()
     {
         $option = new Options();
-        $option->set(array(
+        $option->set([
             'tempDir' => 'test1',
             'fontDir' => 'test2',
             'fontCache' => 'test3',
@@ -69,7 +69,7 @@ class OptionsTest extends TestCase
             'debugLayoutPaddingBox' => false,
             'adminUsername' => 'test9',
             'adminPassword' => 'test10',
-        ));
+        ]);
         $this->assertEquals('test1', $option->getTempDir());
         $this->assertEquals('test2', $option->getFontDir());
         $this->assertEquals('test3', $option->getFontCache());

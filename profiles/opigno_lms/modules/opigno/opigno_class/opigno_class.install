@@ -66,21 +66,11 @@ function opigno_class_update_8003() {
 }
 
 /**
- * Update content manager permissions.
+ * Update view with list of classes and admin menu.
  */
-function opigno_class_update_8004() {
-  // Remove old config.
-  $config = 'user.role.content_manager';
-
-  try {
-    \Drupal::configFactory()->getEditable($config)->delete();
-  }
-  catch (Exception $e) {
-    \Drupal::logger('opigno_class')->error($e->getMessage());
-  }
-
-  $config_path = drupal_get_path('module', 'opigno_class') . '/config/install';
+function opigno_class_update_8005() {
+  $config_path = drupal_get_path('module', 'opigno_class') . '/config/optional';
   $source = new FileStorage($config_path);
   $config_storage = \Drupal::service('config.storage');
-  $config_storage->write('user.role.content_manager', $source->read('user.role.content_manager'));
+  $config_storage->write('views.view.opigno_classes', $source->read('views.view.opigno_classes'));
 }

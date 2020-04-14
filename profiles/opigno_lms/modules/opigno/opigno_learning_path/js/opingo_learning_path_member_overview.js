@@ -36,6 +36,14 @@
         $parent.find('.class_members_row').hide();
       }
 
+      function hideClasses() {
+        var $class = $('.class');
+
+        $class.find('.class_hide').hide();
+        $class.find('.class_show').show();
+        $class.find('.class_members_row').hide();
+      }
+
       $('.class_hide', context).once('click').click(function () {
         hideClass($(this));
       });
@@ -145,29 +153,59 @@
         return false;
       });
 
+      $('.class_members_search').bind('keypress', function (e) {
+        var code = e.keyCode || e.which;
+        if (code === 13) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
       $('#class_members_search').once('autocompleteselect').on('autocompleteselect', function (e, ui) {
         e.preventDefault();
 
         if (ui.item) {
           var id = 'student_' + ui.item.id;
           var $row = $('#' + id);
+          var uid = ui.item.id;
+          var $parentID = $row.closest('.class_members').data('class');
 
-          if ($row.length) {
-            showClass($row);
-
-            window.location.hash = id;
-            window.scrollBy(0, -100);
-          } else {
-            var id = 'individual_' + ui.item.id;
-            var $row = $('#' + id);
-
-            if ($row.length) {
-              showClass($row);
-
-              window.location.hash = id;
-              window.scrollBy(0, -100);
-            }
+          if ($parentID === undefined) {
+            $parentID = 0;
           }
+
+          var url = baseUrl + 'group/' + gid + '/' + $parentID + '/member/' + uid + '/find-group-user';
+          Drupal.ajax({url: url}).execute()
+            .done(function () {
+
+              var id = 'student_' + ui.item.id;
+              var $row = $('#' + id);
+
+              console.log(id);
+
+              if ($row.length) {
+                console.log('1');
+                hideClasses();
+                showClass($row);
+
+                window.location.hash = '';
+                window.location.hash = id;
+                window.scrollBy(0, -100);
+              }
+              else {
+                console.log('2');
+                var id = 'individual_' + ui.item.id;
+                var $row = $('#' + id);
+
+                if ($row.length) {
+                  showClass($row);
+
+                  window.location.hash = '';
+                  window.location.hash = id;
+                  window.scrollBy(0, -100);
+                }
+              }
+            });
         }
 
         return false;

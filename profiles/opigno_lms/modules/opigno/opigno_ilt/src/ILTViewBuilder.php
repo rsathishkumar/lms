@@ -109,6 +109,24 @@ class ILTViewBuilder extends EntityViewBuilder {
       ]),
     ];
 
+    $trainer_id = $entity->getTrainerId();
+
+    if ($trainer_id) {
+      $trainer = \Drupal::entityTypeManager()
+        ->getStorage('user')
+        ->load($trainer_id);
+
+      if ($trainer) {
+        $build[] = [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => $this->t('Trainer: @trainer', [
+            '@trainer' => $trainer->getAccountName(),
+          ]),
+        ];
+      }
+    }
+
     $build[] = $this->buildNavigation($entity);
   }
 

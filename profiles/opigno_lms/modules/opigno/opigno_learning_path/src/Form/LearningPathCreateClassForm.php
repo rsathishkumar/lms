@@ -54,25 +54,19 @@ class LearningPathCreateClassForm extends FormBase {
       ],
     ];
 
-    $form['select_all'] = [
-      '#type' => 'button',
-      '#value' => $this->t('Select all'),
-      '#submit' => [],
+    $form['new_class_users'] = [
+      '#type' => 'multiselect',
       '#attributes' => [
-        'id' => 'select_all',
+        'id' => 'new_class_users',
+        'class' => [
+          'row',
+        ],
       ],
-    ];
-
-    $form['users'] = [
-      '#type' => 'select',
       '#options' => [],
-      '#multiple' => TRUE,
-      '#attributes' => [
-        'id' => 'class_users',
-        'multiple' => TRUE,
-      ],
-      // Allow modifying option with AJAX.
       '#validated' => TRUE,
+      '#process' => [
+        ['Drupal\multiselect\Element\MultiSelect', 'processSelect'],
+      ],
       '#prefix' => '<div id="learning_path_create_class_form_messages" class="alert-danger"></div>',
     ];
 
@@ -117,7 +111,7 @@ class LearningPathCreateClassForm extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    if (empty($form_state->getValue('users'))) {
+    if (empty($form_state->getValue('new_class_users'))) {
       $form_state->hasValidateError = TRUE;
     }
   }
@@ -127,7 +121,7 @@ class LearningPathCreateClassForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $name = $form_state->getValue('name');
-    $users = $form_state->getValue('users');
+    $users = $form_state->getValue('new_class_users');
 
     // Parse uids.
     $uids = array_map(function ($user) {

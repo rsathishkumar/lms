@@ -55,7 +55,7 @@ class GroupSelectorWidget implements ContainerInjectionInterface {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    /* @noinspection PhpParamsInspection. */
+    /** @noinspection PhpParamsInspection. */
     return new static(
       $container->get('entity_type.manager'),
       $container->get('opigno_calendar_event.manager')
@@ -75,11 +75,22 @@ class GroupSelectorWidget implements ContainerInjectionInterface {
     $form_object = $form_state->getFormObject();
     /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
     $entity = $form_object->getEntity();
+
+    // If the event is new, it could be shown in the calendar of the group to
+    // which it will be associated, otherwise we need to get all the selectable
+    // groups associated to the event.
+    $groups = [];
+
     if ($entity->isNew()) {
-      return;
+      $group = $form_state->get('group');
+      if ($group instanceof GroupInterface) {
+        $groups[$group->id()] = $group;
+      }
+    }
+    else {
+      $groups = $this->getSelectableGroups($entity);
     }
 
-    $groups = $this->getSelectableGroups($entity);
     if (!$groups) {
       return;
     }

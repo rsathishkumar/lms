@@ -11,9 +11,11 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\file\Entity\File;
 use Drupal\group\Entity\Group;
 use Drupal\group\Entity\GroupInterface;
+use Drupal\h5p\Entity\H5PContent;
 use Drupal\media\Entity\Media;
 use Drupal\opigno_course\Plugin\OpignoGroupManagerContentType\ContentTypeCourse;
 use Drupal\opigno_group_manager\Entity\OpignoGroupManagedContent;
@@ -21,10 +23,12 @@ use Drupal\opigno_group_manager\Entity\OpignoGroupManagedLink;
 use Drupal\opigno_group_manager\OpignoGroupContentTypesManager;
 use Drupal\opigno_group_manager\OpignoGroupContext;
 use Drupal\opigno_learning_path\LearningPathValidator;
+use Drupal\opigno_module\Entity\OpignoActivity;
 use Drupal\opigno_module\Entity\OpignoModule;
 use Drupal\opigno_moxtra\Entity\Workspace;
 use Drupal\taxonomy\Entity\Term;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -849,7 +853,11 @@ class OpignoGroupManagerController extends ControllerBase {
 //      }
     }
 
-    $guidedNavigation = $group->hasField('field_guided_navigation') ? $group->get('field_guided_navigation')->value : NULL;
+    $guidedNavigation = NULL;
+    if (is_object($group) && $group->hasField('field_guided_navigation')) {
+      $guidedNavigation = $group->get('field_guided_navigation')->value;
+    }
+
     return $guidedNavigation ? FALSE : TRUE;
   }
 
@@ -920,13 +928,545 @@ class OpignoGroupManagerController extends ControllerBase {
       }
     }
 
-
-
     $duplicate->save();
 
     return $this->redirect('entity.group.edit_form', [
       'group' => $duplicate_id,
     ]);
+  }
+
+  /**
+   * Export course.
+   *
+   * @param \Drupal\group\Entity\Group $group
+   *   Group object.
+   */
+  public function courseExport(Group $group) {
+    $course_content = $group->getContentEntities();
+    $course_fields = $group->getFields();
+    $files_to_export = [];
+
+    foreach ($course_fields as $field_key => $field) {
+      $data_structure[$group->id()][$field_key] = $field->getValue();
+    }
+
+    $course_name = $data_structure[$group->id()]['label'][0]['value'];
+    $format = 'json';
+    $dir = 'sites/default/files/opigno-export';
+    \Drupal::service('file_system')->deleteRecursive($dir);
+    \Drupal::service('file_system')->prepareDirectory($dir, FileSystemInterface::MODIFY_PERMISSIONS | FileSystemInterface::CREATE_DIRECTORY);
+
+    $serializer = \Drupal::service('serializer');
+    $content = $serializer->serialize($data_structure, $format);
+
+    $filename = "export-course_{$course_name}_{$group->id()}.{$format}";
+    $filename_path = "{$dir}/{$filename}";
+    $files_to_export['course'] = $filename;
+
+    $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, FileSystemInterface::EXISTS_REPLACE);
+
+    $new_filename = "opigno-course_{$course_name}_{$group->id()}.opi";
+    $zip = new \ZipArchive();
+    $zip->open($dir . '/' . $new_filename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+    $zip->addFile($filename_path, $filename);
+
+    foreach ($course_content as $entity) {
+      if ($entity instanceof OpignoModule) {
+        $activities = $entity->getModuleActivities();
+        $module_fields = $entity->getFields();
+        $data_structure = [];
+
+        foreach ($module_fields as $field_key => $field) {
+          $data_structure[$entity->id()][$field_key] = $field->getValue();
+        }
+
+        $managed_content = reset(OpignoGroupManagedContent::loadByProperties([
+          'group_content_type_id' => 'ContentTypeModule',
+          'entity_id' => $entity->id(),
+          'group_id' => $group->id(),
+        ]));
+
+        $parent_links = $managed_content->getParentsLinks();
+
+        foreach ($parent_links as $link) {
+          $parent_old_content = OpignoGroupManagedContent::load($link->getParentContentId());
+          $parent_module_id = $parent_old_content->getEntityId();
+
+          $parent_new_content = reset(OpignoGroupManagedContent::loadByProperties([
+            'group_content_type_id' => 'ContentTypeModule',
+            'entity_id' => $parent_module_id,
+            'group_id' => $group->id(),
+          ]));
+
+          if ($parent_new_content) {
+            $link = [
+              'group_id' => $group->id(),
+              'parent_content_id' => $parent_new_content->id(),
+              'child_content_id' => $entity->id(),
+              'required_score' => $link->getRequiredScore(),
+              'required_activities'  => $link->getRequiredActivities()
+            ];
+
+            $data_structure[$entity->id()]['parent_links'][] = $link;
+          }
+        }
+
+        $data_structure[$entity->id()]['managed_content'] = $managed_content;
+
+        $module_name = $data_structure[$entity->id()]['name'][0]['value'];
+        $content = $serializer->serialize($data_structure, $format);
+        $filename = "export-module_{$module_name}_{$entity->id()}.{$format}";
+        $filename_path = "{$dir}/{$filename}";
+        $files_to_export['modules'][$module_name . '_' . $entity->id()] = $filename;
+
+        $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, FileSystemInterface::EXISTS_REPLACE);
+
+        $zip->addFile($filename_path, $filename);
+
+        foreach ($activities as $activity) {
+          $opigno_activity = OpignoActivity::load($activity->id);
+          $fields = $opigno_activity->getFields();
+          $data_structure = [];
+
+          foreach ($fields as $field_key => $field) {
+            $data_structure[$opigno_activity->id()][$field_key] = $field->getValue();
+          }
+
+          $activity_name = $data_structure[$opigno_activity->id()]['name'][0]['value'];
+          $filename = "export-activity_{$activity_name}_{$opigno_activity->id()}.{$format}";
+          $filename_path = "{$dir}/{$filename}";
+          $files_to_export['activities'][$module_name . '_' . $entity->id()][] = $filename;
+
+          switch ($opigno_activity->bundle()) {
+            case 'opigno_scorm':
+              if (isset($opigno_activity->get('opigno_scorm_package')->target_id)) {
+                $file = File::load($opigno_activity->get('opigno_scorm_package')->target_id);
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $scorm_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$scorm_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                ];
+
+                $zip->addFile($file_path, $scorm_filename);
+              }
+              break;
+
+            case 'opigno_tincan':
+              if (isset($opigno_activity->get('opigno_tincan_package')->target_id)) {
+                $file = File::load($opigno_activity->get('opigno_tincan_package')->target_id);
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $tincan_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$tincan_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                ];
+
+                $zip->addFile($file_path, $tincan_filename);
+              }
+              break;
+
+            case 'opigno_slide':
+              if (isset($opigno_activity->get('opigno_slide_pdf')->target_id)) {
+                $media = Media::load($opigno_activity->get('opigno_slide_pdf')->target_id);
+                $file_id = $media->get('field_media_file')->getValue()[0]['target_id'];
+                $file = File::load($file_id);
+
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $pdf_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$pdf_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                  'bundle' => $media->bundle(),
+                ];
+
+                $zip->addFile($file_path, $pdf_filename);
+              }
+              break;
+
+            case 'opigno_video':
+              if (isset($opigno_activity->get('field_video')->target_id)) {
+                $file = File::load($opigno_activity->get('field_video')->target_id);
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $video_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$video_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                ];
+
+                $zip->addFile($file_path, $video_filename);
+              }
+              break;
+          }
+
+          if ($opigno_activity->bundle() == 'opigno_h5p') {
+            $hp5_id = $data_structure[$opigno_activity->id()]['opigno_h5p'][0]['h5p_content_id'];
+            $h5p_content = H5PContent::load($hp5_id);
+            $h5p_content->getFilteredParameters();
+
+            $hp5_archive = "interactive-content-{$hp5_id}.h5p";
+            $zip->addFile('sites/default/files/h5p/exports/'. $hp5_archive, $hp5_archive);
+          }
+
+          $content = $serializer->serialize($data_structure, $format);
+          $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, FileSystemInterface::EXISTS_REPLACE);
+
+          $zip->addFile($filename_path, $filename);
+        }
+      }
+    }
+
+    $content = $serializer->serialize($files_to_export, $format);
+    $filename = "list_of_files.{$format}";
+    $filename_path = "{$dir}/{$filename}";
+    $files_to_export['activities'][] = $filename;
+
+    $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, FileSystemInterface::EXISTS_REPLACE);
+
+    $zip->addFile($filename_path, $filename);
+    $zip->close();
+
+    $headers = [
+      'Content-Type' => 'application/opi',
+      'Content-Disposition' => 'attachment; filename="' . $new_filename . '"',
+    ];
+
+    if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) {
+      $headers['Cache-Control'] = 'must-revalidate, post-check=0, pre-check=0';
+      $headers['Pragma'] = 'public';
+    }
+    else {
+      $headers['Pragma'] = 'no-cache';
+    }
+
+    return new BinaryFileResponse($dir . '/' . $new_filename, 200, $headers);
+  }
+
+  /**
+   * Export training.
+   *
+   * @param \Drupal\group\Entity\Group $group
+   *   Group object.
+   */
+  public function trainingExport(Group $group) {
+    $group_content = $group->getContentEntities();
+    $group_fields = $group->getFields();
+    $files_to_export = [];
+    $modules_in_courses = [];
+
+    foreach ($group_content as $entity) {
+      if ($entity instanceof Group && $entity->bundle() == 'opigno_course') {
+        $course_content = $entity->getContentEntities('opigno_module_group');
+        $group_content = array_merge($group_content, $course_content);
+
+        foreach ($course_content as $module) {
+          $modules_in_courses[$module->id()] = $entity->id();
+        }
+      }
+    }
+
+    foreach ($group_fields as $field_key => $field) {
+      $data_structure[$group->id()][$field_key] = $field->getValue();
+    }
+
+    $training_name = $data_structure[$group->id()]['label'][0]['value'];
+    $format = 'json';
+    $dir = 'sites/default/files/opigno-export';
+    \Drupal::service('file_system')->deleteRecursive($dir);
+    \Drupal::service('file_system')->prepareDirectory($dir, FileSystemInterface::MODIFY_PERMISSIONS | FileSystemInterface::CREATE_DIRECTORY);
+
+    $serializer = \Drupal::service('serializer');
+    $content = $serializer->serialize($data_structure, $format);
+
+    $filename = "export-training_{$training_name}_{$group->id()}.{$format}";
+    $filename_path = "{$dir}/{$filename}";
+    $files_to_export['training'] = $filename;
+
+    $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, FileSystemInterface::EXISTS_REPLACE);
+
+    $new_filename = "opigno-training_{$training_name}_{$group->id()}.opi";
+    $zip = new \ZipArchive();
+    $zip->open($dir . '/' . $new_filename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+    $zip->addFile($filename_path, $filename);
+
+    foreach ($group_content as $entity) {
+      if ($entity instanceof OpignoModule || ($entity instanceof Group && $entity->bundle() == 'opigno_course')) {
+
+        if ($entity instanceof OpignoModule) {
+          $activities = $entity->getModuleActivities();
+          $group_content_type_id = 'ContentTypeModule';
+        }
+        else {
+          $activities = [];
+          $group_content_type_id = 'ContentTypeCourse';
+        }
+
+        $module_fields = $entity->getFields();
+        $data_structure = [];
+        $data_structure[$entity->id()]['parent_links'] = [];
+
+        foreach ($module_fields as $field_key => $field) {
+          $data_structure[$entity->id()][$field_key] = $field->getValue();
+        }
+
+        $managed_content = reset(OpignoGroupManagedContent::loadByProperties([
+          'group_content_type_id' => $group_content_type_id,
+          'entity_id' => $entity->id(),
+          'group_id' => $group->id(),
+        ]));
+
+        $link_group_id = $group->id();
+
+        if (!$managed_content && isset($modules_in_courses[$entity->id()])) {
+          $managed_content = reset(OpignoGroupManagedContent::loadByProperties([
+            'group_content_type_id' => $group_content_type_id,
+            'entity_id' => $entity->id(),
+            'group_id' => $modules_in_courses[$entity->id()],
+          ]));
+
+          $data_structure[$entity->id()]['course_rel'] = $modules_in_courses[$entity->id()];
+          $link_group_id = $modules_in_courses[$entity->id()];
+        }
+
+        if ($managed_content) {
+          $parent_links = $managed_content->getParentsLinks();
+
+          foreach ($parent_links as $link) {
+            $parent_old_content = OpignoGroupManagedContent::load($link->getParentContentId());
+            $parent_module_id = $parent_old_content->getEntityId();
+
+            $parent_new_content = reset(OpignoGroupManagedContent::loadByProperties([
+              'group_content_type_id' => 'ContentTypeModule',
+              'entity_id' => $parent_module_id,
+              'group_id' => $link_group_id,
+            ]));
+
+            if ($parent_new_content) {
+              $link = [
+                'group_id' => $link_group_id,
+                'parent_content_id' => $parent_new_content->id(),
+                'child_content_id' => $entity->id(),
+                'required_score' => $link->getRequiredScore(),
+                'required_activities'  => $link->getRequiredActivities()
+              ];
+
+              $data_structure[$entity->id()]['parent_links'][] = $link;
+            }
+          }
+        }
+
+        $data_structure[$entity->id()]['managed_content'] = $managed_content;
+
+        if ($group_content_type_id ==  'ContentTypeModule') {
+          $entity_name = $data_structure[$entity->id()]['name'][0]['value'];
+          $filename = "export-module_{$entity_name}_{$entity->id()}.{$format}";
+          $files_to_export['modules'][$entity_name . '_' . $entity->id()] = $filename;
+        }
+        else {
+          $entity_name = $data_structure[$entity->id()]['label'][0]['value'];
+          $filename = "export-course_{$entity_name}_{$entity->id()}.{$format}";
+          $files_to_export['courses'][$entity_name . '_' . $entity->id()] = $filename;
+        }
+
+        $content = $serializer->serialize($data_structure, $format);
+        $filename_path = "{$dir}/{$filename}";
+
+        \Drupal::service('file_system')->saveData($content, $filename_path, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
+
+        $zip->addFile($filename_path, $filename);
+
+        foreach ($activities as $activity) {
+          $opigno_activity = OpignoActivity::load($activity->id);
+          $fields = $opigno_activity->getFields();
+          $data_structure = [];
+
+          foreach ($fields as $field_key => $field) {
+            $data_structure[$opigno_activity->id()][$field_key] = $field->getValue();
+          }
+
+          $activity_name = $data_structure[$opigno_activity->id()]['name'][0]['value'];
+          $filename = "export-activity_{$activity_name}_{$opigno_activity->id()}.{$format}";
+          $filename_path = "{$dir}/{$filename}";
+          $files_to_export['activities'][$entity_name . '_' . $entity->id()][] = $filename;
+
+          switch ($opigno_activity->bundle()) {
+            case 'opigno_scorm':
+              if (isset($opigno_activity->get('opigno_scorm_package')->target_id)) {
+                $file = File::load($opigno_activity->get('opigno_scorm_package')->target_id);
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $scorm_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$scorm_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                ];
+
+                $zip->addFile($file_path, $scorm_filename);
+              }
+              break;
+
+            case 'opigno_tincan':
+              if (isset($opigno_activity->get('opigno_tincan_package')->target_id)) {
+                $file = File::load($opigno_activity->get('opigno_tincan_package')->target_id);
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $tincan_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$tincan_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                ];
+
+                $zip->addFile($file_path, $tincan_filename);
+              }
+              break;
+
+            case 'opigno_slide':
+              if (isset($opigno_activity->get('opigno_slide_pdf')->target_id)) {
+                $media = Media::load($opigno_activity->get('opigno_slide_pdf')->target_id);
+                $file_id = $media->get('field_media_file')->getValue()[0]['target_id'];
+                $file = File::load($file_id);
+
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $pdf_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$pdf_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                  'bundle' => $media->bundle(),
+                ];
+
+                $zip->addFile($file_path, $pdf_filename);
+              }
+              break;
+
+            case 'opigno_video':
+              if (isset($opigno_activity->get('field_video')->target_id)) {
+                $file = File::load($opigno_activity->get('field_video')->target_id);
+                $file_uri = $file->getFileUri();
+                $file_path = \Drupal::service('file_system')->realpath($file_uri);
+                $video_filename = $file->id() . '-' . $file->getFilename();
+
+                $data_structure[$opigno_activity->id()]['files'][$video_filename] = [
+                  'file_name' => $file->getFilename(),
+                  'filemime' => $file->getMimeType(),
+                  'status' => $file->get('status')->getValue()[0]['value'],
+                ];
+
+                $zip->addFile($file_path, $video_filename);
+              }
+              break;
+          }
+
+          if ($opigno_activity->bundle() == 'opigno_h5p') {
+            $hp5_id = $data_structure[$opigno_activity->id()]['opigno_h5p'][0]['h5p_content_id'];
+            $h5p_content = H5PContent::load($hp5_id);
+            $h5p_content->getFilteredParameters();
+
+            $hp5_archive = "interactive-content-{$hp5_id}.h5p";
+            $zip->addFile('sites/default/files/h5p/exports/'. $hp5_archive, $hp5_archive);
+          }
+
+          $content = $serializer->serialize($data_structure, $format);
+          $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
+
+          $zip->addFile($filename_path, $filename);
+        }
+      }
+    }
+
+    // Export documents library.
+    $main_tid = $group->get('field_learning_path_folder')->getString();
+    $items_list = $this->documentsLibraryList($main_tid);
+    $folder_library = $dir . '/library';
+    \Drupal::service('file_system')->prepareDirectory($folder_library, FileSystemInterface::MODIFY_PERMISSIONS | FileSystemInterface::CREATE_DIRECTORY);
+    $zip->addEmptyDir('library');
+
+    foreach ($items_list as $item) {
+      if ($item['type'] == 'file') {
+        $media = Media::load($item['id']);
+
+        $filename = $media->id() . '_media_' . $media->label() . '.' . $format;
+        $filename_path = "{$folder_library}/{$filename}";
+        $files_to_export['files'][$item['id']]['media'] = $filename;
+
+        $content = $serializer->serialize($media, $format);
+        $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
+        $zip->addFile($filename_path, 'library/' . $filename);
+
+        $file_id = $media->get('tft_file')->getValue()[0]['target_id'];
+        $file = File::load($file_id);
+        $file_uri = $file->getFileUri();
+        $filename = $file->id() . '-' . $file->getFilename();
+        $file_path = \Drupal::service('file_system')->realpath($file_uri);
+
+        $zip->addFile($file_path, 'library/' . $filename);
+
+        $filename = $file->id() . '_file_' . $file->label() . '.' . $format;
+        $files_to_export['files'][$item['id']]['file'] = $filename;
+        $filename_path = "{$folder_library}/{$filename}";
+        $content = $serializer->serialize($file, $format);
+        $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
+        $zip->addFile($filename_path, 'library/' . $filename);
+      }
+      elseif($item['type'] == 'term') {
+        $term = Term::load($item['id']);
+
+        if ($term) {
+          $filename = $term->id() . '_' . $term->label() . '.' . $format;
+          $filename_path = "{$folder_library}/{$filename}";
+          $files_to_export['terms'][] = $filename;
+
+          $content = $serializer->serialize($term, $format);
+          $context['results']['file'] = \Drupal::service('file_system')->saveData($content, $filename_path, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
+
+          $zip->addFile($filename_path, 'library/' . $filename);
+        }
+      }
+    }
+
+    $content = $serializer->serialize($files_to_export, $format);
+    $filename = "list_of_files.{$format}";
+    $filename_path = "{$dir}/{$filename}";
+    $files_to_export['activities'][] = $filename;
+
+    \Drupal::service('file_system')->saveData($content, $filename_path, \Drupal\Core\File\FileSystemInterface::EXISTS_REPLACE);
+
+    $zip->addFile($filename_path, $filename);
+
+    $zip->close();
+
+    $headers = [
+      'Content-Type' => 'application/opi',
+      'Content-Disposition' => 'attachment; filename="' . $new_filename . '"',
+    ];
+
+    if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) {
+      $headers['Cache-Control'] = 'must-revalidate, post-check=0, pre-check=0';
+      $headers['Pragma'] = 'public';
+    }
+    else {
+      $headers['Pragma'] = 'no-cache';
+    }
+
+    return new BinaryFileResponse($dir . '/' . $new_filename, 200, $headers);
   }
 
   /**

@@ -24,7 +24,9 @@ class GroupMembershipStatus extends FieldPluginBase {
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    return LearningPathAccess::getMembershipStatus($values->_entity->id(), TRUE);
+    return $values->_entity->bundle() === 'learning_path-group_membership' ?
+      LearningPathAccess::getMembershipStatus($values->_entity->id(), TRUE) :
+      $this->t('no status');
   }
 
 }

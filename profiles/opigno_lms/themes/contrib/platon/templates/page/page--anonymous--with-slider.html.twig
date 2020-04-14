@@ -80,7 +80,9 @@
       </div>
       <div class="switch-link text-center mt-auto pt-4">
         <div><a href="{{ path('user.pass') }}">{{ 'Request new password'|t }}</a></div>
+        {% if register != 'admin_only' %}
         <div><a href="{{ path('user.register') }}">{{ 'Create new account'|t }}</a></div>
+        {% endif %}
       </div>
     </div>
 
@@ -93,7 +95,9 @@
       </div>
       <div class="switch-link text-center mt-auto pt-4">
         <div><a href="{{ path('user.login') }}">{{ 'Login'|t }}</a></div>
+        {% if register != 'admin_only' %}
         <div><a href="{{ path('user.register') }}">{{ 'Create new account'|t }}</a></div>
+        {% endif %}
       </div>
     </div>
 

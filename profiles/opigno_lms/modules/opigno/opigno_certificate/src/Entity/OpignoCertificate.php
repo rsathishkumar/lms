@@ -213,10 +213,24 @@ class OpignoCertificate extends EditorialContentEntityBase implements OpignoCert
       ])
       ->setDisplayOptions('form', [
         'type' => 'string_textfield',
-        'weight' => -5,
+        'weight' => -6,
       ])
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayConfigurable('form', TRUE);
+
+    $fields['paper_orientation'] = BaseFieldDefinition::create('list_string')
+      ->setLabel(t('Paper Orientation'))
+      ->setRevisionable(TRUE)
+      ->setTranslatable(TRUE)
+      ->setDefaultValue('portrait')
+      ->setSetting('allowed_values', [
+        'portrait' => t('Portrait'),
+        'landscape' => t('Landscape'),
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'options_select',
+        'weight' => -5,
+      ]);
 
     $fields['referencing_entity'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Referencing entity'))

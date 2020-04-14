@@ -298,7 +298,7 @@ class OpignoModuleManagerController extends ControllerBase {
       return [
         'bundle' => 'opigno_h5p',
         'library' => $library->name,
-        'name' => 'H5P ' . $library->title,
+        'name' => $library->title,
         'description' => $this->getH5PDescription($library->name),
         'major_version' => $library->major_version,
         'minor_version' => $library->minor_version,
@@ -316,7 +316,13 @@ class OpignoModuleManagerController extends ControllerBase {
       $types['H5P.Summary'],
       $types['H5P.TwitterUserFeed'],
       $types['H5P.AppearIn'],
-      $types['H5P.SingleChoiceSet']
+      $types['H5P.SingleChoiceSet'],
+      $types['H5P.Accordion'],
+      $types['H5P.Agamotto'],
+      $types['H5P.Collage'],
+      $types['H5P.ImageMultipleHotspotQuestion'],
+      $types['H5P.IFrameEmbed'],
+      $types['H5P.MemoryGame']
     );
 
     // Set external package types.
@@ -326,7 +332,7 @@ class OpignoModuleManagerController extends ControllerBase {
     if (self::getPptConvertAllow()) {
       $ppt = [
         'bundle' => 'external_package_ppt',
-        'name' => $this->t('H5P PPT(X) Course Presentation'),
+        'name' => $this->t('PPT(X) Course Presentation'),
         'description' => $this->t('This activity allows creation H5P Course Presentation content imported from PowerPoint files. Slides from PowerPoint presentation will be imported as images into H5P Course Presentation slider. Allowed file extensions are ppt/pptx.'),
       ];
       if (array_key_exists('H5P.CoursePresentation', $types)) {

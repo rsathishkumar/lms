@@ -25,11 +25,11 @@ interface GroupRoleInheritanceInterface {
    *   relations. The array is in the form of:
    *   $map[$group_a_id][$group_b_id][$group_b_role_id] = $group_a_role_id;
    */
-  public function getAllInheritedGroupRoleIds();
+  public function getAllInheritedGroupRoleIds($group);
 
   /**
    * Rebuild the nested array with all inherited roles for all group relations.
    */
-  public function rebuild();
+  public function rebuild($group_id);
 
 }

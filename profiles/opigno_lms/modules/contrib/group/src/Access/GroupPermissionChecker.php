@@ -42,7 +42,8 @@ class GroupPermissionChecker implements GroupPermissionCheckerInterface {
     // we need to check the group type permissions instead, i.e.: the ones for
     // anonymous or outsider audiences.
     $item = $calculated_permissions->getItem(CalculatedGroupPermissionsItemInterface::SCOPE_GROUP, $group->id());
-    if ($item === FALSE) {
+
+    if ($item === FALSE || empty($item->getPermissions())) {
       $item = $calculated_permissions->getItem(CalculatedGroupPermissionsItemInterface::SCOPE_GROUP_TYPE, $group->bundle());
     }
 

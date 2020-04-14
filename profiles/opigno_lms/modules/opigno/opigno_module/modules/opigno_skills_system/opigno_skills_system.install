@@ -149,3 +149,17 @@ function opigno_skills_system_update_8004(&$sandbox) {
   $sandbox['current'] += 50;
   $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['current'] / $sandbox['max']);
 }
+
+/**
+ * Update skills vocabulary.
+ */
+function opigno_skills_system_update_8005() {
+  $config_path = drupal_get_path('module', 'opigno_skills_system')
+    . '/config/optional';
+
+  $storage = new FileStorage($config_path);
+  $config_storage = \Drupal::service('config.storage');
+
+  $data = $storage->read('field.storage.taxonomy_term.field_level_names');
+  $config_storage->write('field.storage.taxonomy_term.field_level_names', $data);
+}

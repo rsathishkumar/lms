@@ -10,8 +10,8 @@ module.exports = merge(webpackConfig, {
     filename: '[name].js',
   },
   devServer: {
-    host: 'opigno-d8',
-    contentBase: path.join(__dirname, '../..'),
+    host: 'opignod8',
+    contentBase: path.join(__dirname, '/dist'),
     port: 8080,
   },
 });

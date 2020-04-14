@@ -1,6 +1,16 @@
 (function ($, Drupal, drupalSettings) {
   Drupal.behaviors.opignoModuleActivitiesBank = {
     attach: function (context, settings) {
+      var self = this;
+
+      $(document).once().ajaxComplete(function () {
+        if (self.inIframe() &&
+          typeof settings.closeActivityBankPanel !== 'undefined'
+        ) {
+          parent.closeActivityBankPanel = settings.closeActivityBankPanel;
+        }
+      });
+
       var view = $('.view-opigno-activities-bank-lp-interface tbody');
       var group_page = false;
 
@@ -92,6 +102,15 @@
           }
         }
       });
-    }
+    },
+
+    inIframe: function() {
+      try {
+        return window.self !== window.top;
+      }
+      catch (e) {
+        return true;
+      }
+    },
   };
 }(jQuery, Drupal, drupalSettings));

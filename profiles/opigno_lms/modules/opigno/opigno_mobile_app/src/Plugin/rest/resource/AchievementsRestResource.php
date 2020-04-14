@@ -167,7 +167,7 @@ class AchievementsRestResource extends ResourceBase {
       $member = $training->getMember($this->currentUser)->getGroupContent();
       $registration = $member->getCreatedTime();
       // Get time when user finished the training.
-      $validation = opigno_learning_path_completed_on($training->id(), $this->currentUser->id());
+      $validation = opigno_learning_path_completed_on($training->id(), $this->currentUser->id(), TRUE);
       // Get time spent.
       /** @var \Drupal\Core\Datetime\DateFormatterInterface $date_formatter */
       $date_formatter = \Drupal::service('date.formatter');

@@ -22,6 +22,8 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Url;
+use Drupal\Core\Render\Element;
+use Drupal\Core\Template\Attribute;
 use Drupal\group\Entity\Group;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\opigno_ilt\ILTInterface;
@@ -36,6 +38,7 @@ use Drupal\opigno_module\Entity\OpignoActivity;
 use Drupal\opigno_module\Entity\OpignoModule;
 use Drupal\opigno_module\Entity\UserModuleStatus;
 use Drupal\opigno_moxtra\MeetingInterface;
+use Drupal\multiselect\Element\Multiselect;
 use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Core\Breadcrumb\Breadcrumb;
@@ -101,7 +104,20 @@ function opigno_learning_path_theme() {
         'group' => NULL,
       ],
     ],
+    'multiselect_new_class' => [
+      'arguments' => ['element' => NULL],
+      'render element' => 'element',
+      'template' => 'multiselect-new-class',
+    ],
   ];
+}
+
+function opigno_learning_path_theme_suggestions_multiselect(array $variables) {
+  if (isset($variables["element"]["#name"]) && $variables["element"]["#name"] == 'new_class_users') {
+    $suggestions = [];
+    $suggestions[] = 'multiselect_new_class';
+    return $suggestions;
+  }
 }
 
 /**
@@ -230,6 +246,65 @@ function opigno_learning_path_preprocess_region(&$variables) {
       ];
     }
 
+  }
+}
+
+/**
+ * Implements hook_preprocess_multiselect().
+ */
+function opigno_learning_path_preprocess_multiselect_new_class(&$variables) {
+  $element = $variables['element'];
+  Element::setAttributes($element, array('id', 'name', 'size', 'required'));
+
+  $available_options = Multiselect::getOptions('available', $element);
+  $available_size = min(count($available_options), 10);
+
+  $selected_options = Multiselect::getOptions('selected', $element);
+  $selected_size = min(count($selected_options), 10);
+  $total_size = $available_size + $selected_size;
+
+  $variables['multiselect'] = array(
+    'available' => array(
+      'id' => $element['#attributes']['id'] . '-available',
+      'label' => t('Available Options'),
+      'attributes' => array(
+        'id' => $element['#attributes']['id'] . '-available',
+        'size' => $total_size,
+      ),
+      'options' => $available_options,
+    ),
+    'selected' => array(
+      'id' => $element['#attributes']['id'],
+      'label' => t('Selected Options'),
+      'attributes' => $element['#attributes'],
+      'options' => $selected_options,
+    ),
+    'labels' => array(
+      'add' => t('Add'),
+      'remove' => t('Remove'),
+    ),
+  );
+
+  // Prepare selected attributes.
+  $variables['multiselect']['selected']['attributes']['size'] = $total_size;
+
+  // Prepare attributes for available select.
+  foreach (array('multiple', 'required', 'class') as $key) {
+    $element_key = "#{$key}";
+    if (isset($element[$element_key])) {
+      $variables['multiselect']['available']['attributes'][$key] = $element[$element_key];
+    }
+  }
+  // Prepare attributes.
+  $multiselect = &$variables['multiselect'];
+  foreach (array('available', 'selected') as $key) {
+    $multiselect[$key]['attributes']['class'][] = 'multiselect-' . $key;
+    $multiselect[$key]['attributes']['class'][] = 'form-multiselect';
+    if (isset($multiselect[$key]['attributes']) && !($multiselect[$key]['attributes'] instanceof Attribute)) {
+      if ($multiselect[$key]['attributes']) {
+        $multiselect[$key]['attributes'] = new Attribute($multiselect[$key]['attributes']);
+      }
+    }
   }
 }
 
@@ -404,7 +479,7 @@ function opigno_learning_path_preprocess_opigno_certificate(array &$variables) {
 
   // Provide the referencing entity context.
   if ($referencing_entity) {
-    $completed = opigno_learning_path_completed_on($referencing_entity->id(), \Drupal::currentUser()->id());
+    $completed = opigno_learning_path_completed_on($referencing_entity->id(), \Drupal::currentUser()->id(), TRUE);
     if ($completed) {
       $variables['completed_on'] = \Drupal::service('date.formatter')->format($completed, NULL, 'd/M/Y');
     }
@@ -432,6 +507,7 @@ function opigno_learning_path_get_step_list_top() {
   $group_type = opigno_learning_path_get_group_type();
   $current_step = opigno_learning_path_get_current_step();
   $passed_steps = opigno_learning_path_validate_group_creating_steps();
+  $enough_activities = TRUE;
 
   if ($group_type == 'learning_path') {
     $steps = [
@@ -448,7 +524,6 @@ function opigno_learning_path_get_step_list_top() {
 
     if ($moduleHandler->moduleExists('opigno_skills_system') && $current_step == 5) {
       $group_steps = OpignoGroupManagedContent::loadByGroupId($group->id());
-      $enough_activities = TRUE;
 
       foreach ($group_steps as $group_step) {
         $id = $group_step->getEntityId();
@@ -1075,10 +1150,21 @@ function opigno_learning_path_form_alter(&$form, FormStateInterface $form_state,
     // Unpublish existing training.
     if ($route_name == 'entity.group.edit_form') {
       $group = \Drupal::routeMatch()->getParameter('group');
+      $state = $group->get('field_learning_path_published')->value;
+
+      if ($state == 0) {
+        $title = t('Publish');
+        $route = 'opigno_learning_path.manager.publish';
+      }
+      else {
+        $title = t('Unpublish');
+        $route = 'opigno_learning_path.manager.unpublish';
+      }
+
       $form['actions']['submit']['unpublish'] = [
         '#type' => 'link',
-        '#title' => t("Unpublish"),
-        '#url' => Url::fromRoute('opigno_learning_path.manager.unpublish', [
+        '#title' => $title,
+        '#url' => Url::fromRoute($route, [
           'group' => $group->id(),
         ]),
         '#attributes' =>
@@ -1140,6 +1226,8 @@ function opigno_learning_path_form_alter(&$form, FormStateInterface $form_state,
 
     foreach (array_keys($form['actions']) as $action) {
       if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+        // Unset path alias field.
+        unset($form['path']);
         // Add custom submit to user join group form.
         $form['actions'][$action]['#submit'][] = 'opigno_learning_path_group_membership_form_submit';
         // Change submit button text.
@@ -1276,6 +1364,16 @@ function opigno_learning_path_form_alter(&$form, FormStateInterface $form_state,
   ])) {
     $form["#attached"]['library'][] = 'opigno_learning_path/opigno_dropzonejs_widgets';
   }
+
+  if (in_array($form_id, [
+    'opigno_moxtra_score_meeting_form',
+    'opigno_ilt_create_result_form',
+    'opigno_ilt_score_form',
+    'opigno_moxtra_create_meeting_result_form',
+  ])) {
+    // Attach addition styles for entity forms in embedded html page.
+    $form["#attached"]['library'][] = 'opigno_learning_path/iframe_opigno_lp_manager';
+  }
 }
 
 /**
@@ -1373,16 +1471,26 @@ function opigno_learning_path_group_membership_add_form_submit(array $form, Form
 
   // Assign each class to the learning path.
   foreach ($classes as $class) {
-    /** @var \Drupal\group\Entity\Group $class */
-    $group->addContent($class, 'subgroup:opigno_class');
+    $db_connection = \Drupal::service('database');
+    $is_class_added = $db_connection->select('group_content_field_data', 'g_c_f_d')
+      ->fields('g_c_f_d', ['id'])
+      ->condition('gid', $group->id())
+      ->condition('entity_id', $class->id())
+      ->condition('type', 'group_content_type_27efa0097d858')
+      ->execute()->fetchField();
 
-    // Add class members to the users.
-    $members = $class->getMembers();
+    if (!$is_class_added) {
+      /** @var \Drupal\group\Entity\Group $class */
+      $group->addContent($class, 'subgroup:opigno_class');
 
-    foreach ($members as $member) {
-      /** @var \Drupal\group\GroupMembership $member */
-      $user = $member->getUser();
-      $users[$user->id()] = $user;
+      // Add class members to the users.
+      $members = $class->getMembers();
+
+      foreach ($members as $member) {
+        /** @var \Drupal\group\GroupMembership $member */
+        $user = $member->getUser();
+        $users[$user->id()] = $user;
+      }
     }
   }
 
@@ -1455,7 +1563,11 @@ function opigno_learning_path_group_access(Group $group, $operation, AccountInte
       // applied to other cases such as join/signup links, so as well as the
       // visibility check, additional check the 'join group' permission which is
       // already on the route.
-      if ($account->isAnonymous() && ($group_visibility == 'semiprivate' || $group_visibility == 'private')) {
+      if ($account->isAnonymous() && $group_visibility == 'semiprivate') {
+        return Accessresult::forbidden();
+      }
+      // Restrict access to any users to join to private Training.
+      if ($group_visibility == 'private') {
         return Accessresult::forbidden();
       }
       if ($group->hasPermission('join group', $account)) {
@@ -1478,21 +1590,23 @@ function opigno_learning_path_group_access(Group $group, $operation, AccountInte
         return AccessResult::allowed();
       }
 
-      $is_published = $group->field_learning_path_published->value;
-      if (!$is_published) {
-        $training_role_allowed = FALSE;
-        if ($member = $group->getMember($account)) {
-          $roles = $member->getRoles();
-          foreach (['learning_path-user_manager', 'learning_path-content_manager'] as $role) {
-            if (array_key_exists($role, $roles)) {
-              $training_role_allowed = TRUE;
-              break;
+      if ($group->hasField('field_learning_path_published')) {
+        $is_published = $group->field_learning_path_published->value;
+        if (!$is_published) {
+          $training_role_allowed = FALSE;
+          if ($member = $group->getMember($account)) {
+            $roles = $member->getRoles();
+            foreach (['learning_path-user_manager', 'learning_path-content_manager'] as $role) {
+              if (array_key_exists($role, $roles)) {
+                $training_role_allowed = TRUE;
+                break;
+              }
             }
           }
-        }
-        if (!$training_role_allowed) {
-          // Deny if group unpublished and user has no admin or manager roles.
-          return AccessResult::forbidden();
+          if (!$training_role_allowed) {
+            // Deny if group unpublished and user has no admin or manager roles.
+            return AccessResult::forbidden();
+          }
         }
       }
 
@@ -1597,7 +1711,7 @@ function opigno_learning_path_group_access(Group $group, $operation, AccountInte
         : AccessResult::forbidden();
 
     case 'view certificate':
-      $completed = opigno_learning_path_completed_on($group->id(), $account->id());
+      $completed = opigno_learning_path_completed_on($group->id(), $account->id(), TRUE);
       return $completed
         ? AccessResult::allowed()
         : AccessResult::forbidden();
@@ -1691,6 +1805,20 @@ function opigno_learning_path_entity_update(EntityInterface $entity) {
     LearningPathAccess::mergeUserStatus($entity);
   }
 
+  if ($entity->bundle() == 'learning_path') {
+    $db_connection = \Drupal::service('database');
+    try {
+      $db_connection->update('opigno_learning_path_achievements')
+        ->fields(['name' => $entity->label()])
+        ->condition('gid', $entity->id())
+        ->execute();
+    }
+    catch (\Exception $e) {
+      \Drupal::logger('opigno_learning_path')->error($e->getMessage());
+      \Drupal::messenger()->addMessage($e->getMessage(), 'error');
+    }
+  }
+
   if ($entity->getEntityTypeId() === 'user_module_status') {
     // Try to get training id from path.
     $route = \Drupal::routeMatch();
@@ -1738,25 +1866,40 @@ function opigno_learning_path_entity_delete(EntityInterface $entity) {
     $members = $entity->getEntity()->getMembers();
     // Get class group id.
     $gid = $entity->getGroup()->id();
+
+    $classes_members = [];
+    $classes_ids = LearningPathContent::getGroupMembershipIdsByType($gid, ['group_content_type_27efa0097d858']);
+    if ($classes_ids) {
+      foreach ($classes_ids as $id) {
+        $class_members = LearningPathContent::getGroupMembershipIdsByType($id, ['opigno_class-group_membership']);
+        if ($class_members) {
+          $classes_members = array_merge($classes_members, $class_members);
+        }
+      }
+      if ($classes_members) {
+        $classes_members = array_unique($classes_members);
+      }
+    }
+
     if ($members && !empty($gid) && is_numeric($gid)) {
       try {
         $group = Group::load($gid);
         // Get class parent groups.
         foreach ($members as $member) {
           $user = $member->getGroupContent()->getEntity();
+          $uid = $user->id();
           $class_id = $entity->getEntity()->id();
-          $created_group_membership = LearningPathContent::getGroupMembershipTimestamp($group->id(), $user->id());
-          $created_class_membership = LearningPathContent::getGroupMembershipTimestamp($class_id, $user->id());
+          $created_group_membership = LearningPathContent::getGroupMembershipTimestamp($gid, $uid);
+          $created_class_membership = LearningPathContent::getGroupMembershipTimestamp($class_id, $uid);
           if ($group && $user) {
-            // Check if user is a member.
-            if ($group->getMember($user) !== FALSE) {
-              // Get group and class membership timestamps.
-              if ($created_group_membership && $created_class_membership &&
-                ($created_group_membership >= $created_class_membership)) {
+            // If user is the member only in this class of training all classes.
+            $unique_member = $classes_members ? !in_array($uid, $classes_members) : TRUE;
+            // Get group and class membership timestamps.
+            if ($unique_member && $created_group_membership && $created_class_membership &&
+              ($created_group_membership >= $created_class_membership)) {
 
-                // Remove class parent group membership.
-                $group->removeMember($user);
-              }
+              // Remove class parent group membership.
+              $group->removeMember($user);
             }
           }
         }
@@ -1839,9 +1982,9 @@ function opigno_learning_path_entity_presave(EntityInterface $entity) {
 
     // Add notifications to user.
     if ($entity->isNew()) {
-      opigno_set_message($uid, t('Enrolled to a new training @name', [
-        '@name' => $group->label(),
-      ]));
+      $message = t('Enrolled to a new training "@name"', ['@name' => $group->label()]);
+      $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()])->toString();
+      opigno_set_message($uid, $message, $url);
 
       $user = User::load($uid);
       $visibility = $group->field_learning_path_visibility->value;
@@ -2034,6 +2177,27 @@ function opigno_learning_path_views_query_alter(ViewExecutable $view, QueryPlugi
       }
     }
   }
+
+  if ($view->id() === 'opigno_group_members_table') {
+    // Add filter for only members of a training.
+    /** @var \Drupal\group\Entity\Group $group */
+    $group = \Drupal::routeMatch()->getParameter('group');
+    if ($group) {
+      $members = $view->storage->get('group_members');
+      $members = !empty($members) ? $members : [0];
+
+      $query->where[] = [
+        'conditions' => [
+          [
+            'field' => 'group_content_field_data.entity_id',
+            'value' => $members,
+            'operator' => 'IN',
+          ],
+        ],
+        'type' => 'AND',
+      ];
+    }
+  }
 }
 
 /**
@@ -2160,7 +2324,7 @@ function opigno_learning_path_get_module_best_score($id, $uid) {
     $user = User::load($uid);
 
     // For each attempt, check the score and save the best one.
-    $user_attempts = $opigno_module->getModuleAttempts($user);
+    $user_attempts = $opigno_module->getModuleAttempts($user, 'best');
     $best_score = 0;
 
     /* @var \Drupal\opigno_module\Entity\UserModuleStatus $user_attempt */
@@ -2262,11 +2426,22 @@ function opigno_learning_path_get_module_step($group_id, $uid, OpignoModule $mod
       /** @var \Drupal\opigno_module\Entity\UserModuleStatus $attempt */
       // Check that all actual module activities is evaluated.
       $evaluated = TRUE;
+      $answered_count = 0;
       foreach ($activities as $activity) {
         $answer = $activity->getUserAnswer($module, $attempt, $user);
 
         if ($answer === NULL) {
           $evaluated = FALSE;
+        }
+        else {
+          $answered_count++;
+        }
+      }
+      // For random Module option the number of answered activities
+      // should be greater than number of random.
+      if ($module->getRandomization() == 2) {
+        if ($answered_count >= $module->getRandomActivitiesCount()) {
+          $evaluated = TRUE;
         }
       }
 
@@ -2872,11 +3047,13 @@ function opigno_learning_path_get_all_steps($group_id, $uid, $only_modules_and_c
  *   Module ID.
  * @param int $uid
  *   User ID.
+ * @param bool $step_state_counting
+ *   TRUE if function called for calculating step state, FALSE otherwise.
  *
  * @return array
  *   Info about each activity status for a user.
  */
-function opigno_learning_path_get_module_activities($module_id, $uid) {
+function opigno_learning_path_get_module_activities($module_id, $uid, $step_state_counting = FALSE) {
   $user = User::load($uid);
 
   /** @var \Drupal\opigno_module\Entity\OpignoModule $module */
@@ -2887,16 +3064,20 @@ function opigno_learning_path_get_module_activities($module_id, $uid) {
 
   // Load activities for a module.
   $module_activities = $module->getModuleActivities();
-  $activities = array_map(function ($activity) use ($user, $module, $attempts) {
+  $activities = array_map(function ($activity) use ($user, $module, $attempts, $step_state_counting) {
     // Value returned by the OpignoModule::getModuleActivities()
     // is not an OpignoActivity.
     /** @var \Drupal\opigno_module\Entity\OpignoActivity $activity */
     $activity = OpignoActivity::load($activity->id);
 
     /** @var \Drupal\opigno_module\Entity\OpignoAnswer[] $answers */
-    $answers = array_map(function ($attempt) use ($user, $module, $activity) {
+    $answers = array_map(function ($attempt) use ($user, $module, $activity, $step_state_counting) {
       /** @var \Drupal\opigno_module\Entity\OpignoActivity $activity */
-      return $activity->getUserAnswer($module, $attempt, $user);
+      $answer = $activity->getUserAnswer($module, $attempt, $user);
+      if ($answer && $step_state_counting && $activity->hasField('opigno_evaluation_method') && $activity->get('opigno_evaluation_method')->value && !$answer->isEvaluated()) {
+        $answer = NULL;
+      }
+      return $answer;
     }, $attempts);
 
     // The OpignoActivity::getUserAnswer() may return NULL.
@@ -2947,6 +3128,22 @@ function opigno_learning_path_get_activities($group_id, $uid) {
         }
       }
       $activities = array_merge($activities, $module_activities);
+
+      // Limit random activities.
+      if ($module->getRandomization() == 2) {
+        $unanswered_activities = array_filter($activities, function ($activity) {
+          return !$activity['answers'];
+        });
+        $answered_activities = array_filter($activities, function ($activity) {
+          return $activity['answers'];
+        });
+        $activities = array_slice($answered_activities, 0, $module->getRandomActivitiesCount());
+        if (count($activities) < $module->getRandomActivitiesCount()) {
+          $diff_num = $module->getRandomActivitiesCount() - count($activities);
+          $difference = array_slice($unanswered_activities, 0, $diff_num);
+          array_merge($activities, $difference);
+        }
+      }
     }
     elseif ($step['typology'] === 'Course') {
       $course_activities = opigno_learning_path_get_activities($step['id'], $uid);
@@ -2970,7 +3167,7 @@ function opigno_learning_path_get_activities($group_id, $uid) {
 /**
  * Returns step progress.
  */
-function opigno_learning_path_get_step_progress($step, $uid) {
+function opigno_learning_path_get_step_progress($step, $uid, $step_state_counting = FALSE) {
   $typology = isset($step['typology']) ? $step['typology'] : NULL;
   $moduleHandler = \Drupal::service('module_handler');
 
@@ -2979,7 +3176,23 @@ function opigno_learning_path_get_step_progress($step, $uid) {
   }
   elseif ($typology === 'Module' || $typology === 'Course') {
     if ($typology === 'Module') {
-      $activities = opigno_learning_path_get_module_activities($step['id'], $uid);
+      $activities = opigno_learning_path_get_module_activities($step['id'], $uid, $step_state_counting);
+      $module = OpignoModule::load($step['id']);
+      // Limit random activities.
+      if ($module->getRandomization() == 2) {
+        $unanswered_activities = array_filter($activities, function ($activity) {
+          return !$activity['answers'];
+        });
+        $answered_activities = array_filter($activities, function ($activity) {
+          return $activity['answers'];
+        });
+        $activities = array_slice($answered_activities, 0, $module->getRandomActivitiesCount());
+        if (count($activities) < $module->getRandomActivitiesCount()) {
+          $diff_num = $module->getRandomActivitiesCount() - count($activities);
+          $difference = array_slice($unanswered_activities, 0, $diff_num);
+          array_merge($activities, $difference);
+        }
+      }
     }
     elseif ($typology === 'Course') {
       $activities = opigno_learning_path_get_activities($step['id'], $uid);
@@ -3013,8 +3226,8 @@ function opigno_learning_path_get_step_progress($step, $uid) {
 /**
  * Returns step status.
  */
-function opigno_learning_path_get_step_status($step, $uid) {
-  $progress = opigno_learning_path_get_step_progress($step, $uid);
+function opigno_learning_path_get_step_status($step, $uid, $step_state_counting = FALSE) {
+  $progress = opigno_learning_path_get_step_progress($step, $uid, $step_state_counting);
   if (isset($step['passed']) && $step['passed'] == TRUE) {
     return 'passed';
   }
@@ -3069,7 +3282,7 @@ function opigno_learning_path_progress($group_id, $uid) {
  * @throws \Drupal\Component\Plugin\Exception\PluginException
  * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
-function opigno_learning_path_completed_on($group_id, $uid) {
+function opigno_learning_path_completed_on($group_id, $uid, $only_mandatory = FALSE) {
   // Get all mandatory steps.
   $steps = opigno_learning_path_get_steps($group_id, $uid);
   $mandatory_steps = array_filter($steps, function ($step) {
@@ -3080,16 +3293,23 @@ function opigno_learning_path_completed_on($group_id, $uid) {
 
   // If has mandatory steps.
   if (!empty($mandatory_steps)) {
-    $completed_steps = array_filter($mandatory_steps, function ($step) {
+    $completed_steps = array_filter($steps, function ($step) {
       return $step['completed on'] > 0;
     });
 
-    // If all mandatory steps completed.
-    if (count($mandatory_steps) === count($completed_steps)) {
-      // Get completion time of the last mandatory step.
-      $completed_on = max(array_map(function ($step) {
-        return $step['completed on'];
-      }, $mandatory_steps));
+    // If all steps completed.
+    if (count($steps) === count($completed_steps)) {
+      // Get completion time of the last step.
+      if (!$only_mandatory) {
+        $completed_on = max(array_map(function ($step) {
+          return $step['completed on'];
+        }, $steps));
+      }
+      else {
+        $completed_on = max(array_map(function ($step) {
+          return $step['completed on'];
+        }, $mandatory_steps));
+      }
     }
   }
 
@@ -3265,7 +3485,7 @@ function opigno_learning_path_save_step_achievements(
       ->format(DrupalDateTime::FORMAT)
     : NULL;
 
-  $status = opigno_learning_path_get_step_status($step, $uid);
+  $status = opigno_learning_path_get_step_status($step, $uid, TRUE);
 
   // Check the absence of the user at the live meeting or at the ILT.
   switch ($step['typology']) {
@@ -3569,7 +3789,7 @@ function opigno_learning_path_resumed_step(array $steps) {
     $opigno_module = OpignoModule::load($step['id']);
 
     if ($opigno_module != NULL) {
-      $attempts = $opigno_module->getModuleAttempts($account);
+      $attempts = $opigno_module->getModuleAttempts($account, 'last');
       if ($attempts) {
         // Get last attempt.
         $last_attempt = end($attempts);
@@ -3675,6 +3895,16 @@ function opigno_learning_path_library_info_alter(&$libraries, $extension) {
 }
 
 /**
+ * Implements hook_preprocess_breadcrumb().
+ */
+function opigno_learning_path_preprocess_breadcrumb(&$variables) {
+  $route_name = \Drupal::routeMatch()->getRouteName();
+  if ($route_name == 'opigno_module.module_result') {
+    $variables['#cache']['contexts'][] = 'url';
+  }
+}
+
+/**
  * Implements hook_system_breadcrumb_alter().
  */
 function opigno_learning_path_system_breadcrumb_alter(Breadcrumb &$breadcrumb, RouteMatchInterface $route_match, array $context) {
@@ -3693,7 +3923,7 @@ function opigno_learning_path_system_breadcrumb_alter(Breadcrumb &$breadcrumb, R
     if ($group instanceof Group) {
       $links = $breadcrumb->getLinks();
       // Replace link with link to training homepage.
-      $links[1] = Link::createFromRoute($group->label(), 'entity.group.canonical', ['group' => $group->id()]);;
+      $links[1] = Link::createFromRoute($group->label(), 'entity.group.canonical', ['group' => $group->id()]);
       $breadcrumb = new Breadcrumb();
       $breadcrumb->setLinks($links);
     }

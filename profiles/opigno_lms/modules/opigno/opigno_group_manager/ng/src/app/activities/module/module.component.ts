@@ -78,10 +78,13 @@ export class ModuleComponent implements OnInit {
 
   updateActivities(module) {
     this.updateEvent.emit(module);
-    module.treeViewOpened = false;
-    setTimeout(() => {
-      module.treeViewOpened = true;
-    })
+
+    if (typeof module !== 'undefined') {
+      module.treeViewOpened = false;
+      setTimeout(() => {
+        module.treeViewOpened = true;
+      })
+    }
   }
 
   setActivities() {

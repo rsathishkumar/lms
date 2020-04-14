@@ -13,7 +13,22 @@ use Drupal\Core\Render\Markup;
  * Implements hook_preprocess_template().
  */
 function opigno_lms_preprocess_install_page(&$variables) {
-  $variables['site_version'] = '2.7';
+  $variables['site_version'] = '2.11';
+}
+
+/**
+ * Implements hook_install_tasks().
+ */
+function opigno_lms_install_tasks(&$install_state) {
+  $tasks = [
+    'opigno_lms_dashboard_blocks_update' => [
+      'display_name' => t('Dashboard blocks update'),
+      'display' => FALSE,
+      'type' => 'normal',
+      'function' => 'opigno_dashboard_blocks_update',
+    ],
+  ];
+  return $tasks;
 }
 
 /**

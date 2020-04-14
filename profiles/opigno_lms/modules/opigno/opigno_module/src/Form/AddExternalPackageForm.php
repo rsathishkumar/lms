@@ -4,6 +4,7 @@ namespace Drupal\opigno_module\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\file\Entity\File;
 use Drupal\opigno_module\Controller\ExternalPackageController;
 
@@ -88,7 +89,7 @@ class AddExternalPackageForm extends FormBase {
 
     // Prepare folder.
     $temporary_file_path = !$is_ppt ? 'public://external_packages' : 'public://' . ExternalPackageController::getPptConversionDir();
-    file_prepare_directory($temporary_file_path, FILE_CREATE_DIRECTORY);
+    \Drupal::service('file_system')->prepareDirectory($temporary_file_path, FileSystemInterface::MODIFY_PERMISSIONS | FileSystemInterface::CREATE_DIRECTORY);
 
     // Prepare file validators.
     $extensions = !$is_ppt ? ['h5p zip'] : ['ppt pptx'];
@@ -98,7 +99,8 @@ class AddExternalPackageForm extends FormBase {
     // Validate file.
     if ($is_ppt) {
       $ppt_dir = ExternalPackageController::getPptConversionDir();
-      $public_files_real_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+      $file_default_scheme = \Drupal::config('system.file')->get('default_scheme');
+      $public_files_real_path = \Drupal::service('file_system')->realpath($file_default_scheme . "://");
       $ppt_dir_real_path = $public_files_real_path . '/' . $ppt_dir;
 
       $file = file_save_upload($file_field, $validators, $temporary_file_path, NULL, FILE_EXISTS_REPLACE);
@@ -115,7 +117,8 @@ class AddExternalPackageForm extends FormBase {
       if (!empty($file_new)) {
         // Actions on ppt(x) file upload.
         $ppt_dir = ExternalPackageController::getPptConversionDir();
-        $public_files_real_path = \Drupal::service('file_system')->realpath(file_default_scheme() . "://");
+        $file_default_scheme = \Drupal::config('system.file')->get('default_scheme');
+        $public_files_real_path = \Drupal::service('file_system')->realpath($file_default_scheme . "://");
         $ppt_dir_real_path = $public_files_real_path . '/' . $ppt_dir;
 
         $this->logger('ppt_converter')->notice('$ppt_dir_real_path: ' . $ppt_dir_real_path);
@@ -149,9 +152,32 @@ class AddExternalPackageForm extends FormBase {
     if (!$file[0]) {
       return $form_state->setRebuild();
     };
+
+    // Validate Scorm and Tincan packages.
+    $this->validateZipPackage($form, $form_state, $file[0]);
+
     // Set file id in form state for loading on submit.
     $form_state->set('package', $file[0]->id());
 
+  }
+
+  private function validateZipPackage($form, FormStateInterface $form_state, File $file) {
+    /* @var \Drupal\opigno_scorm\OpignoScorm $scorm_controller */
+    $scorm_controller = \Drupal::service('opigno_scorm.scorm');
+    $file_extension = substr(strrchr($file->getFilename(), '.'), 1);
+    if ($file_extension == 'zip') {
+      $scorm_controller->unzipPackage($file);
+      $extract_dir = 'public://opigno_scorm_extracted/scorm_' . $file->id();
+      // This is a standard: these files must always be here.
+      $scorm_file = $extract_dir . '/imsmanifest.xml';
+      $tincan_file = $extract_dir . '/tincan.xml';
+      if (!file_exists($scorm_file) && !file_exists($tincan_file)) {
+        $form_state->setError(
+          $form['package'],
+          $this->t('Your file is not recognized as a valid SCORM, TinCan, or H5P package.')
+        );
+      }
+    }
   }
 
   /**

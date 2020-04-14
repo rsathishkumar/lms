@@ -50,10 +50,14 @@ function opigno_group_manager_update_8002() {
   $definition_manager->installFieldStorageDefinition('required_activities', 'opigno_group_link', 'opigno_group_link', $field);
 }
 
+function opigno_group_manager_update_8003() {
+  // Inapplicable update.
+}
+
 /**
  * Update required activities field. Set default value to NULL.
  */
-function opigno_group_manager_update_8003() {
+function opigno_group_manager_update_8004() {
   $definition = \Drupal::entityTypeManager()->getDefinition('opigno_group_link');
 
   $schema = \Drupal::database()->schema();
@@ -64,4 +68,11 @@ function opigno_group_manager_update_8003() {
       'not null' => FALSE,
     ]);
   }
+}
+
+/**
+ * Enable Serialization module for training objects export-import can work.
+ */
+function opigno_group_manager_update_8005() {
+  \Drupal::service('module_installer')->install(['serialization']);
 }

@@ -12,6 +12,7 @@ use Drupal\opigno_learning_path\LearningPathValidator;
 use Drupal\opigno_module\Entity\OpignoActivity;
 use Drupal\opigno_module\Entity\OpignoModule;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -44,7 +45,11 @@ class LearningPathContentController extends ControllerBase {
    */
   public function coursesIndex(Group $group, Request $request) {
     // Check if user has uncompleted steps.
-    LearningPathValidator::stepsValidate($group);
+    $validation = LearningPathValidator::stepsValidate($group);
+
+    if ($validation instanceof RedirectResponse) {
+      return $validation;
+    }
 
     $group_type = $group->get('type')->getString();
 
@@ -72,7 +77,11 @@ class LearningPathContentController extends ControllerBase {
    */
   public function modulesIndex(Group $group, Request $request) {
     // Check if user has uncompleted steps.
-    LearningPathValidator::stepsValidate($group);
+    $validation = LearningPathValidator::stepsValidate($group);
+
+    if ($validation instanceof RedirectResponse) {
+      return $validation;
+    }
 
     $tempstore = \Drupal::service('user.private_tempstore')->get('opigno_group_manager');
     $next_link = $this->getNextLink($group);

@@ -18,6 +18,7 @@ import { AppComponent } from './app.component';
 import { AppService } from './app.service';
 import { AddComponent } from './add/add.component';
 import { UpdateComponent } from './update/update.component';
+import { MeetingsListComponent } from './meetings/meetings.component';
 import { DeleteComponent } from './delete/delete.component';
 import { LinkComponent } from './link/link.component';
 import { LinkAdminComponent } from './link/admin.component';
@@ -66,6 +67,7 @@ import { AddActivitiesBankComponent } from './activities/activities-bank/activit
     EntityComponent,
     AddComponent,
     UpdateComponent,
+    MeetingsListComponent,
     DeleteComponent,
     LinkComponent,
     LinkAdminComponent,

@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\ggroup\Kernel;
 
-use Drupal\group\Entity\Group;
 use Drupal\group\Entity\GroupContent;
 use Drupal\Tests\group\Kernel\GroupKernelTestBase;
 
@@ -38,7 +37,7 @@ class SubgroupTest extends GroupKernelTestBase {
    */
   protected function setUp() {
     parent::setUp();
-    
+
     $this->installConfig(['ggroup_test_config']);
     $this->installSchema('ggroup', 'group_graph');
 
@@ -85,16 +84,15 @@ class SubgroupTest extends GroupKernelTestBase {
 
   /**
    * Create group and attach subgroup to group.
-   * 
+   *
    * @return array
-   *  Return group and subgroup.
+   *   Return group and subgroup.
    */
   private function addGroup() {
     /* @var Group $group */
     $group = $this->createGroupByType($this->groupType->id(), ['uid' => $this->getCurrentUser()->id()]);
     /* @var Group $subGroup */
     $sub_group = $this->createGroupByType($this->subGroupType->id(), ['uid' => $this->getCurrentUser()->id()]);
-
 
     $group->addContent($sub_group, 'subgroup:' . $this->subGroupType->id());
 
@@ -106,19 +104,18 @@ class SubgroupTest extends GroupKernelTestBase {
    *
    * @param string $type
    *   Group type.
-   *
    * @param array $values
    *   (optional) The values used to create the entity.
    *
-   * @return Group
+   * @return \Drupal\group\Entity\Group
    *   The created group entity.
    */
-  private function createGroupByType($type, $values = []) {
+  private function createGroupByType($type, array $values = []) {
     /* @var Group $group */
     $group = $this->entityTypeManager->getStorage('group')->create($values + [
-        'type' => $type,
-        'label' => $this->randomMachineName(),
-      ]);
+      'type' => $type,
+      'label' => $this->randomMachineName(),
+    ]);
 
     $group->enforceIsNew();
     $group->save();

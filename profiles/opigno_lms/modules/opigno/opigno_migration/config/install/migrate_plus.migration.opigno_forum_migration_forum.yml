@@ -10,7 +10,7 @@ source:
   node_type: forum
 migration_dependencies:
   required:
-    - opigno_forum_migration_term
+    - opigno_taxonomy_term
     - opigno_users
 process:
   nid: tnid
@@ -24,7 +24,9 @@ process:
     plugin: default_value
     default_value: forum
   'body/value': body_value
-  'body/format': body_format
+  'body/format':
+    plugin: default_value
+    default_value: basic_html
   uid:
       plugin: migration
       migration: opigno_users
@@ -37,9 +39,6 @@ process:
   revision_uid: revision_uid
   revision_log: log
   revision_timestamp: timestamp
-  taxonomy_forums:
-      plugin: migration
-      migration: opigno_forum_migration_term
-      source: taxonomy_forums
+  taxonomy_forums: taxonomy_forums_tid
 destination:
   plugin: entity:node

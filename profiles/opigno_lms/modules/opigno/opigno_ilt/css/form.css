@@ -4,6 +4,8 @@
   height: 280px;
   padding: 30px;
   overflow-y: auto;
+  max-width: 250px;
+  margin: 0;
 }
 
 #opigno-ilt-create-form .multiselect-btns ul {

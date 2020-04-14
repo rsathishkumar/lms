@@ -258,6 +258,7 @@ class UserModuleStatus extends ContentEntityBase implements UserModuleStatusInte
     $max_score = 0;
     /* @var $db_connection \Drupal\Core\Database\Connection */
     $db_connection = \Drupal::service('database');
+    /* @var $module \Drupal\opigno_module\Entity\OpignoModule */
     $module = $this->getModule();
     $score_query = $db_connection->select('opigno_module_relationship', 'omr')
       ->fields('omr', ['max_score', 'activity_status'])
@@ -266,12 +267,8 @@ class UserModuleStatus extends ContentEntityBase implements UserModuleStatusInte
     $score_results = $score_query->execute()->fetchAll();
     if (!empty($score_results)) {
       if ($module->getRandomization() == 2) {
-        foreach ($score_results as $score_result) {
-          if ($score_result->activity_status == 1) {
-            $max_score += $score_result->max_score;
-          }
-        }
-        $max_score += $module->getRandomActivitiesCount() * $module->getRandomActivityScore();
+        // Get max score only for answered random activities.
+        $max_score += $this->getRandomActivitiesMaxScore();
       }
       else {
         foreach ($score_results as $score_result) {
@@ -318,7 +315,7 @@ class UserModuleStatus extends ContentEntityBase implements UserModuleStatusInte
     $module = $this->getModule();
     $user = $this->getOwner();
     // For each attempt, check the score and get the best one.
-    $user_attempts = $module->getModuleAttempts($user);
+    $user_attempts = $module->getModuleAttempts($user, 'best');
     if (!$user_attempts) {
       return 0;
     }
@@ -386,6 +383,43 @@ class UserModuleStatus extends ContentEntityBase implements UserModuleStatusInte
     $this->setEvaluated($attempt_evaluated);
     $this->save();
     return $this;
+  }
+
+  /**
+   * Calculate max score for the Module with enabled "Random activities" option.
+   */
+  public function getRandomActivitiesMaxScore() {
+    $max_score = 0;
+    /* @var $db_connection \Drupal\Core\Database\Connection */
+    $db_connection = \Drupal::service('database');
+    /* @var $module \Drupal\opigno_module\Entity\OpignoModule */
+    $module = $this->getModule();
+    $random_activities_count = $module->getRandomActivitiesCount();
+    // Get activities from answers.
+    $activities_query = $db_connection->select('opigno_answer_field_data', 'oafd')
+      ->fields('oafd', ['activity'])
+      ->condition('oafd.user_id', $this->getOwnerId())
+      ->condition('oafd.user_module_status', $this->id())
+      ->range(0, $random_activities_count);
+    $results = $activities_query->execute()->fetchAllAssoc('activity');
+
+    // Get max score for activities.
+    if ($aids = array_keys($results)) {
+      $score_query = $db_connection->select('opigno_module_relationship', 'omr')
+        ->fields('omr', ['max_score', 'activity_status'])
+        ->condition('omr.parent_id', $module->id())
+        ->condition('omr.child_id', $aids, 'IN');
+      $score_results = $score_query->execute()->fetchAll();
+      if (!empty($score_results)) {
+        foreach ($score_results as $score_result) {
+          if ($score_result->activity_status == 1) {
+            $max_score += $score_result->max_score;
+          }
+        }
+      }
+    }
+
+    return $max_score;
   }
 
   /**

@@ -24,10 +24,10 @@ class SubgroupFormStep1 extends GroupForm {
   /**
    * Constructs a SubgroupFormStep2 object.
    *
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager.
    * @param \Drupal\user\PrivateTempStoreFactory $temp_store_factory
    *   The temporary store factory.
+   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
+   *   The entity manager.
    */
   public function __construct(PrivateTempStoreFactory $temp_store_factory, EntityManagerInterface $entity_manager) {
     parent::__construct($temp_store_factory, $entity_manager);

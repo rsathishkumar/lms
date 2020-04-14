@@ -11,10 +11,10 @@ filters:
   filter_html:
     id: filter_html
     provider: filter
-    status: true
+    status: false
     weight: -10
     settings:
-      allowed_html: '<a href hreflang> <em> <strong> <cite> <blockquote cite> <code> <ul type> <ol start type> <li> <dl> <dt> <dd> <h2 id> <h3 id> <h4 id> <h5 id> <h6 id> <img src alt data-entity-type data-entity-uuid>'
+      allowed_html: '<em> <strong> <cite> <blockquote cite> <code> <ul type> <ol start type> <li> <dl> <dt> <dd> <h2 id> <h3 id> <h4 id> <h5 id> <h6 id> <img src alt data-entity-type data-entity-uuid style> <a href hreflang data-entity-type data-entity-uuid>'
       filter_html_help: true
       filter_html_nofollow: false
   token_filter:
@@ -22,4 +22,5 @@ filters:
     provider: token_filter
     status: true
     weight: 0
-    settings: {  }
+    settings:
+      replace_empty: false

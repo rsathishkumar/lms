@@ -122,7 +122,7 @@ class MeetingForm extends ContentEntityForm {
       $date_field_def,
       array_merge(OpignoDateRangeWidget::defaultSettings(), [
         'value_format' => 'Y-m-d H:i:s',
-        'value_timezone' => drupal_get_user_timezone(),
+        'value_timezone' => date_default_timezone_get(),
         'value_placeholder' => t('mm/dd/yyyy'),
       ]),
       []
@@ -272,12 +272,12 @@ class MeetingForm extends ContentEntityForm {
     }
 
     $start_date_value = isset($start_date)
-      ? $start_date->setTimezone(new \DateTimeZone(drupal_get_user_timezone()))
+      ? $start_date->setTimezone(new \DateTimeZone(date_default_timezone_get()))
         ->format(DrupalDateTime::FORMAT)
       : NULL;
 
     $end_date_value = isset($end_date)
-      ? $end_date->setTimezone(new \DateTimeZone(drupal_get_user_timezone()))
+      ? $end_date->setTimezone(new \DateTimeZone(date_default_timezone_get()))
         ->format(DrupalDateTime::FORMAT)
       : NULL;
 
@@ -355,8 +355,8 @@ class MeetingForm extends ContentEntityForm {
         '%meeting' => $meeting_link,
       ]);
 
-      if (empty($options)) {
-        $memberships = $entity->getTraining()->getMembers();
+      if (empty($options) && $training = $entity->getTraining()) {
+        $memberships = $training->getMembers();
         if ($memberships) {
           foreach ($memberships as $membership) {
             $user = $membership->getUser();

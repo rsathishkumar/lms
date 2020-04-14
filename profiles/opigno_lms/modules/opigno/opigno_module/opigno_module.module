@@ -11,6 +11,7 @@ use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\group\Entity\Group;
 use Drupal\h5p\H5PDrupal\H5PDrupal;
 use Drupal\opigno_group_manager\OpignoGroupContext;
@@ -20,6 +21,12 @@ use Drupal\views\ViewExecutable;
 use Drupal\opigno_module\Controller\ExternalPackageController;
 use Drupal\Core\Access\AccessResultAllowed;
 use Drupal\opigno_module\Entity\OpignoActivity;
+use Drupal\opigno_learning_path\Entity\LPModuleAvailability;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\HtmlCommand;
+use Drupal\Core\Ajax\AppendCommand;
+use Drupal\Core\Render\Element\StatusMessages;
+use Drupal\Core\Ajax\SettingsCommand;
 
 define('OPIGNO_MODULE_PPT_TEMP_DIR', 'external_packages_ppt');
 
@@ -80,8 +87,8 @@ function opigno_module_theme() {
     'progress' => NULL,
     'home_link' => NULL,
   ];
-  $theme['page__opigno_module__activity'] = [
-    'base hook' => 'page',
+  $theme['block__opigno_module_learning_path_progress_block'] = [
+    'base hook' => 'block',
     'progress' => NULL,
     'home_link' => NULL,
   ];
@@ -227,6 +234,7 @@ function opigno_module_preprocess_html(&$variables) {
  * Implements hook_form_alter().
  */
 function opigno_module_form_alter(&$form, FormStateInterface &$form_state, $form_id) {
+
   $build_info = $form_state->getBuildInfo();
   $route_name = \Drupal::routeMatch()->getRouteName();
   $moduleHandler = \Drupal::service('module_handler');
@@ -251,10 +259,10 @@ function opigno_module_form_alter(&$form, FormStateInterface &$form_state, $form
     $target_skill = ($entity->get('parent')->getValue()[0]['target_id'] == 0) ? TRUE : FALSE;
 
     if ($entity->isNew()) {
-      $description = t('Check this option if you are creating a new skill tree, with a target skill on top of it. 
-          You will then be able to add several skills to this tree and organize them with a hierarchy. 
-          This target skill can be used in modules using skill system, 
-          so that the module will check that users master all the skills in the related skill tree. 
+      $description = t('Check this option if you are creating a new skill tree, with a target skill on top of it.
+          You will then be able to add several skills to this tree and organize them with a hierarchy.
+          This target skill can be used in modules using skill system,
+          so that the module will check that users master all the skills in the related skill tree.
           But you won’t be able to assign this skill to activities (only activities that are not target skills can be assigned to activities).');
 
       $form['target_skill'] = [
@@ -525,6 +533,62 @@ function opigno_module_form_alter(&$form, FormStateInterface &$form_state, $form
   }
 }
 
+
+/**
+ * Ajaxify activity bank form.
+ */
+function opigno_module_form_views_form_opigno_activities_bank_lp_interface_default_alter(&$form, FormStateInterface &$form_state, $form_id) {
+  $selector = 'ajaxify_submit_form_' . $form_id;
+  $form['#prefix'] = '<div id="' . $selector . '">';
+  $form['#suffix'] = '</div>';
+
+  $form['actions']['submit']['#ajax'] = [
+    'callback' => 'opigno_module_views_form_opigno_activities_bank_lp_interface_default_ajax_callback',
+    'wrapper' => $selector,
+    'effect' => 'fade',
+  ];
+}
+
+/**
+ * Implements opigno_module_views_form_opigno_activities_bank_lp_interface_default_ajax_callback().
+ */
+function opigno_module_views_form_opigno_activities_bank_lp_interface_default_ajax_callback($form, FormStateInterface & $form_state) {
+  $form_id = $form['form_id']['#value'];
+
+  $selector = 'ajaxify_submit_form_' . $form_id;
+
+  // Used to display results of drupal_set_message() calls.
+  $messages = StatusMessages::renderMessages(NULL);
+
+  // Create AJAX Response object.
+  $response = new AjaxResponse();
+
+  $output = [];
+
+  if ($form_state->getErrors()) {
+    $output[] = $messages;
+    $response->addCommand(new AppendCommand($render_selector, $output));
+
+    $command = new SettingsCommand([
+      'closeActivityBankPanel' => FALSE,
+    ], TRUE);
+  }
+  else {
+    // Default reload the page printing the status message.
+    $output[] = $messages;
+    $output[] = $form;
+    $response->addCommand(new HtmlCommand($render_selector, $output));
+
+    $command = new SettingsCommand([
+      'closeActivityBankPanel' => TRUE,
+    ], TRUE);
+  }
+
+  $response->addCommand($command);
+
+  return $response;
+}
+
 /**
  * Ajax form submit.
  */
@@ -537,6 +601,9 @@ function _skill_level_names_ajax(array &$form, FormStateInterface $form_state) {
  */
 function _skills_term_validation(array &$form, FormStateInterface $form_state) {
   $values = $form_state->getValues();
+  $values['parent'] = [$values['parent'] => $values['parent']];
+  $form_state->setValues($values);
+
   if ($values['parent'] == 0 && $values['target_skill'] == 0) {
     $form_state->setErrorByName('parent', t('Please select parent tree or parent skill.'));
   }
@@ -679,6 +746,8 @@ function opigno_module_page_attachments(array &$page) {
   if (opigno_module_is_activity_route()) {
     $page['#attached']['library'][] = 'opigno_module/activity';
   }
+
+  $page['#attached']['library'][] = 'opigno_module/menu_icon';
 }
 
 /**
@@ -718,7 +787,7 @@ function opigno_module_page_top(array &$page_top) {
   if (empty($interface->loadLibraries())) {
     $h5p_default_path = $interface->getOption('default_path', 'h5p');
     $temporary_file_path = 'public://' . $h5p_default_path . '/temp/' . uniqid('h5p-');
-    file_prepare_directory($temporary_file_path, FILE_CREATE_DIRECTORY);
+    \Drupal::service('file_system')->prepareDirectory($temporary_file_path, FileSystemInterface::MODIFY_PERMISSIONS | FileSystemInterface::CREATE_DIRECTORY);
     // Load libraries.h5p.
     $file_content = file_get_contents(drupal_get_path("profile", "opigno_lms") . "/h5plib/libraries.h5p");
     $file = file_save_data($file_content, $temporary_file_path . '.h5p', FILE_EXISTS_REPLACE);
@@ -758,6 +827,10 @@ function opigno_module_views_query_alter(ViewExecutable $view, QueryPluginBase $
   if ($view->id() === 'opigno_score_modules') {
     $user = \Drupal::currentUser();
     $roles = $user->getRoles();
+
+    if ($user->hasPermission('evaluate modules')) {
+      return;
+    }
 
     if (in_array('administrator', $roles)
       || in_array('user_manager', $roles)) {
@@ -950,7 +1023,8 @@ function opigno_module_form_system_file_system_settings_submit($form, FormStateI
  */
 function opigno_module_get_user_module_score(OpignoModule $opigno_module, AccountInterface $account) {
   $which_score_keep = $opigno_module->getKeepResultsOption();
-  $attempts = $opigno_module->getModuleAttempts($account);
+  $attempts = $opigno_module->getModuleAttempts($account, 'last');
+
   if (!$attempts) {
     return 0;
   }
@@ -968,7 +1042,6 @@ function opigno_module_get_user_module_score(OpignoModule $opigno_module, Accoun
     case 'all':
       $score = (int) $last_attempt->calculateBestScore();
       break;
-
   }
   // Clamp score.
   $score = max(0, $score);
@@ -1005,19 +1078,36 @@ function opigno_module_entity_operation(\Drupal\Core\Entity\EntityInterface $ent
   }
 
   $entityTypeId = $entity->getEntityTypeId();
-  if ($entityTypeId !== 'opigno_module') {
+  if ($entityTypeId !== 'opigno_module' && $entityTypeId !== 'opigno_activity') {
     return [];
   }
 
-  $operations['duplicate_module'] = array(
-    'title' => t('Duplicate'),
-    'weight' => 15,
-    'url' => Url::fromRoute('opigno_module.duplicate', ['opigno_module' => $entity->id()]),
-  );
+  switch ($entityTypeId) {
+    case 'opigno_module':
+      $operations['duplicate_module'] = array(
+        'title' => t('Duplicate'),
+        'weight' => 15,
+        'url' => Url::fromRoute('opigno_module.duplicate', ['opigno_module' => $entity->id()]),
+      );
+
+      $operations['export_module'] = array(
+        'title' => t('Export'),
+        'weight' => 16,
+        'url' => Url::fromRoute('opigno_module.export.module', ['opigno_module' => $entity->id()]),
+      );
+      break;
+
+    case 'opigno_activity':
+      $operations['export_activity'] = array(
+        'title' => t('Export'),
+        'weight' => 15,
+        'url' => Url::fromRoute('opigno_module.export.activity', ['opigno_activity' => $entity->id()]),
+      );
+      break;
+  }
 
   return $operations;
 }
-
 
 /**
  * Implements hook_ENTITY_TYPE_update().
@@ -1043,6 +1133,29 @@ function opigno_module_opigno_activity_update(Drupal\Core\Entity\EntityInterface
             'child_vid' => $entity->getRevisionId(),
           ])
           ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function opigno_module_entity_delete(EntityInterface $entity) {
+  if ($entity->getEntityTypeId() === 'opigno_group_content' && $entity->getGroupContentTypeId() === 'ContentTypeModule') {
+    $lp_module_availability = LPModuleAvailability::loadByProperties([
+      'group_id' => $entity->getGroup()->id(),
+      'entity_id' => $entity->getEntityId(),
+    ]);
+
+    if ($lp_module_availability) {
+      $lp_module_availability = current($lp_module_availability);
+      try {
+        $lp_module_availability->delete();
+      }
+      catch (\Exception $e) {
+        \Drupal::logger('opigno_module')->error($e->getMessage());
+        \Drupal::messenger()->addMessage($e->getMessage(), 'error');
       }
     }
   }

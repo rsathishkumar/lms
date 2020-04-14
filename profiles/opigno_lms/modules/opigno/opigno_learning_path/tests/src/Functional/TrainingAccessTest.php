@@ -29,7 +29,14 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()]);
 
     $this->drupalGet($url);
-    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->statusCodeEquals(403, 'Authenticated user can not see an main page for unpublished training.');
+
+    // Make training published.
+    $group->set('field_learning_path_published', TRUE);
+    $group->save();
+
+    $this->drupalGet($url);
+    $this->assertSession()->statusCodeEquals(200, 'Authenticated user can see an main page for published training.');
     // Authenticated user need to subscribe first.
     $this->assertSession()->linkExists('Subscribe to training');
     $this->drupalLogout();
@@ -39,9 +46,11 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     $this->drupalGet($url);
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->linkExists('Start');
-    $this->assertSession()->linkExists('Forum');
-    $this->assertSession()->linkExists('Training Content');
-    $this->assertSession()->linkExists('Documents Library');
+
+    // Other links should not be visible for anonymous.
+    $this->assertSession()->linkNotExists('Forum');
+    $this->assertSession()->linkNotExists('Training Content');
+    $this->assertSession()->linkNotExists('Documents Library');
 
     // Test access if training is semi-private.
     $group->set('field_learning_path_visibility', 'semiprivate');
@@ -57,7 +66,8 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     // Check access for anonymous user.
     $this->drupalGet($url);
     $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->linkExists('Subscribe to training');
+    $this->assertSession()->pageTextContains('About this training');
+    $this->assertSession()->linkNotExists('Subscribe to training');
 
     // Test access if training is hidden for anonymous user.
     $group->set('field_anonymous_visibility', 1);
@@ -65,7 +75,7 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
 
     $this->drupalGet($url);
     // Anonymous user should be redirected to login page.
-    $this->assertSession()->buttonExists('Log in');
+    $this->assertSession()->pageTextContains('You are not authorized to access this page');
     // Test access if training is semi-private.
     $group->set('field_learning_path_visibility', 'private');
     $group->save();
@@ -78,8 +88,7 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     // Check access for anonymous user.
     $this->drupalGet($url);
     // Anonymous user should be redirected to login page.
-    $this->assertSession()->buttonExists('Log in');
-
+    $this->assertSession()->pageTextContains('You are not authorized to access this page');
   }
 
   /**
@@ -89,6 +98,7 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     // Test access if training is public.
     $group = $this->createGroup([
       'field_learning_path_visibility' => 'public',
+      'field_learning_path_published' => 1,
     ]);
     // Log out privileged user.
     $this->drupalLogout();
@@ -98,7 +108,7 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     $canonical_path = Url::fromRoute('entity.group.canonical', ['group' => $group->id()]);
 
     // Create authenticated user to check a training access.
-    $user_one = $this->createUser();
+    $user_one = $this->drupalCreateUser();
     $this->drupalLogin($user_one);
 
     // Authenticated user need to subscribe to a training first.
@@ -112,23 +122,22 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     // Authenticated user can start training.
     $this->drupalGet($start_path);
     $this->assertSession()->statusCodeEquals(200, 'Authenticated user can start a public training.');
-    $this->assertSession()->buttonNotExists('Log in');
+    $this->assertSession()->pageTextNotContains('You are not authorized to access this page');
     $this->drupalLogout();
 
     // Anonymous user can't join to a public training and can immediately start.
     $this->drupalGet($subscribe_path);
-    $this->assertSession()->statusCodeEquals(200, 'Anonymous user can not subscribe to a public training. Redirected to login page.');
-    $this->assertSession()->buttonExists('Log in');
+    $this->assertSession()->statusCodeEquals(403, 'Anonymous user can not subscribe to a public training. Redirected to login page.');
+    $this->assertSession()->pageTextContains('You are not authorized to access this page');
     $this->drupalGet($start_path);
     $this->assertSession()->statusCodeEquals(200, 'Anonymous user can start a public training.');
-    $this->assertSession()->buttonNotExists('Log in');
 
     // Test access if a training is semi-private.
     $group->set('field_learning_path_visibility', 'semiprivate');
     $group->save();
 
     // Create authenticated user to check a training access.
-    $user_two = $this->createUser();
+    $user_two = $this->drupalCreateUser();
     $this->drupalLogin($user_two);
 
     // Authenticated user need to subscribe to a training first.
@@ -141,18 +150,16 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
 
     // Authenticated user can start a training.
     $this->drupalGet($start_path);
-    $this->assertSession()->buttonNotExists('Log in');
+    $this->assertSession()->pageTextContains('No first step assigned');
     $this->assertSession()->statusCodeEquals(200, 'Authenticated user can start a semi-private training.');
     $this->drupalLogout();
 
     // Anonymous user can't subscribe to a semi-private training.
     $this->drupalGet($subscribe_path);
-    $this->assertSession()->buttonExists('Log in');
-    $this->assertSession()->statusCodeEquals(200, 'Anonymous user can not subscribe to a semi-private training. Redirected to login page.');
+    $this->assertSession()->statusCodeEquals(403, 'Anonymous user can not subscribe to a semi-private training.');
     // Anonymous user can't start a semi-private training.
     $this->drupalGet($start_path);
-    $this->assertSession()->buttonExists('Log in');
-    $this->assertSession()->statusCodeEquals(200, 'Anonymous user can not start a semi-private training. Redirected to login page.');
+    $this->assertSession()->statusCodeEquals(403, 'Anonymous user can not start a semi-private training.');
 
     // Test access for a training
     // where user need to be accepted by training admin.
@@ -166,6 +173,7 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     $join_button->click();
     $this->drupalGet($start_path);
     $this->assertSession()->statusCodeEquals(403, 'Authenticated user can not start a semi-private training if user validation is required.');
+    $this->drupalLogout();
 
     // Test access if a training is private.
     $group->set('field_learning_path_visibility', 'private');
@@ -173,7 +181,7 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
     LearningPathAccess::setVisibilityFields($group);
 
     // Create authenticated user to check a training access.
-    $user_three = $this->createUser();
+    $user_three = $this->drupalCreateUser();
     $this->drupalLogin($user_three);
 
     // Authenticated user cant to subscribe to a training.
@@ -186,12 +194,10 @@ class TrainingAccessTest extends LearningPathBrowserTestBase {
 
     // Anonymous user can't subscribe to a private training.
     $this->drupalGet($subscribe_path);
-    $this->assertSession()->buttonExists('Log in');
-    $this->assertSession()->statusCodeEquals(200, 'Anonymous user can not subscribe to a private training. Redirected to login page.');
+    $this->assertSession()->statusCodeEquals(403, 'Anonymous user can not subscribe to a private training.');
     // Anonymous user can't start a private training.
     $this->drupalGet($start_path);
-    $this->assertSession()->buttonExists('Log in');
-    $this->assertSession()->statusCodeEquals(200, 'Anonymous user can not start a private training. Redirected to login page.');
+    $this->assertSession()->statusCodeEquals(403, 'Anonymous user can not start a private training.');
 
   }
 

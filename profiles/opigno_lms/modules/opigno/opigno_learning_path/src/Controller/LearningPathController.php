@@ -59,7 +59,7 @@ class LearningPathController extends ControllerBase {
     $user = $this->currentUser();
     $uid = $user->id();
 
-    $status = opigno_learning_path_get_step_status($step, $uid);
+    $status = opigno_learning_path_get_step_status($step, $uid, TRUE);
     switch ($status) {
       case 'pending':
         $markup = '<span class="lp_step_state_pending"></span>' . $this->t('Pending');

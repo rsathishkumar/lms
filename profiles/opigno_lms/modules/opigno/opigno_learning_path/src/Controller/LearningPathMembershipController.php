@@ -4,11 +4,15 @@ namespace Drupal\opigno_learning_path\Controller;
 
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\OpenModalDialogCommand;
+use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBuilderInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\group\Entity\Group;
 use Drupal\user\Entity\User;
+use Drupal\views\Views;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -144,19 +148,31 @@ class LearningPathMembershipController extends ControllerBase {
         ->range(0, 20);
 
       $gids = $query->execute();
-      $groups = Group::loadMultiple($gids);
+      $classes = Group::loadMultiple($gids);
 
-      /** @var \Drupal\group\Entity\Group $group */
-      foreach ($groups as $group) {
-        $id = $group->id();
-        $name = $group->label();
+      $db_connection = \Drupal::service('database');
+      /** @var \Drupal\group\Entity\Group $class */
+      foreach ($classes as $class) {
+        // Check if class already added.
+        $is_class_added = $db_connection->select('group_content_field_data', 'g_c_f_d')
+          ->fields('g_c_f_d', ['id'])
+          ->condition('gid', $group->id())
+          ->condition('entity_id', $class->id())
+          ->condition('type', 'group_content_type_27efa0097d858')
+          ->execute()->fetchField();
 
-        $matches[] = [
-          'value' => "$name (Group #$id)",
-          'label' => "$name (Group #$id)",
-          'type' => 'group',
-          'id' => 'class_' . $id,
-        ];
+        if (!$is_class_added) {
+          // If class haven't added yet.
+          $id = $class->id();
+          $name = $class->label();
+
+          $matches[] = [
+            'value' => "$name (Group #$id)",
+            'label' => "$name (Group #$id)",
+            'type' => 'group',
+            'id' => 'class_' . $id,
+          ];
+        }
       }
     }
 
@@ -179,17 +195,24 @@ class LearningPathMembershipController extends ControllerBase {
       $like_string = '%' . $this->connection->escapeLike($string) . '%';
       // Find users by email or name.
       $query = \Drupal::entityQuery('user')
-        ->condition('uid', 0, '<>');
-      $cond_group = $query
-        ->orConditionGroup()
-        ->condition('mail', $like_string, 'LIKE')
-        ->condition('name', $like_string, 'LIKE');
-      $query = $query
-        ->condition($cond_group)
+        ->condition('uid', 0, '<>')
+        ->condition('name', $like_string, 'LIKE')
         ->sort('name')
         ->range(0, 20);
-
       $uids = $query->execute();
+
+      $count = count($uids);
+
+      if ($count < 20) {
+        $range = 20 - $count;
+        $query = \Drupal::entityQuery('user')
+          ->condition('uid', 0, '<>')
+          ->condition('mail', $like_string, 'LIKE')
+          ->sort('name')
+          ->range(0, $range);
+        $uids = array_merge($uids, $query->execute());
+      }
+
       $users = User::loadMultiple($uids);
 
       /** @var \Drupal\user\Entity\User $user */
@@ -260,6 +283,117 @@ class LearningPathMembershipController extends ControllerBase {
     }
 
     return new JsonResponse($matches);
+  }
+
+  /**
+   * Ajax callback for searching user in a training classes.
+   *
+   * @param \Drupal\group\Entity\Group $group
+   *   Group object.
+   * @param string $class_id
+   *   Class group ID.
+   * @param string $uid
+   *   User ID.
+   *
+   * @return \Drupal\Core\Ajax\AjaxResponse
+   *   Ajax command or empty.
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   */
+  public function findGroupMember(Group $group, $class_id, $uid) {
+    $response = new AjaxResponse();
+
+    if ($class_id === '0') {
+      $content_types = [
+        'group_content_type_27efa0097d858',
+        'group_content_type_af9d804582e19',
+        'learning_path-group_membership',
+      ];
+
+      $group_content_ids = \Drupal::entityQuery('group_content')
+        ->condition('gid', $group->id())
+        ->condition('type', $content_types, 'IN')
+        ->sort('changed', 'DESC')
+        ->execute();
+      $content = \Drupal::entityTypeManager()
+        ->getStorage('group_content')
+        ->loadMultiple($group_content_ids);
+
+      $users = [];
+      $classes = [];
+
+      /** @var \Drupal\group\Entity\GroupContentInterface $item */
+      foreach ($content as $item) {
+        $entity = $item->getEntity();
+        if ($entity === NULL) {
+          continue;
+        }
+
+        $type = $entity->getEntityTypeId();
+        $bundle = $entity->bundle();
+
+        if ($type === 'user') {
+          $users[$entity->id()] = [
+            'group content' => $item,
+            'entity' => $entity,
+          ];
+        }
+        elseif ($type === 'group' && $bundle === 'opigno_class') {
+          $classes[$entity->id()] = [
+            'group content' => $item,
+            'entity' => $entity,
+          ];
+        }
+      }
+
+      if ($classes) {
+        foreach ($classes as $class) {
+          $view_id = 'opigno_group_members_table';
+          $display = 'group_members_block';
+          $args = [$class['entity']->id()];
+
+          $members_view = Views::getView($view_id);
+          if (is_object($members_view)) {
+            $members_view->storage->set('group_members', array_keys($users));
+            $members_view->setArguments($args);
+            $members_view->setDisplay($display);
+            $members_view->setItemsPerPage(0);
+            $members_view->execute();
+            if (!empty($members_view->result)) {
+              foreach ($members_view->result as $key => $item) {
+                $member = $item->_entity->getEntity();
+                if ($member->id() == $uid) {
+                  $display_default = $members_view->storage->getDisplay('default');
+                  $per_page = $display_default["display_options"]["pager"]["options"]["items_per_page"];
+                  $current_page = intdiv($key, $per_page);
+                  $class_id = $class['entity']->id();
+                  break 2;
+                }
+              }
+            }
+          }
+        }
+
+        if (isset($current_page)) {
+          $selector = '#class-' . $class_id . ' .views-element-container';
+          $members_view = Views::getView($view_id);
+          if (is_object($members_view)) {
+            $members_view->storage->set('group_members', array_keys($users));
+            $members_view->setArguments($args);
+            $members_view->setDisplay($display);
+            $members_view->setCurrentPage($current_page);
+            $members_view->preExecute();
+            $members_view->execute();
+            $members_view_renderable = $members_view->buildRenderable($display, $args);
+
+            $response->addCommand(new ReplaceCommand($selector, $members_view_renderable));
+          }
+        }
+      }
+    }
+
+    return $response;
   }
 
   /**
@@ -419,9 +553,9 @@ class LearningPathMembershipController extends ControllerBase {
         ->invalidateTags($tags);
 
       // Set notification.
-      opigno_set_message($uid, t('Enrollment validated to a new training @name', [
-        '@name' => $group->label(),
-      ]));
+      $message = $this->t('Enrollment validated to a new training "@name"', ['@name' => $group->label()]);
+      $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()])->toString();
+      opigno_set_message($uid, $message, $url);
 
       // Send email.
       $module = 'opigno_learning_path';

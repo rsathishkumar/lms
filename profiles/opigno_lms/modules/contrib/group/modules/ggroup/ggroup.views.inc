@@ -1,21 +1,22 @@
 <?php
 
 /**
- * Views alteration.
+ * @file
+ * Views alterations for group_graph.
  */
 
 /**
-* Implements hook_views_data().
-*/
+ * Implements hook_views_data().
+ */
 function ggroup_views_data() {
-   $data = [];
+  $data = [];
 
-   $data['group_graph'] = [];
-   $data['group_graph']['table'] = [];
-   $data['group_graph']['table']['group'] = t('Group Graph table');
-   $data['group_graph']['table']['provider'] = 'ggroup';
+  $data['group_graph'] = [];
+  $data['group_graph']['table'] = [];
+  $data['group_graph']['table']['group'] = t('Group Graph table');
+  $data['group_graph']['table']['provider'] = 'ggroup';
 
-   return $data;
+  return $data;
 }
 
 /**

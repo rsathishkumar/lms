@@ -62,20 +62,15 @@ class LearningPathValidator {
     }
 
     if (!$is_valid && ($redirect_step === NULL || $redirect_step >= 4)) {
-      $redirect_step = 4;
-
-      // Show message only if user click on "next" button from current route.
-      $current_route = \Drupal::service('current_route_match');
-      $current_step = (int) $current_route->getParameter('current');
-      if ($current_step === $redirect_step) {
+      if ($module->getSkillsActive()) {
+        $is_valid = TRUE;
+      }
+      else {
+        $redirect_step = 4;
         $messenger = \Drupal::messenger();
         $messenger->addError(t('Please, add at least one activity to @module module!', [
           '@module' => $module->label(),
         ]));
-      }
-
-      if ($module->getSkillsActive()) {
-        $is_valid = TRUE;
       }
     }
 
@@ -129,9 +124,9 @@ class LearningPathValidator {
       return TRUE;
     }
 
-    // Step 1 doesn't need validation because it has form validation.
+    // Steps 1 and 2 don't need validation.
     $current_step = (int) opigno_learning_path_get_current_step();
-    if ($current_step === 1) {
+    if ($current_step === 1 || $current_step === 2) {
       return TRUE;
     };
 
@@ -142,11 +137,7 @@ class LearningPathValidator {
     if (empty($contents)) {
       // Learning path is empty.
       $redirect_step = 2;
-
-      // Show message only if user click on "next" button from current route.
-      if ($current_route_step === $redirect_step) {
-        $messenger->addError(t('Please, add some course or module!'));
-      }
+      $messenger->addError(t('Please, add some course or module!'));
     }
     else {
       // Learning path is created and not empty.
@@ -161,14 +152,10 @@ class LearningPathValidator {
       $has_mandatory = self::hasMandatoryItem($contents);
       if (!$has_mandatory) {
         $redirect_step = 2;
-
-        // Show message only if user click
-        // on "next" button from current route.
-        if ($current_route_step === $redirect_step) {
-          $messenger->addError(t('At least one entity must be mandatory!'));
-        }
+        $messenger->addError(t('At least one entity must be mandatory!'));
       }
-      else {
+      elseif($current_route_name != 'opigno_learning_path.learning_path_modules'
+          && $current_route_step != 2 && $current_route_step != 3) {
         foreach ($contents as $content) {
           $type_id = $content->getGroupContentTypeId();
           switch ($type_id) {

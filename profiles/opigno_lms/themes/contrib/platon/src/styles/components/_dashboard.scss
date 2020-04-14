@@ -313,10 +313,7 @@ app-root.dashboard {
   }
 }
 
-div#block-dashboard-views-block-latest-active-trainings-block,
-div#block-dashboard-views-block-opigno-notifications-block-unread-dashboard,
-div#block-dashboard-views-block-private-message-block-dashboard,
-div#block-dashboard-views-block-opigno-group-members-block-pending {
+div[id^="block-dashboard-views-block-"] {
   h2 {
     &::before {
       content: '';
@@ -342,7 +339,8 @@ div#block-dashboard-views-block-opigno-group-members-block-pending {
     }
 
     ul li {
-      a {
+      a,
+      span.button {
         @include make-button(#fff, $light-blue);
         color: $body-color;
       }
@@ -352,6 +350,15 @@ div#block-dashboard-views-block-opigno-group-members-block-pending {
       }
     }
   }
+}
+
+div#block-dashboard-views-block-comments-recent-block-1 .views-field-changed {
+  padding-left: 2rem;
+  margin-top: 0.25rem;
+}
+
+div#block-dashboard-views-block-who-s-online-who-s-online-block .view-header {
+  margin-bottom: 0.5rem;
 }
 
 div#block-dashboard-views-block-latest-active-trainings-block {

@@ -87,6 +87,15 @@ class OpignoNotification extends ContentEntityBase implements OpignoNotification
         'default_value' => 0,
       ]);
 
+    $fields['url'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Url'))
+      ->setDescription(t('The url string for notification entity.'))
+      ->setSettings([
+        'max_length' => 50,
+      ])
+      ->setInitialValue('/notifications')
+      ->setDefaultValue('/notifications');
+
     return $fields;
   }
 
@@ -119,7 +128,7 @@ class OpignoNotification extends ContentEntityBase implements OpignoNotification
 
     $query = \Drupal::entityQuery('opigno_notification');
     $query->condition('uid', $account->id());
-    $query->condition('has_read', FALSE);$query->count();
+    $query->condition('has_read', FALSE);
     $query->count();
     $result = $query->execute();
 
@@ -199,6 +208,27 @@ class OpignoNotification extends ContentEntityBase implements OpignoNotification
    */
   public function setHasRead($value) {
     $this->set('has_read', $value);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getUrl() {
+    $value = $this->get('url')->getValue();
+
+    if (!isset($value)) {
+      return '/notifications';
+    }
+
+    return $value[0]['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUrl($value) {
+    $this->set('url', $value);
     return $this;
   }
 

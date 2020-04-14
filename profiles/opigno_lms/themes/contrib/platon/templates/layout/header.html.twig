@@ -42,9 +42,11 @@
             {% if upcoming_ilts_count %}
               <div id="ilts-wrapper">
                 {% for ilt in upcoming_ilts %}
-                  <a href="{{ ilt['link'] }}" class="dropdown-item">
-                    <span>{{ ilt['title'] }}</span>
-                  </a>
+                  <div class="dropdown-item notification">
+                    <a href="{{ ilt['link'] }}">
+                      <span>{{ ilt['title'] }}</span>
+                    </a>
+                  </div>
                 {% endfor %}
               </div>
             {% else %}
@@ -71,9 +73,11 @@
             {% if upcoming_live_meetings_count %}
               <div id="live-meetings-wrapper">
                 {% for meeting in upcoming_live_meetings %}
-                  <a href="{{ meeting['link'] }}" class="dropdown-item">
-                    <span>{{ meeting['title'] }}</span>
-                  </a>
+                  <div class="dropdown-item notification">
+                    <a href="{{ meeting['link'] }}">
+                      <span>{{ meeting['title'] }}</span>
+                    </a>
+                  </div>
                 {% endfor %}
               </div>
             {% else %}
@@ -213,7 +217,7 @@
 {% endif %}
 
 {% if page.menu %}
-  <div id="menu-wrapper" role="complementary">
+  <div id="menu-wrapper" class="container" role="complementary">
     <div class="bg-faded">
       {{ page.menu }}
       <div class="d-md-none">

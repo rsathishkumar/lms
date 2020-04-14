@@ -5,9 +5,11 @@
  * Contains opigno_dashboard.module.
  */
 
+use Drupal\block\Entity\Block;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
+use Drupal\opigno_dashboard\BlockService;
 
 define('OPIGNO_DASHBOARD_DEFAULT_CONFIG', '{"1":[{"admin_label":"Latest active trainings","id":"views_block:latest_active_trainings-block"}, {"admin_label":"Private Message: Dashboard - Last Threads","id":"views_block:private_message-block_dashboard"}],"2":[{"admin_label":"Opigno calendar block","id":"views_block:opigno_calendar-month_block"},{"admin_label":"Opigno Notifications: Dashboard - Unread Notifications","id":"views_block:opigno_notifications-block_unread_dashboard"}],"3":[]}');
 
@@ -80,7 +82,15 @@ function opigno_dashboard_preprocess_region(&$variables) {
 
     $variables['default_columns'] = !empty($columns) ? $columns : 3;
 
-    $variables['tabs'] = menu_local_tabs();
+    /** @var \Drupal\Core\Menu\LocalTaskManagerInterface $manager */
+    $manager = \Drupal::service('plugin.manager.menu.local_task');
+    $primary = $manager->getLocalTasks(\Drupal::routeMatch()->getRouteName(), 0);
+    $secondary = $manager->getLocalTasks(\Drupal::routeMatch()->getRouteName(), 1);
+    $variables['tabs'] = [
+      '#theme' => 'menu_local_tasks',
+      '#primary' => $primary ?: [],
+      '#secondary' => $secondary ?: [],
+    ];
   }
 }
 
@@ -121,6 +131,9 @@ function opigno_dashboard_form_user_login_form_alter(&$form, FormStateInterface 
 }
 
 function opigno_dashboard_user_login_form_submit($form, FormStateInterface $form_state) {
+  // Redirect user to the dashboard page.
+  $form_state->setRedirectUrl(Url::fromRoute('<front>'));
+
   $route = \Drupal::routeMatch();
   // Restrict by route for avoid issues with REST ect.
   if ($route->getRouteName() == 'user.login') {
@@ -131,6 +144,83 @@ function opigno_dashboard_user_login_form_submit($form, FormStateInterface $form
       $form_state->setRedirectUrl($url);
     }
   }
-  // Redirect user to the dashboard page.
-  $form_state->setRedirectUrl(Url::fromRoute('<front>'));
+}
+
+/**
+ * Updates dashboard blocks with Drupal way machine names.
+ */
+function opigno_dashboard_blocks_update() {
+  $blocks_ids = [
+    'views_block:opigno_group_members-block_pending',
+    'views_block:comments_recent-block_1',
+    'views_block:content_recent-block_1',
+    'views_block:latest_active_trainings-block',
+    'views_block:opigno_calendar-month_block',
+    'views_block:opigno_notifications-block_unread_dashboard',
+    'views_block:opigno_score_modules-dashboard_notavaluated_modules',
+    'views_block:private_message-block_dashboard',
+    'views_block:who_s_new-block_1',
+    'views_block:who_s_online-who_s_online_block',
+  ];
+
+  $config = \Drupal::configFactory();
+  $block_service = new BlockService();
+  $blocks = $block_service->getAllBlocks();
+
+  foreach ($blocks_ids as $id) {
+    $old_id = $block_service->sanitizeIdOld($id);
+    $new_id = str_replace('-', '_', $old_id);
+    if ($block_old = Block::load($old_id)) {
+      try {
+        $block_old->delete();
+      }
+      catch (Exception $e) {
+        \Drupal::logger('opigno_dashboard')->error($e->getMessage());
+      }
+    }
+
+    if (!Block::load($new_id)) {
+      $admin_label = $blocks[$id]['admin_label'];
+      if (is_object($admin_label)) {
+        $admin_label = $admin_label->render();
+      }
+
+      $settings = [
+        'plugin' => $id,
+        'region' => 'content',
+        'id' => $new_id,
+        'theme' => $config->get('system.theme')->get('default'),
+        'label' => t('Dashboard:') . ' ' . $admin_label,
+        'visibility' => [
+          'request_path' => [
+            'id' => 'request_path',
+            'pages' => '<front>',
+            'negate' => FALSE,
+            'context_mapping' => [],
+          ],
+        ],
+        'weight' => 0,
+      ];
+
+      $values = [];
+      foreach (['region', 'id', 'theme', 'plugin', 'weight', 'visibility'] as $key) {
+        $values[$key] = $settings[$key];
+        // Remove extra values that do not belong in the settings array.
+        unset($settings[$key]);
+      }
+      foreach ($values['visibility'] as $id => $visibility) {
+        $values['visibility'][$id]['id'] = $id;
+      }
+      $values['settings'] = $settings;
+      $block_new = Block::create($values);
+      try {
+        $block_new->save();
+      }
+      catch (Exception $e) {
+        \Drupal::logger('opigno_dashboard')->error($e->getMessage());
+      }
+    }
+  }
+
+  drupal_flush_all_caches();
 }

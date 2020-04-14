@@ -150,29 +150,25 @@
             }
           });
 
-          var score = event.getScore();
-          var maxScore = event.getMaxScore();
+          // The score should be fetched only from the main H5P instance.
+          var contentId = event.getVerifiedStatementValue([
+            'object',
+            'definition',
+            'extensions',
+            'http://h5p.org/x-api/h5p-local-content-id'
+          ]);
 
-          if (score === undefined || score === null) {
-            var contentId = event.getVerifiedStatementValue([
-              'object',
-              'definition',
-              'extensions',
-              'http://h5p.org/x-api/h5p-local-content-id'
-            ]);
-
-            for (var i = 0; i < H5P.instances.length; i++) {
-              if (H5P.instances[i].contentId === contentId) {
-                if (typeof H5P.instances[i].getScore === 'function') {
-                  score = H5P.instances[i].getScore();
-                  maxScore = H5P.instances[i].getMaxScore();
-                }
-                break;
+          for (var i = 0; i < H5P.instances.length; i++) {
+            if (H5P.instances[i].contentId === contentId) {
+              if (typeof H5P.instances[i].getScore === 'function') {
+                var score = H5P.instances[i].getScore();
+                var maxScore = H5P.instances[i].getMaxScore();
               }
+              break;
             }
           }
 
-          if (score !== undefined && score !== null) {
+          if (typeof score !== 'undefined' && score !== undefined && score !== null) {
             var key = maxScore > 0 ? score / maxScore : 0;
             key = (key + 32.17) * 1.234;
             $('#activity-h5p-result').val(key);

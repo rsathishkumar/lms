@@ -98,7 +98,7 @@ class ILTForm extends ContentEntityForm {
       $date_field_def,
       array_merge(OpignoDateRangeWidget::defaultSettings(), [
         'value_format' => 'Y-m-d H:i:s',
-        'value_timezone' => drupal_get_user_timezone(),
+        'value_timezone' => date_default_timezone_get(),
         'value_placeholder' => t('mm/dd/yyyy'),
       ]),
       []
@@ -116,6 +116,30 @@ class ILTForm extends ContentEntityForm {
 
     $training = $entity->getTraining();
     if ($training !== NULL) {
+      $trainer_id = $entity->getTrainerId();
+      $trainer_name = '';
+
+      if ($trainer_id) {
+        $trainer = \Drupal::entityTypeManager()
+                    ->getStorage('user')
+                    ->load($trainer_id);
+
+        if ($trainer) {
+          $trainer_name = $trainer->getAccountName();
+        }
+      }
+
+      $form['trainer'] = [
+        '#type' => 'textfield',
+        '#title' => $this->t('Trainer'),
+        '#default_value' => $trainer_name,
+        '#autocomplete_route_name' => 'opigno_ilt.opigno_ilt_trainer_autocomplete',
+        '#autocomplete_route_parameters' => [
+          'group' => $training->id(),
+        ],
+        '#placeholder' => $this->t('Enter a user’s name or email'),
+      ];
+
       $form['members_autocomplete'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Members restriction'),
@@ -213,12 +237,12 @@ class ILTForm extends ContentEntityForm {
     }
 
     $start_date_value = isset($start_date)
-      ? $start_date->setTimezone(new \DateTimeZone(drupal_get_user_timezone()))
+      ? $start_date->setTimezone(new \DateTimeZone(date_default_timezone_get()))
         ->format(DrupalDateTime::FORMAT)
       : NULL;
 
     $end_date_value = isset($end_date)
-      ? $end_date->setTimezone(new \DateTimeZone(drupal_get_user_timezone()))
+      ? $end_date->setTimezone(new \DateTimeZone(date_default_timezone_get()))
         ->format(DrupalDateTime::FORMAT)
       : NULL;
 
@@ -257,6 +281,21 @@ class ILTForm extends ContentEntityForm {
     }
 
     $entity->setMembersIds($users_ids);
+    $trainer_name = $form_state->getValue('trainer');
+
+    if ($trainer_name != '') {
+      $users = \Drupal::entityTypeManager()
+        ->getStorage('user')
+        ->loadByProperties([
+          'name' => $trainer_name,
+        ]);
+
+      $trainer = $users ? reset($users) : FALSE;
+
+      if ($trainer) {
+        $entity->setTrainerId($trainer->id());
+      }
+    }
 
     // Save entity.
     $status = parent::save($form, $form_state);
@@ -296,8 +335,8 @@ class ILTForm extends ContentEntityForm {
         '%ilt' => $link,
       ]);
 
-      if (empty($options)) {
-        $memberships = $entity->getTraining()->getMembers();
+      if (empty($options) && $training = $entity->getTraining()) {
+        $memberships = $training->getMembers();
         if ($memberships) {
           foreach ($memberships as $membership) {
             $uid = $membership->getUser()->id();

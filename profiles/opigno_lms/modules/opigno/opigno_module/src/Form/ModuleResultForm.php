@@ -43,12 +43,20 @@ class ModuleResultForm extends FormBase {
     $answers = $user_module_status->getAnswers();
     foreach ($answers as $answer_id => $answer) {
       $answer_activity = $answer->getActivity();
+      $answer_type = $answer->getType();
+
+      if (!$answer_activity->hasField('opigno_evaluation_method')) {
+        continue;
+      }
+      elseif (!$answer_activity->get('opigno_evaluation_method')->getValue()[0]['value']) {
+        continue;
+      }
+
       $form['answers'][$answer_id] = [
         '#type' => 'fieldset',
         '#title' => Link::createFromRoute($this->t('Activity: %activity', ['%activity' => $answer_activity->getName()]), 'entity.opigno_activity.canonical', ['opigno_activity' => $answer_activity->id()])->toString(),
       ];
 
-      $answer_type = $answer->getType();
       $question_markup = '';
       $answer_markup = '';
       switch ($answer_type) {
@@ -174,6 +182,36 @@ class ModuleResultForm extends FormBase {
     $user_status->setMaxScore($max_score);
     $user_status->setEvaluated(1);
     $user_status->save();
+
+    if (function_exists('opigno_learning_path_get_all_steps')) {
+      $module = $build_info['args'][0];
+      $module_id = $module->id();
+
+      $uid = $user_status->get('user_id')->getValue();
+      $uid = $uid[0]['target_id'];
+
+      $gid = $user_status->get('learning_path')->getValue();
+      $gid = $gid[0]['target_id'];
+
+      $step = [];
+      $steps = opigno_learning_path_get_all_steps($gid, $uid);
+      if ($steps) {
+        foreach ($steps as $item) {
+          if ($item["id"] == $module_id) {
+            $step = $item;
+            break;
+          }
+        }
+      }
+
+      if ($step) {
+        // Save module step achievements.
+        opigno_learning_path_save_step_achievements($gid, $uid, $step, isset($step["parent"]) ? $step["parent"] : 0);
+      }
+
+      // Save training achievements.
+      opigno_learning_path_save_achievements($gid, $uid);
+    }
 
     $form_state->setRedirect('view.opigno_score_modules.opigno_not_evaluated');
   }

@@ -3,11 +3,37 @@ entity.opigno_module.add_form:
   title: 'Add Module'
   appears_on:
     - entity.opigno_module.collection
+
+entity.opigno_module.import:
+  route_name: 'opigno_module.import.module'
+  title: 'Import Module'
+  appears_on:
+    - entity.opigno_module.collection
+
 entity.opigno_activity.add_form:
   route_name: 'entity.opigno_activity.add_page'
   title: 'Add Activity'
   appears_on:
     - entity.opigno_activity.collection
+
+entity.opigno_activity.import:
+  route_name: 'opigno_module.import.activity'
+  title: 'Import Activity'
+  appears_on:
+    - entity.opigno_activity.collection
+
+entity.opigno_training.import:
+  route_name: 'opigno_module.import.training'
+  title: 'Import Training'
+  appears_on:
+    - 'entity.group.collection'
+
+entity.opigno_course.import:
+  route_name: 'opigno_module.import.course'
+  title: 'Import Course'
+  appears_on:
+    - 'entity.group.collection'
+
 entity.opigno_activity_type.add_form:
   route_name: 'entity.opigno_activity_type.add_form'
   title: 'Add Activity type'

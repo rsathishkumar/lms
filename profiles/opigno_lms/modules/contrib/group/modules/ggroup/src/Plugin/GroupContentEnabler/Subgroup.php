@@ -7,7 +7,6 @@ use Drupal\group\Plugin\GroupContentEnablerBase;
 use Drupal\group\Entity\GroupType;
 use Drupal\Core\Url;
 use Drupal\Core\Form\FormStateInterface;
-use Symfony\Component\Routing\Route;
 
 /**
  * Provides a content enabler for subgroups.

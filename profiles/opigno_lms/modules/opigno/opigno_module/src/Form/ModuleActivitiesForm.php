@@ -154,6 +154,7 @@ class ModuleActivitiesForm extends FormBase {
         '#title' => $this->t('Weight'),
         '#title_display' => 'invisible',
         '#default_value' => $activity->weight,
+        '#delta' => 500,
         // Classify the weight element for #tabledrag.
         '#attributes' => ['class' => ['activities-list-order-weight']],
       ];

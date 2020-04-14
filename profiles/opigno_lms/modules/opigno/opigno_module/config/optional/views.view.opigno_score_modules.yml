@@ -1,3 +1,4 @@
+uuid: null
 langcode: en
 status: true
 dependencies:
@@ -483,15 +484,15 @@ display:
           entity_field: name
           plugin_id: field
       filters:
-        evaluated:
-          id: evaluated
+        opigno_module_evaluation:
+          id: opigno_module_evaluation
           table: user_module_status
-          field: evaluated
+          field: opigno_module_evaluation
           relationship: none
           group_type: group
           admin_label: ''
           operator: '='
-          value: '0'
+          value: ''
           group: 1
           exposed: false
           expose:
@@ -519,9 +520,23 @@ display:
             default_group_multiple: {  }
             group_items: {  }
           entity_type: user_module_status
-          entity_field: evaluated
-          plugin_id: boolean
+          plugin_id: opigno_module_manual_evaluation
       sorts:
+        started:
+          id: started
+          table: user_module_status
+          field: started
+          relationship: none
+          group_type: group
+          admin_label: ''
+          order: DESC
+          exposed: false
+          expose:
+            label: ''
+          granularity: second
+          entity_type: user_module_status
+          entity_field: started
+          plugin_id: date
         finished:
           id: finished
           table: user_module_status
@@ -529,7 +544,7 @@ display:
           relationship: none
           group_type: group
           admin_label: ''
-          order: ASC
+          order: DESC
           exposed: false
           expose:
             label: ''
@@ -567,15 +582,6 @@ display:
           content:
             value: 'There are no module to evaluate'
             format: full_html
-#          roles_fieldset:
-#            roles:
-#              anonymous: 0
-#              authenticated: 0
-#              collaborative_features: 0
-#              statistics_reader: 0
-#              user_manager: 0
-#              content_manager: 0
-#              administrator: 0
           plugin_id: text
       relationships:
         module:
@@ -602,6 +608,10 @@ display:
           plugin_id: standard
       arguments: {  }
       display_extenders: {  }
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
     cache_metadata:
       max-age: -1
       contexts:
@@ -639,7 +649,7 @@ display:
       row:
         type: fields
         options: {  }
-      block_description: 'Opigno: not evalueated modules'
+      block_description: 'Opigno: not evaluated modules'
       pager:
         type: some
         options:
@@ -655,7 +665,7 @@ display:
           admin_label: ''
           empty: false
           tokenize: true
-          content: "<a class=\"see-more primary text-center\" href=\"/opigno/unevaluated-modules\">\n<span>{{ 'see more'|t }}</span>\n</a>"
+          content: "<a class=\"see-more primary text-center\" href=\"{{ url('<front>') }}/opigno/unevaluated-modules\">\r\n<span>{{ 'see more'|t }}</span>\r\n</a>"
           plugin_id: text_custom
       fields:
         id:
@@ -1248,6 +1258,73 @@ display:
           entity_type: user
           entity_field: name
           plugin_id: field
+        started:
+          id: started
+          table: user_module_status
+          field: started
+          relationship: none
+          group_type: group
+          admin_label: ''
+          label: 'Date started'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: true
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: timestamp
+          settings:
+            date_format: medium
+            custom_date_format: ''
+            timezone: ''
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+          entity_type: user_module_status
+          entity_field: started
+          plugin_id: field
         finished:
           id: finished
           table: user_module_status
@@ -1366,6 +1443,29 @@ display:
           plugin_id: custom
       defaults:
         fields: false
+        pager: false
+        sorts: true
+      pager:
+        type: full
+        options:
+          items_per_page: 50
+          offset: 0
+          id: 0
+          total_pages: null
+          tags:
+            previous: ‹‹
+            next: ››
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
     cache_metadata:
       max-age: -1
       contexts:

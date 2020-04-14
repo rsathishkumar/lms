@@ -10,10 +10,13 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Url;
+use Drupal\group\Entity\Group;
 use Drupal\node\NodeInterface;
 use Drupal\opigno_forum\ForumTopicHandler;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\taxonomy\TermInterface;
+use Drupal\user\Entity\User;
 
 /**
  * Implements hook_entity_presave().
@@ -37,6 +40,50 @@ function opigno_forum_entity_presave(EntityInterface $entity) {
       $entity->set('field_learning_path_forum', [
         'target_id' => $forum->id(),
       ]);
+    }
+  }
+
+  // Add notification about new post in a training forum.
+  if ($entity->getEntityTypeId() === 'comment'  && $entity->bundle() === 'comment_forum') {
+    // If new post.
+    if ($entity->isNew()) {
+      // Get post topic.
+      $topic = $entity->getCommentedEntity();
+      if ($topic && !empty($topic->forum_tid)) {
+        // Get training id of the forum.
+        $db_connection = \Drupal::service('database');
+        $group_id = $db_connection->select('group__field_learning_path_forum', 'lpf')
+          ->fields('lpf', ['entity_id'])
+          ->condition('field_learning_path_forum_target_id', $topic->forum_tid)
+          ->execute()->fetchField();
+
+        if ($group_id) {
+          $group = Group::load($group_id);
+          if ($group) {
+            // Get training members ids except current user.
+            $user = \Drupal::currentUser();
+            $uids = $db_connection->select('group_content_field_data', 'gc')
+              ->fields('gc', ['entity_id'])
+              ->condition('type', 'learning_path-group_membership')
+              ->condition('gid', $group_id)
+              ->condition('entity_id', $user->id(), '!=')
+              ->execute()->fetchCol();
+
+            if ($uids) {
+              $message = t('New forum post in training "@name"', ['@name' => $group->label()]);
+              $url = Url::fromRoute('entity.group.canonical', ['group' => $group->id()])->toString();
+              foreach ($uids as $uid) {
+                $account = User::load($uid);
+                // Check user access to forum.
+                if ($account && _opigno_forum_access($topic->forum_tid, $account)) {
+                  // Add notification about new post.
+                  opigno_set_message($uid, $message, $url);
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

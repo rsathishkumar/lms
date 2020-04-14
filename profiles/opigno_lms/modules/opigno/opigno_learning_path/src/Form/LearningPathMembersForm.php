@@ -6,7 +6,9 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\opigno_learning_path\LearningPathAccess;
+use Drupal\opigno_learning_path\LearningPathValidator;
 use Drupal\views\Views;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Group overview form.
@@ -31,6 +33,12 @@ class LearningPathMembersForm extends FormBase {
     /** @var \Drupal\group\Entity\Group $group */
     $group = \Drupal::routeMatch()->getParameter('group');
     $group_bundle = $group->bundle();
+
+    // Check if user has uncompleted steps.
+    $validation = LearningPathValidator::stepsValidate($group);
+    if ($validation instanceof RedirectResponse) {
+      return $validation;
+    }
 
     // If not a learning_path or class, returns
     // default '/group/{group}/members' view.
@@ -60,29 +68,6 @@ class LearningPathMembersForm extends FormBase {
     if ($group_bundle == 'learning_path') {
       $form['#prefix'] = '<div id="group_members_list">';
       $form['#suffix'] = '</div>';
-      $start_point = 0;
-      $values = $form_state->getValues();
-
-      if (isset($values['start_point'])) {
-        $start_point = $values['start_point'];
-      }
-
-      if (!empty($form_state->getTriggeringElement())) {
-        $trigger = $form_state->getTriggeringElement()['#name'];
-
-        if ($trigger == 'prev') {
-          $start_point -= 100;
-
-          if ($start_point < 0) {
-            $start_point = 0;
-          }
-        }
-        elseif ($trigger == 'next') {
-          $start_point += 100;
-        }
-
-        $form_state->setValue('start_point', $start_point);
-      }
 
       $content_types = [
         'group_content_type_27efa0097d858',
@@ -93,7 +78,6 @@ class LearningPathMembersForm extends FormBase {
       $group_content_ids = \Drupal::entityQuery('group_content')
         ->condition('gid', $group->id())
         ->condition('type', $content_types, 'IN')
-        ->range($start_point, 100)
         ->sort('changed', 'DESC')
         ->execute();
       $content = \Drupal::entityTypeManager()->getStorage('group_content')->loadMultiple($group_content_ids);
@@ -154,27 +138,34 @@ class LearningPathMembersForm extends FormBase {
       ];
     }
 
+    // Set members data for users in group classes.
     foreach ($classes as $class) {
+      $member_count = 0;
+
       $members = array_filter($users, function ($user) use ($class) {
         /** @var \Drupal\group\Entity\Group $class_entity */
         $class_entity = $class['entity'];
         return $class_entity->getMember($user['entity']) !== FALSE;
       });
-      $member_count = count($members);
 
       $individual_members = array_diff_key($individual_members, $members);
 
-      $rows = array_map(function ($member_info) {
-        /** @var \Drupal\user\Entity\User $user_entity */
-        $user_entity = $member_info['entity'];
-        return [
-          'class' => 'class_members_row',
-          'id' => 'student_' . $user_entity->id(),
-          'data' => [
-            $user_entity->getDisplayName(),
-          ],
-        ];
-      }, $members);
+      // Get class members view as renderable array.
+      $class_id = $class['entity']->id();
+      $args = [$class_id];
+      $view_id = 'opigno_group_members_table';
+      $display = 'group_members_block';
+      $members_view = Views::getView($view_id);
+      if (is_object($members_view)) {
+        $members_view->storage->set('group_members', array_keys($users));
+        $members_view->setArguments($args);
+        $members_view->setDisplay($display);
+        $members_view->preExecute();
+        $members_view->execute();
+        $members_view_renderable = $members_view->buildRenderable($display, $args);
+
+        $member_count = $members_view->total_rows;
+      }
 
       /** @var \Drupal\group\Entity\GroupContentInterface $class_group_content */
       $class_group_content = $class['group content'];
@@ -228,8 +219,18 @@ class LearningPathMembersForm extends FormBase {
               '@count' => $member_count,
             ]),
           ],
-          '#rows' => $rows,
         ],
+        'members_table' => !empty($members_view_renderable) ? [
+          '#type' => 'html_tag',
+          '#tag' => 'div',
+          '#value' => render($members_view_renderable),
+          '#attributes' => [
+            'id' => 'class-' . $class_entity->id(),
+            'class' => ['class_members', 'class_members_row'],
+            'data-class' => $class_entity->id(),
+            'style' => 'display:none;',
+          ],
+        ] : [],
         'hide' => [
           '#type' => 'container',
           '#attributes' => [
@@ -465,55 +466,12 @@ class LearningPathMembersForm extends FormBase {
       unset($form[$last_key]['members']['#header'][4]);
     }
 
-    if ($group_bundle == 'learning_path') {
-      $form['start_point'] = [
-        '#type' => 'hidden',
-        '#value' => $start_point,
-      ];
-
-      if ($start_point > 0) {
-        $form['members_prev_btn_bottom'] = [
-          '#type' => 'button',
-          '#value' => $this->t('Prev'),
-          '#name' => 'prev',
-          '#ajax' => [
-            'wrapper' => 'group_members_list',
-            'callback' => [$this, 'group_members_list_btn'],
-            'method' => 'replace',
-          ],
-          '#attributes' => [
-            'class' => ['btn-group-members-list-prev'],
-          ],
-        ];
-      }
-
-      $form['members_next_btn_bottom'] = [
-        '#type' => 'button',
-        '#value' => $this->t('Next'),
-        '#name' => 'next',
-        '#ajax' => [
-          'wrapper' => 'group_members_list',
-          'callback' => [$this, 'group_members_list_btn'],
-          'method' => 'replace',
-          'effect' => 'fade',
-        ],
-        '#attributes' => [
-          'class' => ['btn-group-members-list-next'],
-        ],
-      ];
-    }
-
     $form['#attached']['library'][] = 'opigno_learning_path/member_overview';
     $form['#attached']['library'][] = 'opigno_learning_path/member_add';
     $form['#attached']['drupalSettings']['opigno_learning_path']['gid'] = $group->id();
     $form['#attached']['drupalSettings']['opigno_learning_path']['student_manager_role'] = $student_manager_role;
     $form['#attached']['drupalSettings']['opigno_learning_path']['content_manager_role'] = $content_manager_role;
     $form['#attached']['drupalSettings']['opigno_learning_path']['class_manager_role'] = $class_manager_role;
-    return $form;
-  }
-
-  // The AJAX callback for button 'Prev'.
-  public function group_members_list_btn($form, FormStateInterface $form_state) {
     return $form;
   }
 

@@ -203,6 +203,12 @@ function opigno_group_manager_entity_operation(\Drupal\Core\Entity\EntityInterfa
         'weight' => 15,
         'url' => Url::fromRoute('opigno_group.course_duplicate', ['group' => $entity->id()]),
       );
+
+      $operations['export_course'] = array(
+        'title' => t('Export'),
+        'weight' => 16,
+        'url' => Url::fromRoute('opigno_group.course_export', ['group' => $entity->id()]),
+      );
       break;
 
     case 'learning_path':
@@ -210,6 +216,12 @@ function opigno_group_manager_entity_operation(\Drupal\Core\Entity\EntityInterfa
         'title' => t('Duplicate'),
         'weight' => 15,
         'url' => Url::fromRoute('opigno_group.training_duplicate', ['group' => $entity->id()]),
+      );
+
+      $operations['export_training'] = array(
+        'title' => t('Export'),
+        'weight' => 16,
+        'url' => Url::fromRoute('opigno_group.training_export', ['group' => $entity->id()]),
       );
       break;
   }

@@ -19,15 +19,43 @@ class LongAnswerActivityAnswer extends ActivityAnswerPluginBase {
    * {@inheritdoc}
    */
   public function evaluatedOnSave(OpignoActivityInterface $activity) {
-    // Answer must be evaluated manually.
-    return FALSE;
+    // Check evaluation method field.
+    $method = $activity->get('opigno_evaluation_method')->value;
+    if ($method == 0) {
+      // Automatic evaluation.
+      return TRUE;
+    }
+    else {
+      // Manual evaluation.
+      return FALSE;
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function getScore(OpignoAnswerInterface $answer) {
-    return 0;
+    // Set default max score.
+    $score = 10;
+    $activity = $answer->getActivity();
+    $method = $activity->get('opigno_evaluation_method')->value;
+
+    if ($method == 0) {
+      // Get max score for activity.
+      $db_connection = \Drupal::service('database');
+      $score_query = $db_connection->select('opigno_module_relationship', 'omr')
+        ->fields('omr', ['max_score'])
+        ->condition('omr.parent_id', $answer->getModule()->id())
+        ->condition('omr.parent_vid', $answer->getModule()->getRevisionId())
+        ->condition('omr.child_id', $activity->id())
+        ->condition('omr.child_vid', $activity->getRevisionId());
+      $score_result = $score_query->execute()->fetchField();
+
+      if ($score_result) {
+        $score = $score_result;
+      }
+    }
+    return $score;
   }
 
   /**

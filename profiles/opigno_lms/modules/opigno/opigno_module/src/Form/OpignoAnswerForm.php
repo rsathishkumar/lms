@@ -64,24 +64,18 @@ class OpignoAnswerForm extends ContentEntityForm {
         && $first_activity->id() === $current_activity->id();
       // Disable back navigation for first content first activity.
       $cid = OpignoGroupContext::getCurrentGroupContentId();
-      $content = OpignoGroupManagedContent::load($cid);
-      $parents = $content->getParentsLinks();
-      if (!$module->getBackwardsNavigation()
-        || (empty($parents) && $is_on_first_activity)) {
-        $form['actions']['back']['#attributes']['disabled'] = TRUE;
+      if ($cid) {
+        $content = OpignoGroupManagedContent::load($cid);
+        $parents = $content->getParentsLinks();
+        if (!$module->getBackwardsNavigation()
+          || (empty($parents) && $is_on_first_activity)) {
+          $form['actions']['back']['#attributes']['disabled'] = TRUE;
+        }
       }
     }
     else {
       $form['actions']['back']['#access'] = FALSE;
       $form['actions']['submit']['#access'] = FALSE;
-    }
-
-    if ($group = \Drupal::routeMatch()->getParameter('group')) {
-      // Get training guided navigation option.
-      $freeNavigation = !OpignoGroupManagerController::getGuidedNavigation($group);
-      if ($freeNavigation) {
-        $form['actions']['back']['#access'] = FALSE;
-      }
     }
 
     /* @var $answer_service \Drupal\opigno_module\ActivityAnswerManager */
@@ -119,7 +113,12 @@ class OpignoAnswerForm extends ContentEntityForm {
         // Evaluation status.
         $evaluated_status = $answer_instance->evaluatedOnSave($activity) ? 1 : 0;
         // Answer score.
-        $score = $answer_instance->getScore($entity);
+        if ($activity->hasField('opigno_evaluation_method') && $activity->get('opigno_evaluation_method')->value) {
+          $score = 0;
+        }
+        else {
+          $score = $answer_instance->getScore($entity);
+        }
 
         // Calculate score for skills system if activity not included in the current module.
         // Activity type H5P.

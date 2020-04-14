@@ -3,6 +3,7 @@
 namespace Drupal\Tests\opigno_ilt\Functional;
 
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\Core\Url;
 use Drupal\opigno_ilt\Entity\ILT;
 
 /**
@@ -26,7 +27,7 @@ class OpignoILTTest extends OpignoILTBrowserTestBase {
     $training->addMember($student_2);
     $training->save();
     // Training members count.
-    $this->assertEquals(3, count($training->getMembers()), 'Training members - Group admin and two students.');
+    $this->assertEquals(3, count($training->getMembers()), 'Training members - a Group admin and two students.');
 
     // Create ILT.
     $meeting = ILT::create([
@@ -37,29 +38,27 @@ class OpignoILTTest extends OpignoILTBrowserTestBase {
     ]);
     $meeting->save();
 
-    // Students should automatically added to ILT.
-    $this->drupalGet('/ilt/' . $meeting->id() . '/edit');
-    $page = $this->getSession()->getPage();
-    $page->pressButton('Save');
+    $ilt_path = Url::fromRoute('entity.opigno_ilt.canonical', [
+      'opigno_ilt' => $meeting->id()
+    ]);
+    // Log out admin.
+    $this->drupalLogout();
 
-    $meeting = ILT::load($meeting->id());
-    $members = $meeting->getMembersIds();
-    $notified = $meeting->getNotifiedMembers();
-    $this->assertEquals(3, count($members), 'Students without restriction were added to ILT.');
-    $this->assertEquals(3, count($notified), 'Students without restriction were notified about ILT.');
+    // Check access for a student without restriction.
+    $this->drupalLogin($student_1);
+    $this->drupalGet($ilt_path);
+    $this->assertSession()->pageTextContains($meeting->getTitle());
+    $this->assertSession()->statusCodeEquals(200, 'Student without restriction has access to ILT');
 
     // Add only one student to ILT.
     $meeting = ILT::load($meeting->id());
-    $meeting->setMembersIds([$student_1->id()]);
+    $meeting->setMembersIds([$student_2->id()]);
     $meeting->save();
-    $this->drupalGet('/ilt/' . $meeting->id() . '/edit');
-    $page = $this->getSession()->getPage();
-    $page->pressButton('Save');
-    $meeting = ILT::load($meeting->id());
-    $members = $meeting->getMembersIds();
-    $notified = $meeting->getNotifiedMembers();
-    $this->assertEquals(1, count($members), 'Student with restriction was added to ILT.');
-    $this->assertEquals(1, count($notified), 'Student with restriction was notified about ILT.');
+
+    // Check access for a student with restriction.
+    $this->drupalGet($ilt_path);
+    $this->assertSession()->pageTextNotContains($meeting->getTitle());
+    $this->assertSession()->statusCodeEquals(403, 'Student with restriction does not have access to ILT');
   }
 
   /**
@@ -75,9 +74,9 @@ class OpignoILTTest extends OpignoILTBrowserTestBase {
     $start_date_value = DrupalDateTime::createFromFormat($display_format, $start_date);
     $end_date_value = DrupalDateTime::createFromFormat($display_format, $end_date);
     $date_range = [
-      'value' => $start_date_value->setTimezone(new \DateTimeZone(drupal_get_user_timezone()))
+      'value' => $start_date_value->setTimezone(new \DateTimeZone(date_default_timezone_get()))
         ->format(DrupalDateTime::FORMAT),
-      'end_value' => $end_date_value->setTimezone(new \DateTimeZone(drupal_get_user_timezone()))
+      'end_value' => $end_date_value->setTimezone(new \DateTimeZone(date_default_timezone_get()))
         ->format(DrupalDateTime::FORMAT),
     ];
     return $date_range;

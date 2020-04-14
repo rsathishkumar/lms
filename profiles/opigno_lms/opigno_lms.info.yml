@@ -1,8 +1,8 @@
 name: Opigno LMS
 type: profile
 description: 'Install Opigno with commonly used features pre-configured.'
-# core: 8.x
-# version: 8.x-2.7
+core: 8.x
+# version: 8.x-2.11
 distribution:
   name: "Opigno LMS"
 dependencies:
@@ -14,6 +14,7 @@ dependencies:
   - calendar
   - calendar_datetime
   - ckeditor
+  - ckeditor_bgimage
   - color
   - comment
   - config
@@ -99,8 +100,8 @@ dependencies:
   - private_message
   - quickedit
   - rdf
-  - search
   - search_api
+  - serialization
   - shortcut
   - system
   - taxonomy
@@ -122,8 +123,7 @@ themes:
   - platon
   - seven
 
-# Information added by Drupal.org packaging script on 2019-07-09
-version: '8.x-2.7'
-core: '8.x'
+# Information added by Drupal.org packaging script on 2020-03-19
+version: '8.x-2.11'
 project: 'opigno_lms'
-datestamp: 1562695194
+datestamp: 1584623185

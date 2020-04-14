@@ -34,6 +34,11 @@ class ForumComment extends FieldableEntity {
    */
   public function prepareRow(Row $row) {
     $cid = $row->getSourceProperty('cid');
+    $pid = $row->getSourceProperty('pid');
+
+    if ($pid === '0') {
+      $row->setSourceProperty('pid', NULL);
+    }
 
     $node_type = $row->getSourceProperty('node_type');
     $comment_type = 'comment_node_' . $node_type;
@@ -42,6 +47,10 @@ class ForumComment extends FieldableEntity {
     foreach (array_keys($this->getFields('comment', $comment_type)) as $field) {
       $row->setSourceProperty($field, $this->getFieldValues('comment', $field, $cid));
     }
+
+    $comment_body = $row->getSourceProperty('comment_body');
+    $comment_body[0]['format'] = 'basic_html';
+    $row->setSourceProperty('comment_body', $comment_body);
 
     return parent::prepareRow($row);
 

@@ -80,6 +80,7 @@
   padding: 30px;
   overflow-y: auto;
   border: 0;
+  max-width: 250px;
 }
 
 .group-content-learning-path-group-membership-add-form .multiselect-btns ul,
@@ -138,6 +139,7 @@
   overflow-y: auto;
   border: 0;
   margin-left: 0;
+  max-width: 250px;
 }
 
 .group-content-learning-path-group-membership-add-form #training_users .username {

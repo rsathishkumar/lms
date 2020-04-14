@@ -6,14 +6,23 @@ dependencies:
     - field.field.opigno_activity.opigno_slide.opigno_body
     - field.field.opigno_activity.opigno_slide.opigno_slide_pdf
     - opigno_module.opigno_activity_type.opigno_slide
+  module:
+    - text
 id: opigno_activity.opigno_slide.activity
 targetEntityType: opigno_activity
 bundle: opigno_slide
 mode: activity
 content:
+  opigno_body:
+    type: text_default
+    weight: 0
+    region: content
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
   opigno_slide_pdf:
     type: entity_reference_entity_view
-    weight: 0
+    weight: 1
     region: content
     label: hidden
     settings:
@@ -24,6 +33,6 @@ hidden:
   entity_print_view_epub: true
   entity_print_view_pdf: true
   entity_print_view_word_docx: true
+  langcode: true
   name: true
-  opigno_body: true
   uid: true

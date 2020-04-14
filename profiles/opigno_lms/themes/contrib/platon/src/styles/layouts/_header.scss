@@ -153,6 +153,14 @@
           background-size: cover;
         }
       }
+
+      a.dropdown-item:not(.primary) {
+        @include make-button($light-gray, $light-blue);
+
+        + a {
+          margin-top: 0.5rem;
+        }
+      }
     }
 
     .user-ilts {
@@ -279,12 +287,22 @@
           font-style: italic;
         }
 
-        a.dropdown-item:not(.primary) {
-          @include make-button($light-gray, $light-blue);
-          width: calc(100% - 1rem);
+        .dropdown-item.notification {
+          padding: 0;
 
-          + a.dropdown-item {
-            margin-top: 0.5rem;
+          a,
+          span.button {
+            @include make-button($light-gray, $light-blue);
+            width: calc(100% - 1rem);
+            color: inherit;
+
+            + a.dropdown-item {
+              margin-top: 0.5rem;
+            }
+          }
+
+          + .dropdown-item.notification {
+            margin-top: 10px;
           }
         }
 

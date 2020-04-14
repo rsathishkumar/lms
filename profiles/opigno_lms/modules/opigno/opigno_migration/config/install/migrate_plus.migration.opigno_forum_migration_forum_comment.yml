@@ -34,4 +34,4 @@ destination:
   plugin: entity:comment
 migration_dependencies:
   required:
-    - opigno_forum_migration
+    - opigno_forum_migration_forum

@@ -50,7 +50,7 @@ class StepsBlock extends BlockBase {
    */
   protected function buildState($step) {
     $uid = \Drupal::currentUser()->id();
-    $status = opigno_learning_path_get_step_status($step, $uid);
+    $status = opigno_learning_path_get_step_status($step, $uid, TRUE);
     $markups = [
       'pending' => '<span class="lp_steps_block_step_pending"></span>',
       'failed' => '<span class="lp_steps_block_step_failed"></span>'

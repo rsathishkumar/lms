@@ -123,7 +123,7 @@ class GroupPermissionHandler implements GroupPermissionHandlerInterface {
       /** @var \Drupal\group\Plugin\GroupContentEnablerInterface $plugin */
       foreach ($this->pluginManager->getAll() as $plugin) {
         $provider = $plugin->getProvider();
-        $section = $plugin->getLabel()->__toString();
+        $section = (string) $plugin->getLabel();
 
         foreach ($plugin->getPermissions() as $permission_name => $permission) {
           $permission += ['provider' => $provider, 'section' => $section];
@@ -144,7 +144,7 @@ class GroupPermissionHandler implements GroupPermissionHandlerInterface {
     // Add the plugin defined permissions to the whole.
     foreach ($group_type->getInstalledContentPlugins() as $plugin) {
       $provider = $plugin->getProvider();
-      $section = $plugin->getLabel()->__toString();
+      $section = (string) $plugin->getLabel();
 
       /** @var \Drupal\group\Plugin\GroupContentEnablerInterface $plugin */
       foreach ($plugin->getPermissions() as $permission_name => $permission) {
@@ -275,8 +275,8 @@ class GroupPermissionHandler implements GroupPermissionHandlerInterface {
         if ($permission_a['section'] == $permission_b['section']) {
           // All permissions should have gone through ::completePermission() so
           // the titles are \Drupal\Core\StringTranslation\TranslatableMarkup.
-          $title_a = $permission_a['title']->__toString();
-          $title_b = $permission_b['title']->__toString();
+          $title_a = (string) $permission_a['title'];
+          $title_b = (string) $permission_b['title'];
           return strip_tags($title_a) > strip_tags($title_b);
         }
         else {

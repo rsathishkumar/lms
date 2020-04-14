@@ -28,25 +28,6 @@
 
         return false;
       });
-
-      // Mark a notification as read on click.
-      $notifications.once('click').click(function(e) {
-        e.preventDefault();
-
-        var id = $(this).attr('data-id');
-        $(this).closest('.views-row').remove();
-
-        $.ajax({
-          url: baseUrl + 'ajax/notifications/mark-read/' + id,
-          success: function() {
-            if ($unreadCount.length && $unreadCount.text() !== 0) {
-              $unreadCount.text($unreadCount.text() - 1);
-            }
-          }
-        });
-
-        return false;
-      });
     },
   };
 }(jQuery, Drupal));

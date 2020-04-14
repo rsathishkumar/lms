@@ -23,7 +23,7 @@ use Drupal\group\Entity\Group;
  *     "child_content_id" = "child_content_id",
  *     "required_score" = "required_score",
  *   }
- * )s
+ * )
  */
 class LPManagedLink extends ContentEntityBase {
 
