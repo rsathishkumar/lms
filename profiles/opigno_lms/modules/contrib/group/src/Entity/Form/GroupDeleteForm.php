@@ -22,7 +22,7 @@ class GroupDeleteForm extends ContentEntityConfirmFormBase {
    * {@inheritdoc}
    */
   public function getCancelURL() {
-    return new Url('entity.group.collection');
+    return $this->entity->toUrl();
   }
 
   /**
@@ -45,7 +45,7 @@ class GroupDeleteForm extends ContentEntityConfirmFormBase {
     ];
 
     \Drupal::logger('group')->notice('@type: deleted %title.', $t_args);
-    drupal_set_message($this->t('@type %title has been deleted.', $t_args));
+    $this->messenger()->addStatus($this->t('@type %title has been deleted.', $t_args));
 
     $form_state->setRedirect('entity.group.collection');
   }

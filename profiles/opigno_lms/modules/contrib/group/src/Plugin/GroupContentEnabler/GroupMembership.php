@@ -2,6 +2,7 @@
 
 namespace Drupal\group\Plugin\GroupContentEnabler;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\group\Access\GroupAccessResult;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\group\Entity\GroupContentInterface;
@@ -23,8 +24,8 @@ use Drupal\Core\Session\AccountInterface;
  *   description = @Translation("Adds users to groups as members."),
  *   entity_type_id = "user",
  *   pretty_path_key = "member",
- *   reference_label = @Translation("Username"),
- *   reference_description = @Translation("The name of the user you want to make a member"),
+ *   reference_label = @Translation("User"),
+ *   reference_description = @Translation("The user you want to make a member"),
  *   enforced = TRUE
  * )
  */
@@ -55,6 +56,21 @@ class GroupMembership extends GroupContentEnablerBase {
     }
 
     return $operations;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getGroupOperationsCacheableMetadata() {
+    // We cannot use the user.is_group_member:%group_id cache context for the
+    // join and leave operations, because they end up in the group operations
+    // block, which is shown for most likely every group in the system. Instead,
+    // we cache per user, meaning the block will be auto-placeholdered in most
+    // set-ups.
+    // @todo With the new VariationCache, we can use the above context.
+    $cacheable_metadata = new CacheableMetadata();
+    $cacheable_metadata->setCacheContexts(['user']);
+    return $cacheable_metadata;
   }
 
   /**

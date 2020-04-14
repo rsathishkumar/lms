@@ -5,11 +5,12 @@
  * Install, update and uninstall functions for the group module.
  */
 
-use Drupal\group\Entity\GroupContent;
 use Drupal\Core\Config\ExtensionInstallStorage;
 use Drupal\Core\Config\InstallStorage;
 use Drupal\Core\Entity\EntityTypeListenerInterface;
 use Drupal\Core\Entity\Sql\SqlContentEntityStorage;
+use Drupal\group\Entity\GroupContent;
+use Drupal\group\Entity\Storage\GroupContentStorageSchema;
 
 /**
  * Resave all GroupContent labels and remove orphaned entities.
@@ -225,7 +226,7 @@ function group_update_8005() {
 
   foreach ($config_factory->listAll('group.type.') as $group_type_config_name) {
     $group_type = $config_factory->getEditable($group_type_config_name);
-    list(,,$group_type_id) = explode('.', $group_type_config_name);
+    list(, , $group_type_id) = explode('.', $group_type_config_name);
 
     // Make sure the group type ID is set in the plugin config.
     $plugins = $group_type->get('content');
@@ -247,7 +248,7 @@ function group_update_8006() {
   // Get the configuration from every group type.
   foreach ($config_factory->listAll('group.type.') as $group_type_config_name) {
     $group_type = $config_factory->getEditable($group_type_config_name);
-    list(,,$group_type_id) = explode('.', $group_type_config_name);
+    list(, , $group_type_id) = explode('.', $group_type_config_name);
 
     // Store the group type's plugin configuration in an array.
     $plugins = $group_type->get('content');
@@ -423,4 +424,32 @@ function group_update_8014() {
     $group_type->set('creator_wizard', TRUE);
     $group_type->save(TRUE);
   }
+}
+
+/**
+ * Update the group members view to use the new cache group permissions context.
+ */
+function group_update_8015() {
+  // Empty update. See group_post_update_view_cache_contexts();
+}
+
+/**
+ * Re-run a fixed version of _8015 and gnode_update_8006 on all views.
+ */
+function group_update_8016() {
+  // Empty update. See group_post_update_view_cache_contexts();
+}
+
+
+/**
+ * Add storage schema to group content.
+ */
+function group_update_8017() {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+
+  // Add the new storage schema to the GroupContent entity type, which should
+  // automatically reindex the table.
+  $entity_type = $manager->getEntityType('group_content');
+  $entity_type->setHandlerClass('storage_schema', GroupContentStorageSchema::class);
+  $manager->updateEntityType($entity_type);
 }
