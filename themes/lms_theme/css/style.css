@@ -163,7 +163,7 @@ nav#mobile-menu ul:not(.contextual-links), nav.block-system_menu_block-main ul:n
 
 nav.block-system_menu_block-main li a {
   background-size: 50px !important;
-  padding: 3.5rem 2.8rem !important;
+  padding: 3.5rem 2.3rem !important;
   background-repeat: no-repeat;
   display: block !important;
   font-size: 1.2rem !important;
@@ -726,7 +726,6 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
 }
 
 .lp_step_summary .lp_step_summary_title {
-  position: absolute;
   bottom: 25px;
   text-transform: uppercase;
   font-size: 16px;
