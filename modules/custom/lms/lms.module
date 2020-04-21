@@ -82,3 +82,9 @@ function lms_views_pre_render(\Drupal\views\ViewExecutable $view) {
     $view->element['#attached']['library'][] = 'core/drupal.dialog.ajax';
   }
 }
+
+function lms_block_build_alter(array &$build, \Drupal\Core\Block\BlockPluginInterface $block) {
+  if($block->getPluginId() == 'lp_steps_block') {
+    $build['#cache']['max-age'] = 0;
+  }
+}
