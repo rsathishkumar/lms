@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ *
+ * Update script to update config dashboard default value.
+ */
+
+function lms_update_8001() {
+  $config_factory = \Drupal::configFactory();
+  $config = $config_factory->getEditable('opigno_dashboard.default.settings');
+  $data = $config->getRawData();
+  $json = new \Drupal\Component\Serialization\Json();
+  $positions = $json::decode($data['positions']);
+  if ($positions[2][0]['id'] == 'views_block:opigno_calendar-month_block') {
+    $positions[2][0]['admin_label'] = "Calendar block";
+  }
+  if ($positions[2][1]['id'] == 'views_block:opigno_notifications-block_unread_dashboard') {
+    $positions[2][1]['admin_label'] = "Notification: Dashboard - Unread Notification";
+  }
+  $data['positions'] = $json->encode($positions);
+  $config->setData($data);
+  $config->save(TRUE);
+}
