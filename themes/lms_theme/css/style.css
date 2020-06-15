@@ -154,6 +154,7 @@ nav#mobile-menu ul:not(.contextual-links), nav.block-system_menu_block-main ul:n
 
 nav.block-system_menu_block-main li a {
   background-size: 50px !important;
+  background-position: top center;
   padding: 3.5rem 2.3rem !important;
   background-repeat: no-repeat;
   display: block !important;
@@ -795,7 +796,7 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   background-image: url('../img/timeline_end.png');
 }
 
-.lp_timeline_step.passed {
+.lp_timeline_step .lp_status.passed {
   background-image: url(../img/timeline_checked.png);
   -webkit-background-size: 100%;
   background-size: 100%;
@@ -811,7 +812,7 @@ body.anonymous-slider div#main #user-sidebar form.user-register-form .form-contr
   background-size: 90%;
 }
 
-.lp_timeline_step {
+.lp_timeline_step .lp_status {
   background-image: url(../img/timeline_unchecked.png);
   background-size: 100%;
 }
@@ -879,6 +880,10 @@ form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
 
 .lp_steps_block_table td:nth-child(1) {
   border-left: 5px solid #008583;
+}
+
+.views-exposed-form .form-inline .form-group {
+  flex-direction:inherit;
 }
 
 @media (max-width: 1199px) {
