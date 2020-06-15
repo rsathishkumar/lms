@@ -64,6 +64,14 @@ interface PrivateMessageServiceInterface {
   public function getThreadsForUser($count, $timestamp = FALSE);
 
   /**
+   * Retrieve the number of threads a user has.
+   *
+   * @return int
+   *   The number of threads a user has.
+   */
+  public function getCountThreadsForUser();
+
+  /**
    * Retrieve a users private messages created after the given ID.
    *
    * @param int $threadId

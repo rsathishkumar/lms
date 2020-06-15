@@ -1,15 +1,13 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\views_role_based_global_text\RoleBasedGlobalText;
- */
-
 namespace Drupal\views_role_based_global_text;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\area\Text;
 
+/**
+ * Class RoleBasedGlobalText.
+ */
 class RoleBasedGlobalText extends Text {
 
   /**

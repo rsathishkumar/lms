@@ -94,15 +94,8 @@ class PrivateMessageNotifier implements PrivateMessageNotifierInterface {
    * {@inheritdoc}
    */
   public function notify(PrivateMessageInterface $message, PrivateMessageThreadInterface $thread, array $members = []) {
-    $params = [
-      'private_message' => $message,
-      'private_message_thread' => $thread,
-    ];
-
     foreach ($members as $member) {
       if ($member->id() != $this->currentUser->id()) {
-        $params['member'] = $member;
-
         // Check if the notification should be sent.
         if ($this->shouldSend($member, $message, $thread)) {
           // Send the notification.

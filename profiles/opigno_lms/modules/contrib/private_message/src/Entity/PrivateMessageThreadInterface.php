@@ -36,6 +36,11 @@ interface PrivateMessageThreadInterface extends ContentEntityInterface {
   public function addMemberById($id);
 
   /**
+   * Retrieve the ids of the members of the private message thread.
+   */
+  public function getMembersId();
+
+  /**
    * Retrieve the members of the private message thread.
    */
   public function getMembers();

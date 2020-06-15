@@ -3,10 +3,9 @@ description: 'Module provides the option to show the content in Global: Text Are
 core: 8.x
 type: module
 dependencies:
-  - views
+  - drupal:views
 
-
-# Information added by drush on 2015-05-14
-version: '8.x-1.0+0-dev'
+# Information added by Drupal.org packaging script on 2019-10-24
+version: '8.x-1.1'
 project: 'views_role_based_global_text'
-datestamp: 1431598057
+datestamp: 1571914986

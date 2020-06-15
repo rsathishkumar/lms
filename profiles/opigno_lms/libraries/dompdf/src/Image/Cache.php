@@ -120,6 +120,7 @@ class Cache
                 } // Not remote, local image
                 else {
                     $resolved_url = Helpers::build_url($protocol, $host, $base_path, $url);
+                    $resolved_url = urldecode($resolved_url);
                 }
             }
 
