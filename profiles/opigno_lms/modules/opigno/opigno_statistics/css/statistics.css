@@ -4,6 +4,11 @@
   min-width: 100px;
 }
 
+.form-item-year .form-element-wrapper,
+.form-item-month .form-element-wrapper {
+  width: 100% !important;
+}
+
 .trainings-progress {
   background-color: #f6f6f6;
   color: #585857;
@@ -55,7 +60,7 @@
 }
 
 .trainings-progress .value {
-  color: #5bb4d8;
+  color: #2E98C2;
   font-size: 30px;
   font-weight: 600;
 }
@@ -80,7 +85,7 @@
 }
 
 .trainings-progress .indicator path {
-  fill: #5bb4d8;
+  fill: #2E98C2;
 }
 
 .trainings-progress .indicator circle.inner {
@@ -109,7 +114,7 @@
 }
 
 .user-metric {
-  background-color: #5bb4d8;
+  background-color: #2E98C2;
   flex: 1;
   padding: 20px;
   text-align: center;
@@ -140,47 +145,20 @@
 
 .user-metric-label {
   font-size: 20px;
+  font-weight: 700;
 }
 
-/* table.statistics-table {
-  border: 1px solid #70706f;
-} */
-
 .statistics-table thead th {
-  background-color: #5bb4d8;
+  background-color: #2E98C2;
   border: 0 !important;
   color: #fff;
-  font-size: 16px;
+  font-size: 19px;
   font-style: italic;
-  font-weight: normal;
+  font-weight: 700;
   padding-left: 30px;
   padding-right: 30px;
   text-transform: none;
 }
-
-/* .statistics-table thead th:not(:first-child) {
-  text-align: center;
-}
-
-.statistics-table tbody tr {
-  border: 0;
-}
-
-.statistics-table tbody tr:nth-child(2n+1),
-.statistics-table tbody tr:nth-child(2n+1):hover {
-  background-color: #eee;
-}
-
-.statistics-table tbody tr:nth-child(2n),
-.statistics-table tbody tr:nth-child(2n):hover {
-  background-color: #fff;
-}
-
-.statistics-table tbody td {
-  border: 0;
-  color: #70706f;
-  padding: 5px 30px;
-} */
 
 .statistics-table thead th:not(:first-child),
 .statistics-table tbody td:not(:first-child) {
@@ -198,6 +176,8 @@
   background-repeat: no-repeat;
   width: 22px;
   height: 1.75rem;
+  font-size: 20px;
+  color: #000;
 }
 
 .statistics-table tbody td .details:hover {
@@ -271,15 +251,15 @@ form .popover-help {
   padding: 0;
   background: none;
   border: 0;
-  width: 18px;
-  height: 18px;
-  background-color: #5bb4d8 !important;
+  width: 22px;
+  height: 22px;
+  background-color: #2E98C2 !important;
   border-radius: 100%;
   color: #fff !important;
   display: inline-block;
-  line-height: 18px;
+  line-height: 22px;
   text-align: center;
-  font-size: 14px;
+  font-size: 19px;
   font-weight: 700;
   margin-left: .5rem;
   vertical-align: top;
@@ -327,5 +307,5 @@ form .popover-help .popover-header .close {
 
 .bs-popover-auto[x-placement^=right] .arrow:before,
 .bs-popover-right .arrow:before {
-  border-right-color: #5bb4d8;
+  border-right-color: #2E98C2;
 }

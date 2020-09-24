@@ -35,11 +35,8 @@ class OpignoLearningPathProgress extends FieldPluginBase {
     $entity = $values->_entity;
     $group = $entity instanceof LatestActivity ? $entity->getTraining() : $entity;
     if (!is_null($group)) {
-      // Get training latest certification timestamp.
-      $latest_cert_date = LPStatus::getTrainingStartDate($group, $uid);
-
-      $group_progress = opigno_learning_path_progress($group->id(), $uid, $latest_cert_date);
-      return round(100 * $group_progress) . '%';
+      $progress_service = \Drupal::service('opigno_learning_path.progress');
+      return $progress_service->getProgressAjaxContainer($group->id(), $account->id(), '', 'mini');
     };
 
     return '';

@@ -70,9 +70,14 @@ function opigno_class_preprocess_page(&$variables) {
  */
 function opigno_class_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id === 'group_content_opigno_class-group_membership_add_form') {
-    // Add redirection after member is added.
-    $form['actions']['submit']['#submit'][] = '_opigno_class_group_membership_add_form_submit';
     array_unshift($form['#validate'], '_opigno_class_group_membership_add_form_validate');
+  }
+  if (in_array($form_id, [
+    'group_opigno_class_add_form',
+    'group_opigno_class_edit_form',
+    'group_content_opigno_class-group_membership_add_form',
+  ])) {
+    $form['actions']['submit']['#submit'][] = '_opigno_class_group_membership_add_form_submit';
   }
 }
 
@@ -112,9 +117,20 @@ function _opigno_class_group_membership_add_form_validate($form, FormStateInterf
 function _opigno_class_group_membership_add_form_submit($form, FormStateInterface $form_state) {
   $route = \Drupal::routeMatch();
   $group = $route->getParameter('group');
-  $form_state->setRedirect('opigno_learning_path.membership.overview', [
-    'group' => $group->id(),
-  ]);
+  $gid = NULL;
+
+  if (empty($group)) {
+    $route_options = $form_state->getRedirect()->getRouteParameters();
+    $gid = !empty($route_options['group']) ? $route_options['group'] : NULL;
+  }
+  else {
+    $gid = $group->id();
+  }
+  if (!empty($gid)) {
+    $form_state->setRedirect('opigno_learning_path.membership.overview', [
+      'group' => $gid
+    ]);
+  }
 }
 
 /**

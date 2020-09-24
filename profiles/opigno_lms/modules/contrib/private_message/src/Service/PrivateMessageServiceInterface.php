@@ -146,7 +146,7 @@ interface PrivateMessageServiceInterface {
   public function getUpdatedInboxThreads(array $existingThreadIds, $count = FALSE);
 
   /**
-   * Determine whetherthe given user is allowed to be used in a  thread.
+   * Determine whether given user is allowed to be used in a  thread.
    *
    * Usernames belonging to accounts that have the 'use private messaging
    * system' permission will be considered valid.

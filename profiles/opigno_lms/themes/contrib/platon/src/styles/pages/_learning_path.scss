@@ -51,25 +51,24 @@ body.admin-learning-path {
     .info-icon {
       margin: 0.25rem 0 0.75rem;
 
-      &::before {
-        content: '';
-        @include svg-picto('picto-info');
-        background-repeat: no-repeat;
-        background-size: contain;
-        width: 2rem;
-        height: 2rem;
-        display: inline-block;
+      i {
         margin-right: 0.5rem;
+        font-size: 30px;
         vertical-align: middle;
+        position: relative;
+        top: -2px;
       }
     }
 
     button.close-info-card {
-      @include svg-picto('picto-close-white');
-      background-color: transparent !important;
+      font-size: 0;
+      background: none !important;
       padding: 0;
-      width: 1rem;
-      height: 1rem;
+
+      i {
+        color: $white;
+        font-size: 16px;
+      }
     }
   }
 
@@ -105,15 +104,25 @@ body.admin-learning-path {
     }
 
     button.type-help-close {
-      @include svg-picto(picto-activity-close);
-      background-color: transparent !important;
-      background-size: 1rem;
+      font-size: 0;
+
+      i {
+        font-size: 16px;
+      }
     }
 
     button.type-help-open {
-      @include svg-picto(picto-activity-help);
       background-color: #fff !important;
-      background-size: 1.75rem;
+      font-size: 0;
+      color: $medium-gray-200 !important;
+
+      &:hover {
+        color: $black !important;
+      }
+
+      i {
+        font-size: 28px;
+      }
     }
   }
 
@@ -131,15 +140,8 @@ body.admin-learning-path {
       padding: 20px;
       line-height: 1.1;
 
-      &::before {
-        content: '';
-        @include svg-picto('picto-home-white');
-        display: inline-block;
-        vertical-align: top;
-        width: 1em;
-        height: 1em;
+      i {
         margin-right: 0.75rem;
-        font-size: 1em;
       }
     }
   }
@@ -197,12 +199,13 @@ body.admin-learning-path {
       vertical-align: middle;
 
       span {
-        @include svg-picto('picto-handle');
-
         display: block;
-        width: 16px;
-        height: 21px;
         cursor: move;
+
+        i {
+          font-size: 24px;
+          color: $medium-gray-200;
+        }
       }
     }
 
@@ -225,19 +228,14 @@ body.admin-learning-path {
       input[type="text"] {}
     }
 
+    td.delete,
     td.edit {
       button {
-        @include svg-picto('picto-edit', false);
+        font-size: 0;
 
-        background-size: 17px;
-      }
-    }
-
-    td.delete {
-      button {
-        @include svg-picto('picto-close-white', false);
-
-        background-size: 17px;
+        i {
+          font-size: 20px;
+        }
       }
     }
   }
@@ -252,14 +250,22 @@ body.admin-learning-path {
     }
 
     button.action-button {
-      @extend .picto-more;
-
+      position: relative;
       left: 0;
       width: 100% !important;
       height: 35px !important;
-      background-repeat: no-repeat;
-      background-size: 43px 11px;
-      background-position: right 1rem center;
+
+      &:before {
+        @include icon-base();
+        content: icon(more);
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: $medium-gray-600;
+        font-size: 40px;
+      }
+
 
       mat-icon.mat-icon.material-icons {
         font-size: 0;
@@ -332,12 +338,8 @@ body.admin-learning-path {
       background-color: #dadada !important;
       color: #575756 !important;
 
-      &::after {
-        @include svg-picto('picto-tree-view-close');
-        content: '';
-        display: inline-block;
-        width: 20px;
-        height: 17px;
+      i {
+        font-size: 18px;
         vertical-align: middle;
         margin-left: 0.5rem;
       }
@@ -346,10 +348,10 @@ body.admin-learning-path {
         background-color: $blue !important;
         color: #fff !important;
 
-        &::after {
-          @include svg-picto('picto-tree-view-open');
-          width: 12px;
-          height: 6px;
+        i {
+          &:before {
+            content: icon(chevron-up);
+          }
         }
       }
     }
@@ -388,21 +390,12 @@ body.admin-learning-path {
       * {
         cursor: not-allowed;
       }
-
-      &::before {
-        @extend .picto-link-grey;
-      }
     }
 
-    &::before {
-      @include svg-picto('picto-link');
-
-      content: '';
-      display: inline-block;
-      width: 18px;
-      height: inherit;
-      margin-left: 0.75rem;
-      margin-right: -0.25rem;
+    i {
+      vertical-align: text-bottom;
+      margin-right: 0.75rem;
+      font-size: 18px;
     }
   }
 
@@ -428,13 +421,9 @@ body.admin-learning-path {
     font-style: italic;
 
     span.mat-button-wrapper {
-      &::before {
-        @include svg-picto('picto-plus-green');
-
-        content: '';
+      i {
         display: block;
-        width: 23px;
-        height: 23px;
+        font-size: 24px;
         margin: 0 auto 0.25rem;
       }
     }
@@ -467,39 +456,40 @@ body.admin-learning-path {
     }
   }
 
-  .activity-add {
-    button.create {
-      width: 100%;
-      text-align: left;
-      border-left: 2px solid $blue !important;
-      padding: 0.75rem 2rem;
-
-      &::before {
-        @include svg-picto(picto-new-course);
-
-        content: '';
-        width: 23px;
-        height: 27px;
-        display: inline-block;
-        margin-right: 0.75rem;
-        margin-left: -0.75rem;
-        vertical-align: middle;
-      }
-    }
-
-    input[type="text"] {
-      @extend .picto-trobbler;
-      background-color: $light-gray;
-      border: 0;
-      padding: 0.75rem 2rem;
-      width: 100%;
-      margin-top: 0.5rem;
-      margin-bottom: 2rem;
-      background-position: right 1rem center;
-      background-repeat: no-repeat;
-      background-size: 18px;
-    }
-  }
+  // @todo: Need review. It look like unnecessary style.
+  //.activity-add {
+  //  button.create {
+  //    width: 100%;
+  //    text-align: left;
+  //    border-left: 2px solid $blue !important;
+  //    padding: 0.75rem 2rem;
+  //
+  //    &::before {
+  //      @include svg-picto(picto-new-course);
+  //
+  //      content: '';
+  //      width: 23px;
+  //      height: 27px;
+  //      display: inline-block;
+  //      margin-right: 0.75rem;
+  //      margin-left: -0.75rem;
+  //      vertical-align: middle;
+  //    }
+  //  }
+  //
+  //  input[type="text"] {
+  //    @extend .picto-trobbler;
+  //    background-color: $light-gray;
+  //    border: 0;
+  //    padding: 0.75rem 2rem;
+  //    width: 100%;
+  //    margin-top: 0.5rem;
+  //    margin-bottom: 2rem;
+  //    background-position: right 1rem center;
+  //    background-repeat: no-repeat;
+  //    background-size: 18px;
+  //  }
+  //}
 
   .activity-add.add,
   .entity-add.add {
@@ -550,16 +540,11 @@ body.admin-learning-path {
         border-left: 2px solid $blue !important;
         padding: 0.75rem 2rem;
 
-        &::before {
-          @include svg-picto(picto-new-course);
-
-          content: '';
-          width: 23px;
-          height: 27px;
-          display: inline-block;
+        i {
+          font-size: 24px;
+          vertical-align: text-top;
           margin-right: 0.75rem;
           margin-left: -0.75rem;
-          vertical-align: middle;
         }
       }
 
@@ -599,6 +584,8 @@ body.admin-learning-path {
     padding: 28px 0;
 
     li {
+      position: relative;
+
       .number {
         align-items: center;
         border: 2px dashed;
@@ -613,6 +600,21 @@ body.admin-learning-path {
         width: 100px;
       }
 
+      i {
+        display: block;
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        position: absolute;
+        top: 6rem;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-left: 2.5rem;
+        border-radius: 50%;
+        font-size: 10px;
+        color: $white;
+      }
+
       &.active {
         .number {
           background-color: $blue;
@@ -623,37 +625,14 @@ body.admin-learning-path {
       }
 
       &.done {
-        position: relative;
-
-        &::after {
-          content: '';
-          @include svg-picto('picto-learning-path-done');
-          display: block;
-          width: 20px;
-          height: 20px;
-          position: absolute;
-          top: 6rem;
-          left: 50%;
-          transform: translateX(-50%);
-          margin-left: 2.5rem;
+        i {
+          background-color: #c2e76b;
         }
       }
 
       &.error {
-        position: relative;
-
-        &::after {
-          content: '';
-          background-size: 100%;
-          @include svg-picto('picto-learning-path-error');
-          display: block;
-          width: 20px;
-          height: 20px;
-          position: absolute;
-          top: 6rem;
-          left: 50%;
-          transform: translateX(-50%);
-          margin-left: 2.5rem;
+        i {
+          background-color: #ff5541;
         }
       }
 

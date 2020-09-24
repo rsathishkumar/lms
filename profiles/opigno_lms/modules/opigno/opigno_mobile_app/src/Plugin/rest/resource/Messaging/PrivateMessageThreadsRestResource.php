@@ -13,6 +13,7 @@ use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Render\RenderContext;
 
 /**
  * Provides a resource to for PrivateMessageThread entity.
@@ -118,79 +119,84 @@ class PrivateMessageThreadsRestResource extends ResourceBase {
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   public function get() {
-    $response_data = [
-      'items' => [],
-      'next_page' => FALSE,
-    ];
 
-    // Get request parameters.
-    $request = \Drupal::request();
-    $request_query = $request->query;
-    $request_query_array = $request_query->all();
-    // How many items should be returned.
-    $limit = $request_query->get('limit') ?: $this->limit;
-    // Part of items.
-    $page = $request_query->get('page') ?: 0;
-    // How to order items.
-    $order_by = $request_query->get('order_by') && in_array(strtoupper($request_query->get('order_by')), ['ASC', 'DESC'])
-      ? $request_query->get('order_by') : $this->order_by;
-
-    // Find out how many dialogs do we have.
-    $threads = OpignoMessageThread::getUserThreads($this->currentUser->id());
-
-    $threads_count = count($threads);
-    $position = $limit * ($page + 1);
-    if ($threads_count > $position) {
-      $next_page_query = $request_query_array;
-      $next_page_query['page'] = $page + 1;
-      $response_data['next_page'] = Url::createFromRequest($request)
-        ->setOption('query', $next_page_query)
-        ->toString(TRUE)
-        ->getGeneratedUrl();
-    }
-
-    // Find dialogs.
-      $query = \Drupal::entityQuery('private_message_thread')
-        ->condition('members', $this->currentUser->id())
-        ->sort('updated', strtoupper($order_by))
-        ->pager($limit);
-      $result = $query->execute();
-      $dialogs = \Drupal::entityTypeManager()
-        ->getStorage('private_message_thread')
-        ->loadMultiple($result);
-
-    /* @var \Drupal\private_message\Entity\PrivateMessageThread $dialog */
-    foreach ($dialogs as $dialog) {
-      // Get last message.
-      $messages = $dialog->getMessages();
-      usort($messages, function ($a, $b) {
-        /* @var \Drupal\private_message\Entity\PrivateMessage $a */
-        /* @var \Drupal\private_message\Entity\PrivateMessage $b */
-        return $a->getCreatedTime() < $b->getCreatedTime();
-      });
-      $last_message = reset($messages);
-      // Get info about members.
-      $members = $dialog->getMembers();
-      $members_info = array_map(function ($member) {
-        return [
-          'uid' => $member->id(),
-          'name' => $member->getAccountName(),
-          'user_picture' => opigno_mobile_app_get_user_picture($member),
-        ];
-      }, $members);
-      // Get unread messages.
-      $unread_messages = PrivateMessagesHandler::getUnreadMessagesForThread($dialog, $this->currentUser);
-      $response_data['items'][] = [
-        'id' => $dialog->id(),
-        'subject' => $dialog->field_pm_subject->value,
-        'members' => $members_info,
-        'updated' => $dialog->getUpdatedTime(),
-        'last_access_time' => $dialog->getLastAccessTimestamp($this->currentUser),
-        'messages' => count($dialog->getMessages()),
-        'unread_messages' => count($unread_messages),
-        'last_uid' => $last_message ? $last_message->getOwnerId() : '',
+    // Wrap fully data to avaoid to early rendering.
+    $response_data = \Drupal::service('renderer')->executeInRenderContext(new RenderContext(), function () {
+      $response_data = [
+        'items' => [],
+        'next_page' => FALSE,
       ];
-    }
+  
+      // Get request parameters.
+      $request = \Drupal::request();
+      $request_query = $request->query;
+      $request_query_array = $request_query->all();
+      // How many items should be returned.
+      $limit = $request_query->get('limit') ?: $this->limit;
+      // Part of items.
+      $page = $request_query->get('page') ?: 0;
+      // How to order items.
+      $order_by = $request_query->get('order_by') && in_array(strtoupper($request_query->get('order_by')), ['ASC', 'DESC'])
+        ? $request_query->get('order_by') : $this->order_by;
+  
+      // Find out how many dialogs do we have.
+      $threads = OpignoMessageThread::getUserThreads($this->currentUser->id());
+  
+      $threads_count = count($threads);
+      $position = $limit * ($page + 1);
+      if ($threads_count > $position) {
+        $next_page_query = $request_query_array;
+        $next_page_query['page'] = $page + 1;
+        $response_data['next_page'] = Url::createFromRequest($request)
+          ->setOption('query', $next_page_query)
+          ->toString(TRUE)
+          ->getGeneratedUrl();
+      }
+  
+      // Find dialogs.
+        $query = \Drupal::entityQuery('private_message_thread')
+          ->condition('members', $this->currentUser->id())
+          ->sort('updated', strtoupper($order_by))
+          ->pager($limit);
+        $result = $query->execute();
+        $dialogs = \Drupal::entityTypeManager()
+          ->getStorage('private_message_thread')
+          ->loadMultiple($result);
+  
+      /* @var \Drupal\private_message\Entity\PrivateMessageThread $dialog */
+      foreach ($dialogs as $dialog) {
+        // Get last message.
+        $messages = $dialog->getMessages();
+        usort($messages, function ($a, $b) {
+          /* @var \Drupal\private_message\Entity\PrivateMessage $a */
+          /* @var \Drupal\private_message\Entity\PrivateMessage $b */
+          return $a->getCreatedTime() < $b->getCreatedTime();
+        });
+        $last_message = reset($messages);
+        // Get info about members.
+        $members = $dialog->getMembers();
+        $members_info = array_map(function ($member) {
+          return [
+            'uid' => $member->id(),
+            'name' => $member->getAccountName(),
+            'user_picture' => opigno_mobile_app_get_user_picture($member),
+          ];
+        }, $members);
+        // Get unread messages.
+        $unread_messages = PrivateMessagesHandler::getUnreadMessagesForThread($dialog, $this->currentUser);
+        $response_data['items'][] = [
+          'id' => $dialog->id(),
+          'subject' => $dialog->field_pm_subject->value,
+          'members' => $members_info,
+          'updated' => $dialog->getUpdatedTime(),
+          'last_access_time' => $dialog->getLastAccessTimestamp($this->currentUser),
+          'messages' => count($dialog->getMessages()),
+          'unread_messages' => count($unread_messages),
+          'last_uid' => $last_message ? $last_message->getOwnerId() : '',
+        ];
+      }
+      return $response_data;
+    });
 
     $response = new ResourceResponse($response_data, 200);
     // Disable caching.

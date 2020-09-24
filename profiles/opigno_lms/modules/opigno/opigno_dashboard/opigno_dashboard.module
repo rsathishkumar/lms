@@ -12,6 +12,7 @@ use Drupal\Core\Render\Element;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\opigno_dashboard\BlockService;
+use \Symfony\Component\HttpFoundation\RequestStack;
 
 define('OPIGNO_DASHBOARD_DEFAULT_CONFIG', '{"1":[{"admin_label":"Latest active trainings","id":"views_block:latest_active_trainings-block"}, {"admin_label":"Private Message: Dashboard - Last Threads","id":"views_block:private_message-block_dashboard"}],"2":[{"admin_label":"Opigno calendar block","id":"views_block:opigno_calendar-month_block"},{"admin_label":"Opigno Notifications: Dashboard - Unread Notifications","id":"views_block:opigno_notifications-block_unread_dashboard"}],"3":[]}');
 
@@ -148,8 +149,28 @@ function opigno_dashboard_page_attachments(array &$page) {
  * Implements hook_form_FORM_ID_alter().
  */
 function opigno_dashboard_form_user_login_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $route = \Drupal::routeMatch();
+  // Restrict by route for avoid issues with REST ect.
+  if ($route->getRouteName() == 'user.login') {
+    // Redirect user to the previous page.
+    $previous_url = \Drupal::request()->query->get('prev_path');
+    if (!empty($previous_url)) {
+      // Save redirect url to user private_tempstore in the first form loading.
+      $tempstore = \Drupal::service('user.private_tempstore')->get('opigno_dashboard');
+      $tempstore->set('prev_path', $previous_url);
+    }
+    else {
+      // Drupal will redirect to /user/login page before submit and rebuild form.
+      $tempstore = \Drupal::service('user.private_tempstore')->get('opigno_dashboard');
+      $prev_path = $tempstore->get('prev_path');
+      if (!empty($prev_path)) {
+        $form_state->set('prev_path', $prev_path);
+      }
+    }
+  }
+
   // Alter login form and add own custom submit handler.
-  $form['#submit'][] = 'opigno_dashboard_user_login_form_submit';
+    $form['#submit'][] = 'opigno_dashboard_user_login_form_submit';
 }
 
 function opigno_dashboard_user_login_form_submit($form, FormStateInterface $form_state) {
@@ -160,9 +181,9 @@ function opigno_dashboard_user_login_form_submit($form, FormStateInterface $form
   // Restrict by route for avoid issues with REST ect.
   if ($route->getRouteName() == 'user.login') {
     // Redirect user to the previous page.
-    $previous_url = \Drupal::request()->query->get('prev_path');
-    if ($previous_url) {
-      $url = Url::fromUri('internal:' . $previous_url);
+    $prev_path = $form_state->get('prev_path');
+    if ($prev_path) {
+      $url = Url::fromUri('internal:' . $prev_path);
       $form_state->setRedirectUrl($url);
     }
   }
@@ -252,6 +273,7 @@ function opigno_dashboard_blocks_update() {
  */
 function opigno_dashboard_preprocess_page_title(&$variables) {
   if (\Drupal::routeMatch()->getRouteName() == 'view.frontpage.page_1') {
-    $variables['title']['#markup'] = '';
+    $variables['title']['#allowed_tags'][] = 'span';
+    $variables['title']['#markup'] = '<span class="sr-only">' . $variables['title']['#markup'] . '</span>';
   }
 }

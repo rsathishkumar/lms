@@ -45,4 +45,8 @@ html {
       }
     }
   }
+
+  a[href="#main-content"] {
+    color: $deeper-blue;
+  }
 }

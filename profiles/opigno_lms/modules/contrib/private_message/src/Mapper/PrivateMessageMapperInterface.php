@@ -44,7 +44,7 @@ interface PrivateMessageMapperInterface {
    * @param \Drupal\user\UserInterface $user
    *   The user whose most recently thread IDs should be retrieved.
    * @param mixed $count
-   *   The number of thread IDs to retrieve or FALSE to retieve them all.
+   *   The number of thread IDs to retrieve or FALSE to retrieve them all.
    * @param int $timestamp
    *   A timestamp relative to which only thread IDs with an earlier timestamp
    *   should be returned.

@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Serializer;
+use Drupal\opigno_learning_path\Progress;
 
 /**
  * Class UsersController.
@@ -56,6 +57,13 @@ class UsersController extends ControllerBase {
   protected $database;
 
   /**
+   * Progress bar service.
+   *
+   * @var \Drupal\opigno_learning_path\Progress
+   */
+  protected $progress;
+
+  /**
    * Constructs a new UsersController object.
    *
    * @param \Symfony\Component\Serializer\Serializer $serializer
@@ -74,12 +82,14 @@ class UsersController extends ControllerBase {
                               array $serializer_formats,
                               LoggerInterface $logger,
                               EntityTypeManagerInterface $entity_type_manager,
-                              Connection $database) {
+                              Connection $database,
+                              Progress $progress) {
     $this->serializer = $serializer;
     $this->serializerFormats = $serializer_formats;
     $this->logger = $logger;
     $this->entityTypeManager = $entity_type_manager;
     $this->database = $database;
+    $this->progress = $progress;
   }
 
   /**
@@ -101,7 +111,8 @@ class UsersController extends ControllerBase {
       $formats,
       $container->get('logger.factory')->get('opigno_mobile_app'),
       $container->get('entity_type.manager'),
-      $container->get('database')
+      $container->get('database'),
+      $container->get('opigno_learning_path.progress')
     );
   }
 
@@ -326,7 +337,7 @@ class UsersController extends ControllerBase {
     ];
     foreach ($trainings as $training) {
       /* @var \Drupal\group\Entity\Group $training */
-      $user_achievements['progress'] += round(100 * opigno_learning_path_progress($training->id(), $user->id()));
+      $user_achievements['progress'] += $this->progress->getProgressRound($training->id(), $user->id());
       $user_achievements['time_spent'] += opigno_learning_path_get_time_spent($training->id(), $user->id());
       $is_passed = opigno_learning_path_is_passed($training, $user->id());
       if ($is_passed) {

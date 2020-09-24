@@ -443,7 +443,7 @@ class LearningPathMembersForm extends FormBase {
     }
 
     // Remove not needed roles for classes.
-    if ($group_bundle == 'opigno_class') {
+    if ($group_bundle == 'opigno_class' && !empty($form[0])) {
       unset($form[0]['title']);
       foreach ($form[0]['members']['#rows'] as $key => $row) {
         unset($form[0]['members']['#rows'][$key]['data'][2]);

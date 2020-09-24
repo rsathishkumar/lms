@@ -42,6 +42,7 @@
         margin: 0 auto;
         border-radius: 100%;
         border: 2px solid #70706f;
+        // @todo: Need add default image from BE side.
         @include svg-picto(picto-avatar);
         background-position: center bottom;
         background-size: 48px;
@@ -63,10 +64,19 @@
     right: 3rem;
 
     a {
-      @include svg-picto(picto-trash);
-      display: block;
-      width: $picto-size;
-      height: $picto-size;
+      font-size: 0;
+      color: $medium-gray-200;
+      text-decoration: none;
+
+      &:hover {
+        color: $blood-red;
+      }
+
+      &:before {
+        @include icon-base();
+        content: icon(trash);
+        font-size: 24px;
+      }
     }
   }
 
@@ -116,7 +126,6 @@
       flex: 1;
 
       .date {
-        color: #b3b3b2;
         margin-bottom: 1rem;
       }
 
@@ -176,6 +185,11 @@
 
   div#edit-message-0-format-guidelines {
     display: none;
+  }
+
+  .form-submit {
+    font-weight: 700;
+    font-size: 19px;
   }
 }
 

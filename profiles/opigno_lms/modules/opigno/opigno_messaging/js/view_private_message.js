@@ -5,7 +5,7 @@
       var $readAll = $('#read-all-messages', context);
       var $unreadCount = $('#site-header #header-right .user-messages a .unread');
       var baseUrl = drupalSettings.path.baseUrl ? drupalSettings.path.baseUrl : '/';
-      var language = (drupalSettings.path.currentLanguage !== undefined) ? '/' + drupalSettings.path.currentLanguage : '';
+      var language = (drupalSettings.path.currentLanguage !== undefined && drupalSettings.multiLingual.length) ? '/' + drupalSettings.path.currentLanguage : '';
 
       rowsClickListener($rows, language);
 

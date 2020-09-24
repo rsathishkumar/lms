@@ -6,9 +6,9 @@
           [class.activated-link]="entity === selectedEntity1 || entity === selectedEntity2">
   <div class="info-card-wrapper" *ngIf="infoCard && userHasInfoCard && row==1">
     <div class="text-right">
-      <button class="close-info-card" (click)="removeHideInfoCardPermanently()">{{ text_close }}</button>
+      <button class="close-info-card" (click)="removeHideInfoCardPermanently()"><i class="icon-close"></i>{{ text_close }}</button>
     </div>
-    <div class="info-icon">{{ text_add_a_new_item }}</div>
+    <div class="info-icon"><i class="icon-info"></i>{{ text_add_a_new_item }}</div>
     <div class="text-right">
       <a href="#" (click)="removeHideInfoCardPermanently();$event.preventDefault()">{{ text_do_not_show_this_message_again }}</a>
     </div>

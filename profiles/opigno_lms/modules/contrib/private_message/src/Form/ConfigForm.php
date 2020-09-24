@@ -127,7 +127,7 @@ class ConfigForm extends ConfigFormBase {
       '#type' => 'number',
       '#title' => $this->t('The number of seconds after which a user should be considered as not viewing a thread'),
       '#default_value' => $config->get('number_of_seconds_considered_away'),
-      '#description' => $this->t('When users have a private message thread open, calls to the server update the last time they have accessed the thread. This setting determines how many seconds after they have closed the thread, they should be considred as not accessing the thread anymore. Users will be able to override this value on their profile settings page.'),
+      '#description' => $this->t('When users have a private message thread open, calls to the server update the last time they have accessed the thread. This setting determines how many seconds after they have closed the thread, they should be considered as not accessing the thread anymore. Users will be able to override this value on their profile settings page.'),
       '#states' => [
         'visible' => [
           ':input[name="enable_notifications"]' => ['checked' => TRUE],

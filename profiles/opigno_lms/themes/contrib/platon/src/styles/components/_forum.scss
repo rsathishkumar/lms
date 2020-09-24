@@ -27,8 +27,6 @@ form.node-forum-form {
   }
 
   .form-actions {
-    // background-color: #dadada !important;
-
     input#edit-preview {
       display: none;
     }
@@ -127,15 +125,30 @@ article[typeof="schema:Discussion"] {
           height: 1.75rem;
           font-size: 0;
           background-size: 1rem;
+          color: $white;
+          text-decoration: none;
+          text-align: center;
+
+          &:before {
+            @include icon-base();
+            font-size: 18px;
+            line-height: 28px;
+          }
 
           &[href*="delete"] {
-            @include svg-picto('picto-message-delete', false);
             background-color: #ff5440;
+
+            &:before {
+              content: icon(trash);
+            }
           }
 
           &[href*="edit"] {
-            @include svg-picto('picto-message-edit', false);
             background-color: #ee6fbb;
+
+            &:before {
+              content: icon(pencil);
+            }
           }
         }
       }
@@ -183,10 +196,6 @@ body[class*="page-forum-"] {
 
   table {
     color: #70706f;
-
-    thead {
-      // display: none;
-    }
 
     tbody {
       tr {

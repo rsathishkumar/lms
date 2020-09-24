@@ -15,8 +15,8 @@ use Drupal\opigno_forum\ForumTopicHandler;
 /**
  * Creates field for a forum reference in a training groups.
  */
-function opigno_forum_install() {
-  if (!\Drupal::service('config.installer')->isSyncing()) {
+function opigno_forum_install($is_syncing) {
+  if (!$is_syncing) {
     $config_path = drupal_get_path('module', 'opigno_forum')
       . '/config/install';
     $storage = new FileStorage($config_path);

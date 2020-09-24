@@ -36,7 +36,7 @@ class EventSubscriber implements EventSubscriberInterface {
           if ($certificate && $certificate->hasField('paper_orientation')) {
             $orientation = $certificate->get('paper_orientation')->value;
             $configuration = $event->getArgument('configuration');
-            $configuration['orientation'] = !empty($orientation) ? $orientation : 'portrait';
+            $configuration['default_paper_orientation'] = $configuration['orientation'] = !empty($orientation) ? $orientation : 'portrait';
             $event->setArgument('configuration', $configuration);
           }
         }

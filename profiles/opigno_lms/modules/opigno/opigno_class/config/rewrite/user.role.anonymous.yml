@@ -14,3 +14,4 @@ permissions:
   - 'take modules'
   - 'use text format restricted_html'
   - 'view media'
+  - 'restful post color_rest_resource'

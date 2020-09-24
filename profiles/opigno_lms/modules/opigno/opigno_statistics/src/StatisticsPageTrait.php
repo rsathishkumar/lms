@@ -27,49 +27,18 @@ trait StatisticsPageTrait {
     $cx = $width / 2;
     $cy = $height / 2;
     $radius = min($width / 2, $height / 2);
-
     $value_rad = $value * 2 * 3.14159 - 3.14159 / 2;
-    $x = round($cx + $radius * cos($value_rad), 2);
-    $y = round($cy + $radius * sin($value_rad), 2);
-
-    if ($value_rad < 3.14159 / 2) {
-      $template = '<svg class="indicator" viewBox="0 0 {{ width }} {{ height }}">
-  <circle cx="{{ cx }}" cy="{{ cy }}" r="{{ radius }}"></circle>
-  <path d="M{{ cx }},{{ cy }}
-    L{{ cx }},0
-    A{{ radius }},{{ radius }} 1 0,1 {{ x }},{{ y }} z"></path>
-  <circle class="inner" cx="{{ cx }}" cy="{{ cy }}" r="{{ radius - 6 }}"></circle>
-</svg>';
-    }
-    else {
-      $template = '<svg class="indicator" viewBox="0 0 {{ width }} {{ height }}">
-  <circle cx="{{ cx }}" cy="{{ cy }}" r="{{ radius }}"></circle>
-  <path d="M{{ cx }},{{ cy }}
-    L{{ cx }},0
-    A{{ radius }},{{ radius }} 1 0,1 {{ cx }},{{ cy + radius }}
-    A{{ radius }},{{ radius }} 1 0,1 {{ x }},{{ y }} z"></path>
-  <circle class="inner" cx="{{ cx }}" cy="{{ cy }}" r="{{ radius - 6 }}"></circle>
-</svg>';
-    }
 
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['indicator-wrapper'],
-      ],
-      [
-        '#type' => 'inline_template',
-        '#template' => $template,
-        '#context' => [
-          'width' => $width,
-          'height' => $height,
-          'cx' => $cx,
-          'cy' => $cy,
-          'radius' => $radius,
-          'x' => $x,
-          'y' => $y,
-        ],
-      ],
+      '#theme' => 'opigno_statistics_circle_indicator',
+      '#width' => $width,
+      '#height' => $height,
+      '#cx' => $cx,
+      '#cy' => $cy,
+      '#radius' => $radius,
+      '#x' => round($cx + $radius * cos($value_rad), 2),
+      '#y' => round($cy + $radius * sin($value_rad), 2),
+      '#val_rad' => $value_rad < 3.14159 / 2,
     ];
   }
 
@@ -88,36 +57,10 @@ trait StatisticsPageTrait {
    */
   protected function buildValue($label, $value, $help_text = NULL) {
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['value-wrapper'],
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'span',
-        '#attributes' => [
-          'class' => ['value', ($help_text) ? 'p-relative' : NULL],
-        ],
-        '#value' => $value,
-        ($help_text) ? [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['popover-help'],
-            'data-toggle' => 'popover',
-            'data-content' => $help_text,
-          ],
-          '#value' => '?',
-        ] : NULL,
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'span',
-        '#attributes' => [
-          'class' => ['label'],
-        ],
-        '#value' => $label,
-      ],
+      '#theme' => 'opigno_statistics_circle_indicator_value',
+      '#value' => $value,
+      '#label' => $label,
+      '#help_text' => $help_text,
     ];
   }
 
@@ -316,37 +259,13 @@ trait StatisticsPageTrait {
       ->orderBy('position')
       ->orderBy('parent_id')
       ->execute()
-      ->fetchAllAssoc('entity_id');
-
-    $entity_ids = array_keys($data);
-
-    // Get relationships between courses and modules.
-    $query = \Drupal::database()
-      ->select('group_content_field_data', 'g_c_f_d');
-    $query->fields('g_c_f_d', ['entity_id', 'gid']);
-    if (!empty($entity_ids)) {
-      $query->condition('g_c_f_d.entity_id', $entity_ids, 'IN');
-    }
-    $group_content = $query
-      ->execute()
       ->fetchAll();
-
-    $modules_relationships = [];
-
-    foreach ($group_content as $content) {
-      $modules_relationships[$content->entity_id][] = $content->gid;
-    }
 
     // Sort courses and modules.
     $rows = [];
     foreach ($data as $row) {
       if ($row->typology == 'Course') {
         $rows[] = $row;
-        foreach ($data as $module) {
-          if (in_array($row->entity_id, $modules_relationships[$module->entity_id])) {
-            $rows[] = $module;
-          }
-        }
       }
       elseif (($row->typology == 'Module' && $row->parent_id == 0)
         || $row->typology == 'ILT' || $row->typology == 'Meeting') {

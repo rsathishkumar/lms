@@ -7,7 +7,6 @@ use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\view_mode_selector\Plugin\Field\FieldWidget\ViewModeSelectorSelect as ParentSelect;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -19,13 +18,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *  field_types = {"view_mode_selector"}
  * )
  */
-class ViewModeSelectorSelect extends ParentSelect implements ContainerFactoryPluginInterface {
+class ViewModeSelectorSelect extends ViewModeSelectorWidgetBase implements ContainerFactoryPluginInterface {
 
   /**
    * Gather all available view modes.
    */
   public function __construct($plugin_id, $plugin_definition, FieldDefinitionInterface $field_definition, array $settings, array $third_party_settings, EntityDisplayRepository $entity_display_repository) {
-    parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings);
+    parent::__construct($plugin_id, $plugin_definition, $field_definition, $settings, $third_party_settings, $entity_display_repository);
     // Get all view modes without restricting them to enabled ones..
     // Workaround for static caching issue with display modes.
     $entity_type = $field_definition->getTargetEntityTypeId();

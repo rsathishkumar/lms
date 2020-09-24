@@ -85,8 +85,8 @@ class MeetingForm extends ContentEntityForm {
     $session_key = $entity->getSessionKey();
     if (!empty($session_key)) {
       $info = $this->moxtraService->getMeetingInfo($owner_id, $session_key);
-      $status = $info['data']['status'];
-      if ($status !== 'SESSION_SCHEDULED') {
+      $status = !empty($info['data']) ? $info['data']['status'] : FALSE;
+      if (!empty($status) && $status !== 'SESSION_SCHEDULED') {
         $form[] = [
           '#markup' => $this->t('You can edit only a scheduled live meeting.'),
         ];
@@ -241,7 +241,7 @@ class MeetingForm extends ContentEntityForm {
         }
         else {
           $form_state->setError($form, $this->t("Can't create live meeting. Moxtra error: @message", [
-            '@message' => $response['message'],
+            '@message' => !empty($response['message']) ? $response['message'] : $response['error'],
           ]));
         }
       }
@@ -255,7 +255,7 @@ class MeetingForm extends ContentEntityForm {
     /** @var \Drupal\opigno_moxtra\MeetingInterface $entity */
     $entity = $this->entity;
     $current_members_ids = [];
-    $current_members = $form['members']['#default_value'];
+    $current_members = !empty($form['members']['#default_value']) ? $form['members']['#default_value'] : [];
     foreach ($current_members as $current_member) {
       list($type, $id) = explode('_', $current_member);
       $current_members_ids[] = $id;
@@ -290,8 +290,13 @@ class MeetingForm extends ContentEntityForm {
     // Load added users & classes from the form_state.
     $users_ids = [];
     $classes_ids = [];
+    $invite_users = [];
+    $owner_id = $entity->getOwnerId();
 
     $options = $form_state->getValue('members');
+    if (count($options)) {
+      $options['user_' . $owner_id] = 'user_' . $owner_id;
+    }
     if (!empty($options)) {
       foreach ($options as $option) {
         list($type, $id) = explode('_', $option);
@@ -318,6 +323,18 @@ class MeetingForm extends ContentEntityForm {
 
       $entity->setMembersIds($users_ids);
     }
+
+    $users = User::loadMultiple($users_ids);
+
+    foreach ($users as $account) {
+      $prefix = $this->moxtraService->isManager($account) ? 'm_' : '';
+      $invite_users[] = [
+        'user' => ['unique_id' => $prefix . $account->id()]
+      ];
+    }
+
+    $this->moxtraService->AddUsersToMeeting($entity->getOwnerId(), $entity->getSessionKey(), $invite_users);
+
     // Save entity.
     $status = parent::save($form, $form_state);
 
@@ -341,7 +358,6 @@ class MeetingForm extends ContentEntityForm {
       ]);
 
       // Send email notifications about meeting for added users.
-      $users = User::loadMultiple($users_ids);
       foreach ($users as $user) {
         if (!in_array($user->id(), $current_members_ids)) {
           $to = $user->getEmail();
@@ -359,25 +375,22 @@ class MeetingForm extends ContentEntityForm {
         $memberships = $training->getMembers();
         if ($memberships) {
           foreach ($memberships as $membership) {
-            $user = $membership->getUser();
-            if ($user->hasRole(OPIGNO_MOXTRA_COLLABORATIVE_FEATURES_RID)) {
-              $uid = $membership->getUser()->id();
-              if ($uid != $entity->getOwner()->id()) {
-                $users_ids[] = $uid;
-              }
+            $uid = $membership->getUser()->id();
+            if ($uid != $entity->getOwner()->id()) {
+              $users_ids[] = $uid;
             }
           }
         }
       }
 
       // Send email notifications about new meeting for users.
-      $users = User::loadMultiple($users_ids);
       foreach ($users as $user) {
         $to = $user->getEmail();
         $langcode = $user->getPreferredLangcode();
         $mail_service->mail($module, $key, $to, $langcode, $params, NULL, TRUE);
       }
     }
+
     $this->messenger()->addMessage($message);
 
     // Set redirect.

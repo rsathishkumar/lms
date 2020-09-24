@@ -26,7 +26,7 @@
 {% for type, messages in message_list %}
   <div class="alert {% if type == 'status' %}alert-success{% elseif type == 'error' %}alert-danger{% elseif type == 'warning' %}alert-warning{% endif %}" role="alert" aria-label="{{ status_headings[type] }}"{{ attributes|without('role', 'aria-label', 'class') }}>
     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-      <span aria-hidden="true">&times;</span>
+      <i class="icon-close"></i>
     </button>
 
     {% if type == 'error' %}

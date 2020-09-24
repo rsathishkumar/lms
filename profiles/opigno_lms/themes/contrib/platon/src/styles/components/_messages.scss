@@ -11,9 +11,20 @@
   }
 
   button[type="button"].close {
-    font-size: 1.25rem;
+    font-size: 1rem;
     padding-top: 0;
     padding-bottom: 0;
+    margin-left: 0.75rem;
+    color: $white;
+    opacity: 1;
+
+    &:hover {
+      opacity: .8;
+    }
+
+    body.anonymous-slider & {
+      margin-top: 4px;
+    }
   }
 }
 

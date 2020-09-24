@@ -7,7 +7,7 @@ use Drupal\Core\Link;
 use Drupal\group\Entity\Group;
 use Drupal\opigno_moxtra\MeetingInterface;
 use Drupal\opigno_moxtra\MoxtraServiceInterface;
-use Drupal\opigno_moxtra\OpignoServiceInterface;
+use Drupal\opigno_moxtra\MoxtraConnector;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\opigno_learning_path\LearningPathAccess;
@@ -20,9 +20,9 @@ class MeetingController extends ControllerBase {
   /**
    * Opigno service.
    *
-   * @var \Drupal\opigno_moxtra\OpignoServiceInterface
+   * @var \Drupal\opigno_moxtra\MoxtraConnector
    */
-  protected $opignoService;
+  protected $moxtraConnector;
 
   /**
    * Moxtra service.
@@ -34,16 +34,16 @@ class MeetingController extends ControllerBase {
   /**
    * Creates new MeetingController instance.
    *
-   * @param \Drupal\opigno_moxtra\OpignoServiceInterface $opigno_service
+   * @param \Drupal\opigno_moxtra\MoxtraConnector $opigno_service
    *   Opigno API service.
    * @param \Drupal\opigno_moxtra\MoxtraServiceInterface $moxtra_service
    *   Moxtra API service.
    */
   public function __construct(
-    OpignoServiceInterface $opigno_service,
+    MoxtraConnector $moxtra_connector,
     MoxtraServiceInterface $moxtra_service
   ) {
-    $this->opignoService = $opigno_service;
+    $this->moxtraConnector = $moxtra_connector;
     $this->moxtraService = $moxtra_service;
   }
 
@@ -52,7 +52,7 @@ class MeetingController extends ControllerBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('opigno_moxtra.opigno_api'),
+      $container->get('opigno_moxtra.connector'),
       $container->get('opigno_moxtra.moxtra_api')
     );
   }
@@ -82,7 +82,7 @@ class MeetingController extends ControllerBase {
       '#title' => 'test',
     ];
 
-    $title = 'Back to training homepage';
+    $title = $this->t('Back to training homepage');
     $route = 'entity.group.canonical';
     $route_params = [
       'group' => $gid,
@@ -135,9 +135,19 @@ class MeetingController extends ControllerBase {
     $client_id = $config->get('client_id');
     $org_id = $config->get('org_id');
 
-    $access_token = $this->opignoService->getToken($user->id());
+    $access_token = $this->moxtraConnector->getToken();
     $binder_id = $opigno_moxtra_meeting->getBinderId();
     $session_key = $opigno_moxtra_meeting->getSessionKey();
+    $topic = $opigno_moxtra_meeting->getTitle();
+    $invitees = [];
+
+    $members = $opigno_moxtra_meeting->getMembers();
+    foreach ($members as $member) {
+      $prefix = $this->moxtraConnector->isManager($member) ? 'm_' : '';
+      $invitees[] = ['unique_id' => $prefix . $member->id()];
+    }
+
+    $url = $this->moxtraConnector->getUrl();
 
     return [
       '#type' => 'container',
@@ -148,7 +158,7 @@ class MeetingController extends ControllerBase {
         ],
       ],
       'start_btn' => [
-        '#markup' => '<div class="start-meeting"><a href="#" id="start-meeting">' . $this->t('Start the live meeting') . '</div></a>',
+        '#markup' => '<div class="start-meeting"><a href="#" id="start-meeting">' . $this->t('Start the live meeting') . '<i class="icon-play-circle"></i></div></a>',
       ],
       'navigation' => $this->buildNavigation($opigno_moxtra_meeting),
       '#attached' => [
@@ -164,6 +174,9 @@ class MeetingController extends ControllerBase {
             'accessToken' => $access_token,
             'binderId' => $binder_id,
             'sessionKey' => $session_key,
+            'topic' => $topic,
+            'baseDomain' => $url,
+            'invitees' => $invitees,
           ],
         ],
       ],
@@ -180,13 +193,22 @@ class MeetingController extends ControllerBase {
    *   Render array.
    */
   protected function buildMeetingStarted(MeetingInterface $opigno_moxtra_meeting) {
-    $user = $this->currentUser();
+
     $config = $this->config('opigno_moxtra.settings');
     $client_id = $config->get('client_id');
     $org_id = $config->get('org_id');
 
-    $access_token = $this->opignoService->getToken($user->id());
+    $access_token = $this->moxtraConnector->getToken();
     $binder_id = $opigno_moxtra_meeting->getBinderId();
+    $topic = $opigno_moxtra_meeting->getTitle();
+    $invitees = [];
+    $members = $opigno_moxtra_meeting->getMembers();
+    foreach ($members as $member) {
+      $prefix = $this->moxtraConnector->isManager($member) ? 'm_' : '';
+      $invitees[] = ['unique_id' => $prefix . $member->id()];
+    }
+    $url = $this->moxtraConnector->getUrl();
+
     $session_key = $opigno_moxtra_meeting->getSessionKey();
 
     return [
@@ -220,6 +242,9 @@ class MeetingController extends ControllerBase {
             'accessToken' => $access_token,
             'binderId' => $binder_id,
             'sessionKey' => $session_key,
+            'topic' => $topic,
+            'baseDomain' => $url,
+            'invitees' => $invitees,
           ],
         ],
       ],
@@ -239,7 +264,7 @@ class MeetingController extends ControllerBase {
     return [
       '#type' => 'container',
       'message' => [
-        '#markup' => '<div class="meeting-ended">' . $this->t('This live meeting has ended.') . '</div>',
+        '#markup' => '<div class="meeting-ended">' . $this->t('This live meeting has ended.') . '<i class="icon-checked-circle"></i></div>',
       ],
       'navigation' => $this->buildNavigation($opigno_moxtra_meeting),
     ];
@@ -264,7 +289,8 @@ class MeetingController extends ControllerBase {
     $info = $this->moxtraService->getMeetingInfo($owner_id, $session_key);
 
     $content = [];
-    $status = $info['data']['status'];
+    $status = !empty($info['data']) ? $info['data']['status'] : FALSE;
+
     switch ($status) {
       case 'SESSION_SCHEDULED':
         $content[] = $this->buildMeetingScheduled($opigno_moxtra_meeting);
@@ -296,6 +322,19 @@ class MeetingController extends ControllerBase {
   }
 
   /**
+   * Returns title for the live meeting.
+   *
+   * @param \Drupal\opigno_moxtra\MeetingInterface $opigno_moxtra_meeting
+   *   The Live Meeting.
+   *
+   * @return string
+   *   Meeting title.
+   */
+  public function title(MeetingInterface $opigno_moxtra_meeting) {
+    return $opigno_moxtra_meeting->getTitle();
+  }
+
+  /**
    * Returns response for the autocompletion.
    *
    * @param \Drupal\group\Entity\Group $group
@@ -318,11 +357,6 @@ class MeetingController extends ControllerBase {
         return $member->getUser();
       }, $training_members);
       foreach ($training_users as $user) {
-        /** @var \Drupal\user\UserInterface $user */
-        if (!$user->hasPermission('view meeting entities')) {
-          continue;
-        }
-
         $id = $user->id();
         $name = $user->getDisplayName();
         $label = $this->t("@name (User #@id)", [

@@ -9,6 +9,7 @@ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Render\Markup;
 use Drupal\group\Entity\GroupInterface;
 use Drupal\opigno_group_manager\Entity\OpignoGroupManagedContent;
 use Drupal\opigno_learning_path\Entity\LPStatus;
@@ -280,54 +281,24 @@ AND gc.gid = :gid",
       ->execute()
       ->fetchField();
 
-    $users_block = $this->buildUserMetric(
-      $this->t('Users'),
-      $users,
-      t('This is the number of users registered to that training.')
-    );
-    $new_users_block = $this->buildUserMetric(
-      $this->t('New users'),
-      $new_users,
-      t('This is the number of users who registered during the last 7 days')
-    );
-    $active_users_block = $this->buildUserMetric(
-      $this->t('Recently active users'),
-      $active_users,
-      t('This is the number of users who where active in that training within the last 7 days.')
-    );
-
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['user-metrics'],
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'h3',
-        '#attributes' => [
-          'class' => ['user-metrics-title'],
-        ],
-        '#value' => $this->t('Users metrics'),
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['popover-help'],
-            'data-toggle' => 'popover',
-            'data-content' => t('The metrics below are related to this training'),
-          ],
-          '#value' => '?',
-        ],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['user-metrics-content'],
-        ],
-        'users' => $users_block,
-        'new_users' => $new_users_block,
-        'active_users' => $active_users_block,
-      ],
+      '#theme' => 'opigno_statistics_user_metrics',
+      '#help_text' => t('The metrics below are related to this training'),
+      'users' => $this->buildUserMetric(
+        $this->t('Users'),
+        $users,
+        t('This is the number of users registered to that training.')
+      ),
+      'new_users' => $this->buildUserMetric(
+        $this->t('New users'),
+        $new_users,
+        t('This is the number of users who registered during the last 7 days')
+      ),
+      'active_users' => $this->buildUserMetric(
+        $this->t('Recently active users'),
+        $active_users,
+        t('This is the number of users who where active in that training within the last 7 days.')
+      ),
     ];
   }
 
@@ -541,7 +512,7 @@ AND gc.gid = :gid",
         : '-';
 
       $details_link = Link::createFromRoute(
-        '',
+        Markup::create('<span class="sr-only">' . t('@user_name details', ['@user_name' => $row->name]) . '</span>'),
         'opigno_statistics.user.training_details',
         [
           'user' => $row->uid,
@@ -757,6 +728,8 @@ AND gc.gid = :gid",
     $max_year = !empty($years) ? max(array_keys($years)) : NULL;
     $year_select = [
       '#type' => 'select',
+      '#title' => $this->t('Year'),
+      '#title_display' => 'invisible',
       '#options' => $years,
       '#default_value' => 'none',
       '#ajax' => [
@@ -798,6 +771,8 @@ AND gc.gid = :gid",
     $month_select = [
       '#type' => 'select',
       '#options' => $months,
+      '#title' => $this->t('Month'),
+      '#title_display' => 'invisible',
       '#default_value' => 'none',
       '#ajax' => [
         'event' => 'change',
@@ -822,6 +797,15 @@ AND gc.gid = :gid",
       '#type' => 'container',
       '#attributes' => [
         'id' => 'statistics-trainings-progress',
+      ],
+      // H2 Need for correct structure.
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'h2',
+        '#value' => $this->t('Training statistics'),
+        '#attributes' => [
+          'class' => ['sr-only']
+        ]
       ],
       'year' => $year_select,
       'month' => $month_select,

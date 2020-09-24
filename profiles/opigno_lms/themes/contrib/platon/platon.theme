@@ -20,6 +20,26 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\opigno_messaging\OpignoMessageThread;
 
 /**
+ * Implements hook_theme().
+ */
+function platon_theme() {
+  return [
+    'platon__login_front_slider' => [
+      'variables' => [
+        'items' => NULL,
+      ],
+      'template' => 'platon/platon--login-front-slider'
+    ],
+  ];
+}
+
+function platon_theme_suggestions_form_element_alter(&$suggestions, $variables, $hook) {
+  if (!empty($variables['element']['#type']) && $variables['element']['#type'] == 'managed_file') {
+    $suggestions[] = $hook . '__managed_file';
+  }
+}
+
+/**
  * Callback for both ajax-enabled buttons.
  *
  * Selects and returns the fieldset with the names in it.
@@ -195,163 +215,159 @@ function platon_preprocess_group(&$variables)
 /**
  * Implements hook_preprocess_page().
  */
-function platon_preprocess_page(&$variables)
-{
-    $route = \Drupal::routeMatch()->getRouteName();
-    $account = \Drupal::currentUser();
-    $moduleHandler = \Drupal::service('module_handler');
-    $variables['route_name'] = $route;
+function platon_preprocess_page(&$variables) {
+  $route = \Drupal::routeMatch()->getRouteName();
+  $account = \Drupal::currentUser();
+  $moduleHandler = \Drupal::service('module_handler');
+  $variables['route_name'] = $route;
 
-    $account_settings = \Drupal::config('user.settings');
-    $register = $account_settings->get('register');
-    $variables['register'] = $register;
+  $account_settings = \Drupal::config('user.settings');
+  $register = $account_settings->get('register');
+  $variables['register'] = $register;
 
-    // Check if demo module enabled.
-    if ($moduleHandler->moduleExists('opigno_demo') && $route == 'view.frontpage.page_1') {
-      $variables['opgino_demo'] = TRUE;
-    }
-    else {
-      $variables['opgino_demo'] = FALSE;
-    }
+  // Check if demo module enabled.
+  if ($moduleHandler->moduleExists('opigno_demo') && $route == 'view.frontpage.page_1') {
+    $variables['opgino_demo'] = TRUE;
+  } else {
+    $variables['opgino_demo'] = FALSE;
+  }
 
-    /** About opigno version */
-    if (function_exists('opigno_lms_check_opigno_lms_updates') && function_exists('update_get_available')) {
-        $variables['opigno_lms_updates'] = opigno_lms_check_opigno_lms_updates() ? 'nok' : 'ok';
-    }
+  /** About opigno version */
+  if (function_exists('opigno_lms_check_opigno_lms_updates') && function_exists('update_get_available')) {
+    $variables['opigno_lms_updates'] = opigno_lms_check_opigno_lms_updates() ? 'nok' : 'ok';
+  }
 
-    if (function_exists('opigno_lms_get_current_opigno_lms_release')) {
-        $variables['opigno_lms_release'] = opigno_lms_get_current_opigno_lms_release();
-    }
+  if (function_exists('opigno_lms_get_current_opigno_lms_release')) {
+    $variables['opigno_lms_release'] = opigno_lms_get_current_opigno_lms_release();
+  }
 
-    if (function_exists('opigno_search_block_form')) {
-      $variables['opigno_search_form'] = opigno_search_block_form();
-    }
+  if (function_exists('opigno_search_block_form')) {
+    $variables['opigno_search_form'] = opigno_search_block_form();
+  }
 
-    /** Login form */
-    $variables['login_form'] = null;
-    if (!$account->id()) {
-        $form = Drupal::formBuilder()->getForm(Drupal\user\Form\UserLoginForm::class);
-        $render = Drupal::service('renderer');
+  /** Login form */
+  $variables['login_form'] = null;
+  if (!$account->id()) {
+    $form = Drupal::formBuilder()->getForm(Drupal\user\Form\UserLoginForm::class);
+    $render = Drupal::service('renderer');
 
-        $form['name']['#attributes']['placeholder'] = $form['name']['#title'];
-        $form['pass']['#attributes']['placeholder'] = $form['pass']['#title'];
-        $form['name']['#title'] = $form['name']['#description'] = null;
-        $form['pass']['#title'] = $form['pass']['#description'] = null;
-        $form['#action'] = Url::fromRoute('user.login')->toString();
-        $variables['login_form'] = $render->renderPlain($form);
-    }
+    $form['name']['#attributes']['placeholder'] = !empty($form['name']) ? $form['name']['#title'] : '';
+    $form['pass']['#attributes']['placeholder'] = !empty($form['pass']) ? $form['pass']['#title'] : '';
+    $form['name']['#title_display'] = $form['name']['#description_display'] = 'invisible';
+    $form['pass']['#title_display'] = $form['pass']['#description_display'] = 'invisible';
+    $form['#action'] = Url::fromRoute('user.login')->toString();
+    $variables['login_form'] = $render->renderPlain($form);
+  }
 
-    /** Password form */
-    $variables['password_form'] = null;
-    if (!$account->id()) {
-        $form = Drupal::formBuilder()->getForm(Drupal\user\Form\UserPasswordForm::class);
-        $render = Drupal::service('renderer');
+  /** Password form */
+  $variables['password_form'] = null;
+  if (!$account->id()) {
+    $form = Drupal::formBuilder()->getForm(Drupal\user\Form\UserPasswordForm::class);
+    $render = Drupal::service('renderer');
 
-        $form['name']['#attributes']['placeholder'] = $form['name']['#title'];
-        $form['name']['#title'] = $form['name']['#description'] = null;
-        $form['mail']['#access'] = false;
-        $form['#action'] = Url::fromRoute('user.pass')->toString();
-        $variables['password_form'] = $render->renderPlain($form);
-    }
+    $form['name']['#attributes']['placeholder'] = $form['name']['#title'];
+    $form['name']['#title_display'] = $form['name']['#description_display'] = 'invisible';
+    $form['mail']['#access'] = false;
+    $form['#action'] = Url::fromRoute('user.pass')->toString();
+    $variables['password_form'] = $render->renderPlain($form);
+  }
 
-    /** Password form */
-    $variables['register_form'] = null;
-    if (!$account->id()) {
-        $entity = \Drupal::entityTypeManager()
-          ->getStorage('user')
-          ->create(array());
+  /** Password form */
+  $variables['register_form'] = null;
+  if (!$account->id()) {
+    $entity = \Drupal::entityTypeManager()
+      ->getStorage('user')
+      ->create(array());
 
-        $formObject = \Drupal::entityTypeManager()
-          ->getFormObject('user', 'register')
-          ->setEntity($entity);
+    $formObject = \Drupal::entityTypeManager()
+      ->getFormObject('user', 'register')
+      ->setEntity($entity);
 
-        $form = \Drupal::formBuilder()->getForm($formObject);
+    $form = \Drupal::formBuilder()->getForm($formObject);
+    $form['account']['name']['#title'] = t('Enter username');
+    $form['account']['mail']['#attributes']['placeholder'] = $form['account']['mail']['#title'];
+    $form['account']['name']['#attributes']['placeholder'] = $form['account']['name']['#title'];
+    $form['account']['mail']['#title_display'] = 'invisible';
+    $form['account']['name']['#title_display'] = 'invisible';
+    $form['user_picture']['#access'] = false;
+    $form['contact']['#access'] = false;
+    $form['timezone']['#access'] = false;
+    $form['#action'] = Url::fromRoute('user.register')->toString();
+    $variables['register_form'] = $form;
+  }
 
-        $form['account']['mail']['#attributes']['placeholder'] = $form['account']['mail']['#title'];
-        $form['account']['name']['#attributes']['placeholder'] = $form['account']['name']['#title'];
-        $form['account']['mail']['#title'] = null;
-        $form['account']['name']['#title'] = null;
-        $form['user_picture']['#access'] = false;
-        $form['contact']['#access'] = false;
-        $form['timezone']['#access'] = false;
-        $form['#action'] = Url::fromRoute('user.register')->toString();
-        $variables['register_form'] = $form;
-    }
+  /** Search form */
+  $variables['search_form'] = null;
+  if ($moduleHandler->moduleExists('search')) {
+    $form = Drupal::formBuilder()->getForm(Drupal\search\Form\SearchBlockForm::class);
+    $render = Drupal::service('renderer');
+    $form['keys']['#attributes']['placeholder'] = $form['keys']['#title'];
+    $form['keys']['#title_display'] = 'invisible';
+    $variables['search_form'] = $render->renderPlain($form);
+  }
 
-    /** Search form */
-    $variables['search_form'] = null;
-    if ($moduleHandler->moduleExists('search')) {
-      $form = Drupal::formBuilder()->getForm(Drupal\search\Form\SearchBlockForm::class);
-      $render = Drupal::service('renderer');
-      $form['keys']['#attributes']['placeholder'] = $form['keys']['#title'];
-      $form['keys']['#title'] = null;
-      $variables['search_form'] = $render->renderPlain($form);
-    }
+  /** Frontpage slider */
+  $variables['frontpage_slider'] = false;
+  if (platon_anonymous_has_slider()) {
+    $platon_home_page_settings = theme_get_setting('platon_home_page_settings', 'platon');
+    $variables['frontpage_slider'] = true;
 
-    /** Frontpage slider */
-    $variables['frontpage_slider'] = false;
-    if (platon_anonymous_has_slider()) {
-        $platon_home_page_settings = theme_get_setting('platon_home_page_settings', 'platon');
-        $variables['frontpage_slider'] = true;
-        $content = null;
-        $content .= '<div class="anonymous-slider list-unstyled d-flex">';
+    $slides = [];
+    foreach ($platon_home_page_settings['platon_home_page_slides'] as $slide) {
+      if (isset($slide['platon_home_page_image_path']) && isset($slide['platon_home_page_markup_wrapper']['value'])) {
+        $background_image_uri = 'public://' . $slide['platon_home_page_image_path'];
+        $background_image_url = (ImageStyle::load(PLATON_HOMEPAGE_IMAGE_STYLE)) ? ImageStyle::load(PLATON_HOMEPAGE_IMAGE_STYLE)->buildUrl($background_image_uri) : file_create_url($background_image_uri);
+        $markup = $slide['platon_home_page_markup_wrapper']['value'];
 
-        $nb_items = 0;
-        foreach ($platon_home_page_settings['platon_home_page_slides'] as $slide) {
-            if (!isset($slide['platon_home_page_image_path'])
-                && !isset($slide['platon_home_page_markup_wrapper']['value'])
-            ) {
-                continue;
-            }
-
-            $background_image_uri = 'public://' . $slide['platon_home_page_image_path'];
-            $background_image_url = (ImageStyle::load(PLATON_HOMEPAGE_IMAGE_STYLE)) ? ImageStyle::load(PLATON_HOMEPAGE_IMAGE_STYLE)->buildUrl($background_image_uri) : file_create_url($background_image_uri);
-            $markup = $slide['platon_home_page_markup_wrapper']['value'];
-            if ($slide['platon_home_page_markup_wrapper']['format'] == 'restricted_html') {
-                $markup = '<pre>' . $markup . '</pre>';
-            }
-
-            $content .= '<div class="slider-item" style="background-image: url(' . Xss::filter($background_image_url) . ')">';
-            $content .= '<div class="slider-markup">' . Xss::filterAdmin($markup) . '</div>';
-            $content .= '</div>';
-
-            $nb_items++;
+        if ($slide['platon_home_page_markup_wrapper']['format'] == 'restricted_html') {
+          $markup = '<pre>' . $markup . '</pre>';
         }
-        $content .= '</div>';
 
-        $variables['page']['content'] = new FormattableMarkup($content, []);
-    }
-
-    /** Frontpage menu */
-    if (!platon_anonymous_has_menu($variables) && $account->isAnonymous()) {
-        $variables['page']['menu'] = null;
-    }
-
-    /** Pages with faded background */
-    if (platon_page_has_faded_background()) {
-        $variables['content_wrapper_classes'] = 'faded-form-wrapper';
-    }
-
-    /** Header variables */
-    if (method_exists('\Drupal\opigno_notification\Entity\OpignoNotification', 'unreadCount')) {
-      $variables['notifications_unread_count'] = \Drupal\opigno_notification\Entity\OpignoNotification::unreadCount();
-    }
-
-    if (function_exists('_opigno_ilt_upcoming')) {
-      $user = User::load($account->id());
-      $variables['upcoming_ilts'] = array_map(function ($ilt) {
-        /** @var \Drupal\opigno_ilt\ILTInterface $ilt */
-        return [
-          'title' => $ilt->getTitle(),
-          'link' => Url::fromRoute('entity.opigno_ilt.canonical', [
-            'opigno_ilt' => $ilt->id(),
-          ])->toString(),
+        $slides[] = [
+          'img_path' => Xss::filter($background_image_url),
+          'markup' => Xss::filterAdmin($markup),
         ];
-      }, _opigno_ilt_upcoming($user));
-      $variables['upcoming_ilts_count'] = count($variables['upcoming_ilts']);
+      }
     }
 
-    if (function_exists('_opigno_moxtra_upcoming_live_meetings')) {
+    $variables['page']['content'] = [
+      '#theme' => 'platon__login_front_slider',
+      '#items' => $slides,
+    ];
+  }
+
+  /** Frontpage menu */
+  if (!platon_anonymous_has_menu($variables) && $account->isAnonymous()) {
+    $variables['page']['menu'] = null;
+  }
+
+  /** Pages with faded background */
+  if (platon_page_has_faded_background()) {
+    $variables['content_wrapper_classes'] = 'faded-form-wrapper';
+  }
+
+  /** Header variables */
+  if (method_exists('\Drupal\opigno_notification\Entity\OpignoNotification', 'unreadCount')) {
+    $variables['notifications_unread_count'] = \Drupal\opigno_notification\Entity\OpignoNotification::unreadCount();
+  }
+
+  if (function_exists('_opigno_ilt_upcoming')) {
+    $user = User::load($account->id());
+    $variables['upcoming_ilts'] = array_map(function ($ilt) {
+      /** @var \Drupal\opigno_ilt\ILTInterface $ilt */
+      return [
+        'title' => $ilt->getTitle(),
+        'link' => Url::fromRoute('entity.opigno_ilt.canonical', [
+          'opigno_ilt' => $ilt->id(),
+        ])->toString(),
+      ];
+    }, _opigno_ilt_upcoming($user));
+    $variables['upcoming_ilts_count'] = count($variables['upcoming_ilts']);
+  }
+
+  if (function_exists('_opigno_moxtra_upcoming_live_meetings')) {
+    $connector = \Drupal::service('opigno_moxtra.connector');
+    if ($connector->checkSettings()) {
       $user = User::load($account->id());
       $variables['upcoming_live_meetings'] = array_map(function ($meeting) {
         /** @var \Drupal\opigno_moxtra\MeetingInterface $meeting */
@@ -364,23 +380,24 @@ function platon_preprocess_page(&$variables)
       }, _opigno_moxtra_upcoming_live_meetings($user));
       $variables['upcoming_live_meetings_count'] = count($variables['upcoming_live_meetings']);
     }
+  }
 
-    $variables['notifications_unread'] = views_embed_view('opigno_notifications', 'block_unread', $account->id());
-    $variables['notifications'] = views_embed_view('opigno_notifications', 'block_all', $account->id());
-    $variables['private_messages'] = views_embed_view('private_message', 'block_last', $account->id());
+  $variables['notifications_unread'] = views_embed_view('opigno_notifications', 'block_unread', $account->id());
+  $variables['notifications'] = views_embed_view('opigno_notifications', 'block_all', $account->id());
+  $variables['private_messages'] = views_embed_view('private_message', 'block_last', $account->id());
 
-    /** Header user picture */
-    if (!$account->isAnonymous()) {
-        $user = \Drupal\user\Entity\User::load($account->id());
-        $user_picture = $user->get('user_picture')->getValue();
-        if (isset($user_picture[0]['target_id'])) {
-            $user_picture = File::load($user_picture[0]['target_id']);
-            $variables['user_picture'] = file_create_url($user_picture->getFileUri());
-        }
+  /** Header user picture */
+  if (!$account->isAnonymous()) {
+    $user = \Drupal\user\Entity\User::load($account->id());
+    $user_picture = $user->get('user_picture')->getValue();
+    if (isset($user_picture[0]['target_id'])) {
+      $user_picture = File::load($user_picture[0]['target_id']);
+      $variables['user_picture'] = file_create_url($user_picture->getFileUri());
     }
+  }
 
-    $variables['unread_thread_count'] = OpignoMessageThread::getUnreadThreadCount();
-    $variables['opigno_logo'] = file_create_url(drupal_get_path('theme', 'platon') . '/logo.png');
+  $variables['unread_thread_count'] = OpignoMessageThread::getUnreadThreadCount();
+  $variables['opigno_logo'] = file_create_url(drupal_get_path('theme', 'platon') . '/logo.png');
 }
 
 /**
@@ -400,80 +417,17 @@ function platon_preprocess_region(&$variables)
 }
 
 /**
- * Implements hook_form_alter().
- */
-function platon_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
-{
-  foreach ($form as &$item) {
-    if (is_array($item) && isset($item['widget']) && is_array($item['widget'])) {
-      foreach ($item['widget'] as &$widget) {
-        if (is_array($widget) && isset($widget['#type']) && $widget['#type'] == 'managed_file') {
-          $widget['#field_prefix'] = '<div class="opigno-file-widget-wrapper">';
-          $widget['#field_suffix'] = '<div class="empty-informations">';
-          $widget['#field_suffix'] .= '<div class="picto-file-upload"></div>';
-          $widget['#field_suffix'] .= '<div>' . t('Upload a file') . '</div>';
-          $widget['#field_suffix'] .= '<div>' . t('Drag and drop or click here to select a file') . '</div>';
-          $widget['#field_suffix'] .= '</div>';
-          $widget['#field_suffix'] .= '</div>';
-        }
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_preprocess_input().
  */
-function platon_preprocess_input(&$variables)
-{
-    if ($variables['element']['#type'] == 'submit') {
-        $variables['attributes']['class'][] = 'btn';
-        $variables['attributes']['class'][] = 'btn-success';
-    } elseif ($variables['element']['#type'] == 'checkbox' || $variables['element']['#type'] == 'radio') {
-        $variables['attributes']['class'][] = 'form-check-input';
-    } elseif ($variables['element']['#type'] != 'hidden') {
-        $variables['attributes']['class'][] = 'form-control';
-    }
-}
-
-/**
- * Implements hook_preprocess_select().
- */
-function platon_preprocess_select(&$variables)
-{
+function platon_preprocess_input(&$variables) {
+  if ($variables['element']['#type'] == 'submit') {
+    $variables['attributes']['class'][] = 'btn';
+    $variables['attributes']['class'][] = 'btn-success';
+  } elseif ($variables['element']['#type'] == 'checkbox' || $variables['element']['#type'] == 'radio') {
+    $variables['attributes']['class'][] = 'form-check-input';
+  } elseif ($variables['element']['#type'] != 'hidden') {
     $variables['attributes']['class'][] = 'form-control';
-}
-
-/**
- * Implements hook_preprocess_textarea().
- */
-function platon_preprocess_textarea(&$variables)
-{
-    $variables['attributes']['class'][] = 'form-control';
-}
-
-/**
- * Implements hook_preprocess_form_element().
- */
-function platon_preprocess_form_element(&$variables)
-{
-    $variables['attributes']['class'][] = 'form-group';
-}
-
-/**
- * Implements hook_preprocess_menu_local_task().
- */
-function platon_preprocess_menu_local_task(&$variables)
-{
-    $variables['attributes']['class'][] = 'list-inline-item';
-}
-
-/**
- * Implements hook_preprocess_menu_local_action().
- */
-function platon_preprocess_menu_local_action(&$variables)
-{
-    $variables['attributes']['class'][] = 'list-inline-item';
+  }
 }
 
 /**
@@ -588,6 +542,32 @@ function platon_preprocess_file_video(&$variables) {
   if (is_object($variables['attributes']) && !$variables['attributes']->hasAttribute('autoplay')) {
     global $base_url;
     $variables['video_image'] = $base_url . '/' . drupal_get_path('theme', 'platon') . '/images/video-image.svg';
+  }
+}
+
+/**
+ * Implements hook_preprocess_image_formatter().
+ */
+function platon_preprocess_image_formatter(&$variables) {
+  if (empty($variables['image']['#alt']) && $variables['image_style'] == 'catalog_thumbnail') {
+    // Set empty alt to pass accessibility validation.
+    // Replace empty alt in views.
+    $variables['image']['#alt'] = '';
+
+     if ($group = \Drupal::routeMatch()->getParameter('group')) {
+       $variables['image']['#alt'] = t('Picture of') . ' ' . $group->label();
+    }
+  }
+}
+/**
+ * Implements hook_preprocess_input().
+ *
+ * todo: Need to check.
+ * https://www.drupal.org/project/webform/issues/3114421
+ */
+function platon_preprocess_input__hidden(&$variables) {
+  if (!empty($variables['attributes'])) {
+    unset($variables['attributes']['autocomplete']);
   }
 }
 

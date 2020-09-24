@@ -12,8 +12,8 @@ use Drupal\user\Entity\Role;
 /**
  * Implements hook_install().
  */
-function opigno_skills_system_install() {
-  if (!\Drupal::service('config.installer')->isSyncing()) {
+function opigno_skills_system_install($is_syncing) {
+  if (!$is_syncing) {
     // Give an access to manage skills vocabulary.
     $role = Role::load('content_manager');
     $issueAccessPermissions = [
@@ -40,6 +40,26 @@ function opigno_skills_system_uninstall () {
 
   $data = $storage->read('views.view.opigno_activities_bank_lp_interface');
   $config_storage->write('views.view.opigno_activities_bank_lp_interface', $data);
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function opigno_skills_system_requirements($phase) {
+  $requirements = [];
+  $message = t('"almende/vis" library is not installed. Please install it from <a href="@library">here</a> and place in <em>libraries/</em> folder', ['@library' => 'https://github.com/almende/vis.git']);
+  $library_exists = file_exists('libraries/vis/dist/vis.js') && file_exists('libraries/vis/dist/vis.css');
+  if ($phase == 'runtime' && !$library_exists) {
+    $requirements += [
+      'opigno_skills_system' => [
+        'title' => t('Skills system library'),
+        'value' => $message,
+        'severity' => REQUIREMENT_ERROR,
+      ],
+    ];
+  }
+
+  return $requirements;
 }
 
 /*

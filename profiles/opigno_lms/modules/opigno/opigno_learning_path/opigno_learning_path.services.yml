@@ -15,12 +15,6 @@ services:
     tags:
       - { name: event_subscriber }
 
-  # remove  X-Frame-Options: SAMEORIGIN for angular dev
-  remove_x_frame_options_subscriber:
-    class: Drupal\opigno_learning_path\EventSubscriber\RemoveXFrameOptionsSubscriber
-    tags:
-      - { name: event_subscriber }
-
   opigno_learning_path.group_operations:
     class: Drupal\opigno_learning_path\LearningPathGroupOperationsLinks
 
@@ -36,3 +30,6 @@ services:
   opigno_learning_path.join_form:
     class: Drupal\opigno_learning_path\JoinService
     arguments: ['@current_user', '@entity.form_builder']
+  opigno_learning_path.progress:
+    class: Drupal\opigno_learning_path\Progress
+    arguments: ['@current_user', '@database', '@request_stack']

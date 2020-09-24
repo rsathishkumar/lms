@@ -15,9 +15,10 @@ dependencies:
   - opigno_module:opigno_module
   - opigno_group_manager:opigno_group_manager
   - tft:tft
+  - opigno_cron:opigno_cron
 configure: opigno_moxtra.settings
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.7'
+# Information added by Drupal.org packaging script on 2020-08-18
+version: '8.x-1.9'
 project: 'opigno_moxtra'
-datestamp: 1591090119
+datestamp: 1597750220

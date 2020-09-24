@@ -264,22 +264,17 @@ class Popup extends FieldGroupFormatterBase {
   /**
    * {@inheritdoc}
    */
-  public function preRender(&$element, $rendering_object) {
-    parent::preRender($element, $rendering_object);
+  public function process(&$element, $processed_object) {
 
-    $element = [
-      '#type' => 'container',
-      '#id' => $this->getGroupId(),
-      '#attributes' => [
-        'id' => $this->getGroupId(),
-        'title' => $this->getSettingValue('popup_labels', 'title'),
-        'style' => 'display:none;',
-        'class' => array_merge(explode(' ', $this->getSetting('classes')), ['popup-field-group']),
-      ],
-      '#weight' => isset($element['#weight']) ? $element['#weight'] : 0,
-      '#prefix' => $this->generateOpenPopupHtml(),
-      'popup' => $element,
+    $element['#id'] = $this->getGroupId();
+    $element['#type'] = 'container';
+    $element['#attributes'] = [
+      'id' => $this->getGroupId(),
+      'title' => $this->getSettingValue('popup_labels', 'title'),
+      'style' => 'display:none;',
+      'class' => array_merge(explode(' ', $this->getSetting('classes')), ['popup-field-group']),
     ];
+    $element['#prefix'] = $this->generateOpenPopupHtml();
 
     $element['#attached']['library'][] = 'popup_field_group/core';
     $element['#attached']['drupalSettings']['popupFieldGroup']['linkCssClass'] = $this->openPopupCssClass;
@@ -291,6 +286,15 @@ class Popup extends FieldGroupFormatterBase {
         $element['#attached']['css'][$uri] = ['group' => JS_THEME];
       }
     }
+
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preRender(&$element, $rendering_object) {
+    parent::preRender($element, $rendering_object);
+    $this->process($element, $rendering_object);
   }
 
   /**

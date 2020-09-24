@@ -15,8 +15,8 @@ use Drupal\user\Entity\Role;
 /**
  * Creates the collaborative workspace field in a training groups.
  */
-function opigno_moxtra_install() {
-  if (!\Drupal::service('config.installer')->isSyncing()) {
+function opigno_moxtra_install($is_syncing) {
+  if (!$is_syncing) {
     $config_path = drupal_get_path('module', 'opigno_moxtra')
       . '/config/install';
     $storage = new FileStorage($config_path);
@@ -294,4 +294,42 @@ function opigno_moxtra_update_8012() {
   $role = Role::load('content_manager');
   $role->grantPermission('start meeting');
   $role->save();
+}
+
+/**
+ * Creates create cronjobs.
+ */
+function opigno_moxtra_update_8013() {
+
+  // Enable new module opigno_cron.
+  if (!\Drupal::moduleHandler()->moduleExists('opigno_cron')) {
+    \Drupal::service('module_installer')->install(['opigno_cron']);
+  }
+
+  // Add new cron configuretions.
+  $config_path = drupal_get_path('module', 'opigno_moxtra')
+    . '/config/install';
+  $storage = new FileStorage($config_path);
+
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('ultimate_cron.job.opigno_moxtra_save_meeting_records');
+  $config_storage->write('ultimate_cron.job.opigno_moxtra_save_meeting_records', $data);
+
+  $data = $storage->read('ultimate_cron.job.opigno_moxtra_meeting_notification');
+  $config_storage->write('ultimate_cron.job.opigno_moxtra_meeting_notification', $data);
+}
+
+/**
+ * Creates create cronjobs.
+ */
+function opigno_moxtra_update_8014() {
+  // Add new cron configuretions.
+  $config_path = drupal_get_path('module', 'opigno_moxtra')
+    . '/config/install';
+  $storage = new FileStorage($config_path);
+
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('user.role.collaborative_features');
+  $config_storage->write('user.role.collaborative_features', $data);
+
 }

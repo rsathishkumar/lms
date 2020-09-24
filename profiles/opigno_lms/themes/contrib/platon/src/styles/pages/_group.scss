@@ -4,13 +4,15 @@ body.section-group {
     #delete-lp-form-wrapper,
     #join-group-form-wrapper {
       button.close-overlay {
-        @include svg-picto(picto-close-black);
-        background-color: transparent;
         font-size: 0;
         padding: 0;
-        width: 30px;
-        height: 30px;
-        background-size: 20px;
+        background-color: transparent;
+
+        &:before {
+          @include icon-base();
+          content: icon(close);
+          font-size: 20px;
+        }
       }
     }
   }

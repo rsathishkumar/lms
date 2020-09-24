@@ -732,6 +732,7 @@ function opigno_messaging_preprocess_views_view(&$vars) {
   if (isset($vars['view_array']['#name'])
     && $vars['view_array']['#name'] === 'private_message') {
     $vars['#attached']['library'][] = 'opigno_messaging/view_private_message';
+    $vars['#attached']['drupalSettings']['multiLingual'] = \Drupal::languageManager()->isMultilingual();
   }
 }
 

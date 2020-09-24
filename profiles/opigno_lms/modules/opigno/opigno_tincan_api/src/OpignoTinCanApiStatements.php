@@ -248,7 +248,7 @@ class OpignoTinCanApiStatements {
   }
 
   /**
-   * Creates and sends statement.
+   * Creates and sends statement to drupal queue.
    *
    * @param \TinCan\Statement $statement
    *   The statement to send.
@@ -257,34 +257,11 @@ class OpignoTinCanApiStatements {
    *   Response success flag.
    */
   public static function sendStatement(Statement $statement) {
-    // _opigno_tincan_api_send_statement.
-    // The variables 'opigno_tincan_api_*'
-    // will be used to send the statement to the LRS.
-    $config = \Drupal::config('opigno_tincan_api.settings');
-    $endpoint = $config->get('opigno_tincan_api_endpoint');
-    $username = $config->get('opigno_tincan_api_username');
-    $password = $config->get('opigno_tincan_api_password');
-
-    if (empty($endpoint) || empty($username) || empty($password)) {
-      return FALSE;
-    }
-
-    $lrs = new RemoteLRS(
-      $endpoint,
-      '1.0.1',
-      $username,
-      $password
-    );
-    $response = $lrs->saveStatement($statement);
-
-    if ($response->success === FALSE) {
-      \Drupal::logger('Opigno Tincan API')
-        ->error('The following statement could not be sent :<br /><pre>' . print_r($statement->asVersion('1.0.1'), TRUE) . '</pre><br/>', []);
-
-      return FALSE;
-    }
-
-    return TRUE;
+    $queue_factory = \Drupal::service('queue');
+    $queue = $queue_factory->get('opigno_tincan_send_tincan_statement');
+    $item = new \stdClass();
+    $item->statement = $statement;
+    $queue->createItem($item);
   }
 
   /**

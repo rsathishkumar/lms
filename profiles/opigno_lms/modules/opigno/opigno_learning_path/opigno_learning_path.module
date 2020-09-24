@@ -109,6 +109,87 @@ function opigno_learning_path_theme() {
       'render element' => 'element',
       'template' => 'multiselect-new-class',
     ],
+    'opigno_learning_path_progress_ajax_container' => [
+      'variables' => [
+        'group_id' => NULL,
+        'account_id' => NULL,
+        'latest_cert_date' => NULL,
+        'class' => NULL,
+      ],
+    ],
+    'opigno_learning_path_progress' => [
+      'variables' => [
+        'label' => NULL,
+        'value' => NULL,
+        'class' => NULL,
+        'progress_bar' => TRUE,
+      ],
+    ],
+    'opigno_learning_path_message' => [
+      'variables' => [
+        'markup' => NULL,
+      ],
+    ],
+    'opigno_learning_path_training' => [
+      'render element' => 'elements',
+    ],
+    'opigno_learning_path_training_timeline' => [
+      'variables' => [
+        'steps' => NULL,
+      ],
+    ],
+    'opigno_learning_path_training_timeline_info' => [
+      'variables' => [
+        'label' => NULL,
+        'text' => NULL,
+      ],
+    ],
+    'opigno_learning_path_training_summary' => [
+      'variables' => [
+        'progress' => NULL,
+        'score' => NULL,
+        'group_id' => NULL,
+        'has_certificate' => NULL,
+        'is_passed' => NULL,
+        'state_class' => NULL,
+        'registration_date' => NULL,
+        'validation_message' => NULL,
+        'time_spend' => NULL,
+        'certificate_url' => NULL,
+      ],
+    ],
+    'opigno_learning_path_training_details' => [
+      'variables' => [
+        'group_id' => NULL,
+      ]
+    ],
+    'opigno_learning_path_training_course_content' => [
+      'render element' => 'elements',
+    ],
+    'opigno_learning_path_training_course' => [
+      'variables' => [
+        'passed' => NULL,
+        'score' => NULL,
+        'step' => NULL,
+        'completed' => NULL,
+        'badges' => NULL,
+        'time_spent' => NULL,
+      ]
+    ],
+    'opigno_learning_path_training_module' => [
+      'variables' => [
+        'status' => NULL,
+        'group_id' => NULL,
+        'step' => NULL,
+        'approved' => NULL,
+        'completed' => NULL,
+        'badges' => NULL,
+        'time_spent' => NULL,
+      ],
+    ],
+    'opigno_learning_path_training_step' => [
+      'render element' => 'elements',
+    ],
   ];
 }
 
@@ -366,15 +447,33 @@ function opigno_learning_path_cron() {
 function opigno_learning_path_preprocess_page(&$variables) {
   $route = \Drupal::routeMatch()->getRouteName();
   $account = \Drupal::currentUser();
+  $group = \Drupal::routeMatch()->getParameter('group');
 
   // Hide local tasks.
   if (opigno_learning_path_is_lp_route()) {
     unset($variables['page']['content']['platon_local_tasks']);
   }
 
-  // Get join form.
+  // Check if there is required trainings.
   if ($route == 'entity.group.canonical'
-    && $group = \Drupal::routeMatch()->getParameter('group')) {
+    && $group
+    && $group->getGroupType()->id() == 'learning_path'
+    && $required_trainings = LearningPathAccess::hasUncompletedRequiredTrainings($group, $account)) {
+    // Show for user required trainings.
+    $links = [];
+    foreach ($required_trainings as $gid) {
+      $training = Group::load($gid);
+      $url = Url::fromRoute($route, ['group' => $training->id()]);
+      $link = Link::fromTextAndUrl($training->label(), $url)->toString();
+      array_push($links, render($link));
+    }
+    $messenger = \Drupal::messenger();
+    $messenger->addWarning(Markup::create(t('You need to complete first some prerequisite trainings:') . ' ' . implode(', ', $links)));
+
+  }
+
+  // Get join form.
+  if ($route == 'entity.group.canonical' && $group) {
     $form_builder = \Drupal::service('opigno_learning_path.join_form');
     $form = $form_builder->getForm($group);
     if ($group->hasField('field_learning_path_visibility')) {
@@ -467,24 +566,6 @@ function opigno_learning_path_preprocess_page(&$variables) {
         ],
       ],
     ];
-  }
-
-  // Check if there is required trainings.
-  if ($route == 'entity.group.canonical'
-    && $group = \Drupal::routeMatch()->getParameter('group')
-    && $group->getGroupType()->id() == 'learning_path'
-    && $required_trainings = LearningPathAccess::hasUncompletedRequiredTrainings($group, $account)) {
-    // Show for user required trainings.
-    $links = [];
-    foreach ($required_trainings as $gid) {
-      $training = Group::load($gid);
-      $url = Url::fromRoute($route, ['group' => $training->id()]);
-      $link = Link::fromTextAndUrl($training->label(), $url)->toString();
-      array_push($links, render($link));
-    }
-    $messenger = \Drupal::messenger();
-    $messenger->addWarning(Markup::create(t('You need to complete first some prerequisite trainings:') . ' ' . implode(', ', $links)));
-
   }
 }
 
@@ -660,6 +741,7 @@ function opigno_learning_path_get_step_list_top() {
   }
 
   $html = '<ul class="d-none d-md-flex justify-content-center text-center list-unstyled step-list-top mb-5">';
+  $icon = '';
   foreach ($steps as $key => $step) {
     $classes = ['mx-4', 'mb-4', 'mb-md-0'];
 
@@ -671,15 +753,18 @@ function opigno_learning_path_get_step_list_top() {
       // @TODO check if step is validated.
       if (in_array($key, $passed_steps) && ($key != 4 || (isset($enough_activities) && $enough_activities))) {
         $classes[] = 'done';
+        $icon = 'ok-fill';
       }
       else {
         $classes[] = 'error';
+        $icon = 'close';
       }
     };
 
     $html .= '<li class="' . implode(' ', $classes) . '">';
     $html .= '<div class="number mx-auto">' . $key . '</div>';
     $html .= '<div class="title">' . $step . '</div>';
+    $html .= '<i class="icon-' . $icon . '"></i>';
     $html .= '</li>';
   }
   $html .= '</ul>';
@@ -738,8 +823,7 @@ function opigno_learning_path_get_step_list_aside() {
       '#attributes' => [
         'class' => ['mb-3'],
       ],
-      'link' => Link::createFromRoute(
-        t('Home'),
+      'link' => Link::createFromRoute(Markup::create('<i class="icon-home"></i>' . t('Home')),
         'entity.group.canonical',
         $args,
         [
@@ -2552,6 +2636,17 @@ function opigno_learning_path_get_module_step($group_id, $uid, OpignoModule $mod
         /** @var \Drupal\opigno_module\Entity\UserModuleStatus $attempt */
         return (int) $attempt->get('finished')->getString();
       }, $passed_attempts)) : 0;
+
+      // Check if the module contains manually evaluated activities.
+      if (!empty($activities)) {
+        foreach ($activities as $activity) {
+          if ($activity->hasField('opigno_evaluation_method') && $activity->get('opigno_evaluation_method')->value) {
+            // Set current attempt score.
+            $last_attempt_score = $actual_score;
+            break;
+          }
+        }
+      }
     }
 
     $description = $module->description->value;
@@ -3320,33 +3415,6 @@ function opigno_learning_path_get_step_status($step, $uid, $step_state_counting 
   }
 }
 
-/**
- * Calculates progress in a group for a user.
- *
- * @param int $group_id
- *   Group ID.
- * @param int $uid
- *   User ID.
- * @param int $latest_cert_date
- *   Latest certification date.
- *
- * @return float
- *   Attempted activities count / total activities count.
- *
- * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
- * @throws \Drupal\Component\Plugin\Exception\PluginException
- * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
- */
-function opigno_learning_path_progress($group_id, $uid, $latest_cert_date = NULL) {
-  $activities = opigno_learning_path_get_activities($group_id, $uid, $latest_cert_date);
-
-  $total = count($activities);
-  $attempted = count(array_filter($activities, function ($activity) {
-    return $activity['answers'] > 0;
-  }));
-
-  return $total > 0 ? $attempted / $total : 0;
-}
 
 /**
  * Calculates learning path completion date.
@@ -3739,6 +3807,7 @@ function opigno_learning_path_save_step_achievements(
   $keys = [
     'uid' => $uid,
     'gid' => $gid,
+    'typology' => $step['typology'],
     'entity_id' => $step['id'],
     'parent_id' => $parent_id,
   ];
@@ -3840,7 +3909,8 @@ function opigno_learning_path_save_achievements($gid, $uid) {
 
   $status = isset($completed) ? 'completed' : 'pending';
   $score = opigno_learning_path_get_score($gid, $uid, FALSE, $latest_cert_date);
-  $progress = 100 * opigno_learning_path_progress($gid, $uid, $latest_cert_date);
+  $progress_service = \Drupal::service('opigno_learning_path.progress');
+  $progress = $progress_service->getProgressRound($gid, $uid, $latest_cert_date);
   $time = opigno_learning_path_get_time_spent($gid, $uid);
 
   $keys = [

@@ -53,7 +53,7 @@ class PrivateMessageMapper implements PrivateMessageMapperInterface {
       ->range(0, 1);
 
     // First do an inner join for each user, to ensure that the user exists in
-    // the theread.
+    // the thread.
     $i = 0;
     foreach ($uids as $uid) {
       $tmp_alias = 'member_' . $i;

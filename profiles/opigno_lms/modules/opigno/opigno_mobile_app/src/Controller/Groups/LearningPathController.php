@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Serializer;
+use Drupal\opigno_learning_path\Progress;
 
 /**
  * Class LearningPathController.
@@ -59,6 +60,13 @@ class LearningPathController extends ControllerBase {
   protected $database;
 
   /**
+   * Progress bar service.
+   *
+   * @var \Drupal\opigno_learning_path\Progress
+   */
+  protected $progress;
+
+  /**
    * Constructs a new UserAuthenticationController object.
    *
    * @param \Symfony\Component\Serializer\Serializer $serializer
@@ -76,12 +84,14 @@ class LearningPathController extends ControllerBase {
                               array $serializer_formats,
                               LoggerInterface $logger,
                               EntityTypeManagerInterface $entity_type_manager,
-                              Connection $database) {
+                              Connection $database,
+                              Progress $progress) {
     $this->serializer = $serializer;
     $this->serializerFormats = $serializer_formats;
     $this->logger = $logger;
     $this->entityTypeManager = $entity_type_manager;
     $this->database = $database;
+    $this->progress = $progress;
   }
 
   /**
@@ -103,7 +113,8 @@ class LearningPathController extends ControllerBase {
       $formats,
       $container->get('logger.factory')->get('opigno_mobile_app'),
       $container->get('entity_type.manager'),
-      $container->get('database')
+      $container->get('database'),
+      $container->get('opigno_learning_path.progress')
     );
   }
 
@@ -198,14 +209,14 @@ class LearningPathController extends ControllerBase {
         $registration = $membership->getCreatedTime();
       }
       // Get training progress.
-      $group_progress = opigno_learning_path_progress($training->id(), $account->id());
+      $group_progress = $this->progress->getProgressRound($training->id(), $account->id());
       $response_data['items'][] = [
         'id' => $training->id(),
         'title' => $training->label(),
         'description' => $training->get('field_learning_path_description')->value,
         'category' => $training_category,
         'image' => $this->getTrainingImageInfo($training),
-        'progress' => round(100 * $group_progress),
+        'progress' => $group_progress,
         'subscription' => isset($registration) ? $registration : '',
         'start_link' => $this->getTrainingStartLink($training, $this->currentUser()),
       ];

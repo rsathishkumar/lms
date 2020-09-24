@@ -43,11 +43,11 @@ function _opigno_moxtra_get_organization_status() {
 /**
  * Returns the Opigno API service.
  *
- * @return \Drupal\opigno_moxtra\OpignoServiceInterface
+ * @return \Drupal\opigno_moxtra\MoxtraConnector
  *   Opigno API service.
  */
 function _opigno_moxtra_get_opigno_api() {
-  return \Drupal::service('opigno_moxtra.opigno_api');
+  return \Drupal::service('opigno_moxtra.connector');
 }
 
 /**
@@ -138,22 +138,7 @@ function _opigno_moxtra_get_binder_id(GroupInterface $group) {
  * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
 function _opigno_moxtra_check_user_quota() {
-  $opigno_api = _opigno_moxtra_get_opigno_api();
-  $max_total_users = $opigno_api->getMaxTotalUsers();
-  $is_trial = $max_total_users == 0;
-  if ($is_trial) {
-    return TRUE;
-  }
-
-  $current_users = \Drupal::entityTypeManager()
-    ->getStorage('user')
-    ->getQuery()
-    ->condition('status', 1)
-    ->condition('roles', OPIGNO_MOXTRA_COLLABORATIVE_FEATURES_RID)
-    ->count()
-    ->execute();
-
-  return $current_users < $max_total_users;
+  return TRUE;
 }
 
 /**
@@ -222,7 +207,7 @@ function _opigno_moxtra_is_user_enabled(UserInterface $user) {
  * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
 function _opigno_moxtra_upcoming_live_meetings(UserInterface $user) {
-  if (!_opigno_moxtra_is_active() || !($user->hasRole('administrator') || $user->hasRole(OPIGNO_MOXTRA_COLLABORATIVE_FEATURES_RID))) {
+  if (!_opigno_moxtra_is_active() || $user->isAnonymous() ) {
     return [];
   }
 
@@ -253,7 +238,7 @@ function _opigno_moxtra_upcoming_live_meetings(UserInterface $user) {
 
     if (isset($session_key)) {
       $info = $moxtra_api->getMeetingInfo($owner_id, $session_key);
-      $status = $info['data']['status'];
+      $status = !empty($info['data']) ? $info['data']['status']: FALSE;
     }
 
     if (!empty($group) && $group instanceof Group && $group->getMember($user) && isset($session_key)
@@ -266,22 +251,12 @@ function _opigno_moxtra_upcoming_live_meetings(UserInterface $user) {
 }
 
 /**
- * Implements hook_cron().
+ * Cron job callback for opigno_moxtra_meeting_notification.
  */
-function opigno_moxtra_cron() {
+function opigno_moxtra_cronjob_meeting_notification() {
   $org_id = _opigno_moxtra_get_organization_id();
   if (empty($org_id)) {
     return;
-  }
-
-  // Update organization status from the Opigno/Moxtra API.
-  $opigno_api = _opigno_moxtra_get_opigno_api();
-  $info = $opigno_api->getOrganizationInfo();
-  if (!isset($info['opigno_error_message'])) {
-    \Drupal::configFactory()
-      ->getEditable('opigno_moxtra.settings')
-      ->set('status', (int) $info['active'] === 1)
-      ->save();
   }
 
   // Send the email notifications for the upcoming live meetings.
@@ -342,6 +317,25 @@ function opigno_moxtra_cron() {
 
       $meeting->addNotifiedMember($user->id());
       $meeting->save();
+    }
+  }
+}
+
+/**
+ * Cron job callback for opigno_moxtra_save_meeting_records.
+ */
+function opigno_moxtra_cronjob_save_meeting_records() {
+
+  // Get all learning paths and add to queue to check if we have new meeting records.
+  $gids = \Drupal::entityQuery('group')->condition('type', 'learning_path')->execute();
+
+  if ($gids) {
+    $queue_factory = \Drupal::service('queue');
+    $queue = $queue_factory->get('opigno_moxtra_save_meeting_records');
+    foreach ($gids as $gid) {
+      $item = new \stdClass();
+      $item->gid = $gid;
+      $queue->createItem($item);
     }
   }
 }
@@ -550,17 +544,13 @@ function opigno_moxtra_opigno_moxtra_meeting_insert(EntityInterface $entity) {
  * Creates user in the Moxtra.
  */
 function opigno_moxtra_user_insert(EntityInterface $entity) {
-  if (!_opigno_moxtra_is_active()) {
-    return;
-  }
-
   /** @var \Drupal\user\Entity\User $entity */
-  $user_active = $entity->isActive()
-    && _opigno_moxtra_is_user_enabled($entity);
+  $user_active = $entity->isActive();
+  $connector = \Drupal::service('opigno_moxtra.connector');
 
-  if ($user_active) {
-    $opigno_api = _opigno_moxtra_get_opigno_api();
-    $opigno_api->createUsers([$entity]);
+  if ($user_active && $connector->checkSettings()) {
+    $moxtra = \Drupal::service('opigno_moxtra.moxtra_api');
+    $moxtra->setUser($entity);
   }
 }
 
@@ -570,10 +560,6 @@ function opigno_moxtra_user_insert(EntityInterface $entity) {
  * Updates meeting info in the Moxtra.
  */
 function opigno_moxtra_opigno_moxtra_meeting_update(EntityInterface $entity) {
-  if (!_opigno_moxtra_is_active()) {
-    return;
-  }
-
   // Set meeting reference on the related calendar event.
   /** @var \Drupal\opigno_moxtra\MeetingInterface $entity */
   $calendar_event = $entity->getCalendarEvent();
@@ -587,31 +573,37 @@ function opigno_moxtra_opigno_moxtra_meeting_update(EntityInterface $entity) {
   $session_key = $entity->getSessionKey();
   if (!empty($session_key)) {
     $info = $moxtra_api->getMeetingInfo($owner_id, $session_key);
-    $status = $info['data']['status'];
+    $status = !empty($info['data']) ? $info['data']['status'] : FALSE;
     if ($status !== 'SESSION_SCHEDULED') {
       // Not update the meeting info in the Moxtra, if it is not scheduled.
       return;
     }
 
     $title = $entity->getTitle();
-
-    // Get ISO-8601 date without a timezone when meeting starts.
-    $starts_value = $entity->getStartDate();
-    $starts = isset($starts_value)
-      ? DrupalDateTime::createFromFormat(DrupalDateTime::FORMAT, $starts_value)
-        ->setTimezone(new \DateTimeZone('UTC'))
-        ->format('Y-m-d\TH:i:s\Z')
-      : NULL;
-
-    // Get ISO-8601 date without a timezone when meeting ends.
     $ends_value = $entity->getEndDate();
-    $ends = isset($ends_value)
-      ? DrupalDateTime::createFromFormat(DrupalDateTime::FORMAT, $ends_value)
-        ->setTimezone(new \DateTimeZone('UTC'))
-        ->format('Y-m-d\TH:i:s\Z')
-      : NULL;
+    $starts_value = $entity->getStartDate();
 
-    $moxtra_api->updateMeeting($owner_id, $session_key, $title, $starts, $ends);
+    $original_title = $entity->original->getTitle();
+    $original_starts = $entity->original->getStartDate();
+    $original_ends = $entity->original->getEndDate();
+
+    if ($title !== $original_title || $original_starts !== $starts_value || $ends_value !== $original_ends) {
+      // Get ISO-8601 date without a timezone when meeting starts.
+      $starts = isset($starts_value)
+        ? DrupalDateTime::createFromFormat(DrupalDateTime::FORMAT, $starts_value)
+          ->setTimezone(new \DateTimeZone('UTC'))
+          ->format('Y-m-d\TH:i:s\Z')
+        : NULL;
+
+      // Get ISO-8601 date without a timezone when meeting ends.
+      $ends = isset($ends_value)
+        ? DrupalDateTime::createFromFormat(DrupalDateTime::FORMAT, $ends_value)
+          ->setTimezone(new \DateTimeZone('UTC'))
+          ->format('Y-m-d\TH:i:s\Z')
+        : NULL;
+
+      $moxtra_api->updateMeeting($owner_id, $session_key, $title, $starts, $ends);
+    }
   }
 }
 
@@ -621,10 +613,6 @@ function opigno_moxtra_opigno_moxtra_meeting_update(EntityInterface $entity) {
  * Updates collaborative workspace info in the Moxtra.
  */
 function opigno_moxtra_opigno_moxtra_workspace_update(EntityInterface $entity) {
-  if (!_opigno_moxtra_is_active()) {
-    return;
-  }
-
   /** @var \Drupal\opigno_moxtra\WorkspaceInterface $entity */
   if ($entity->label() !== $entity->original->label()) {
     $binder_id = $entity->getBinderId();
@@ -643,36 +631,13 @@ function opigno_moxtra_opigno_moxtra_workspace_update(EntityInterface $entity) {
  * Updates user info in the Moxtra.
  */
 function opigno_moxtra_user_update(EntityInterface $entity) {
-  if (!_opigno_moxtra_is_active()) {
-    return;
-  }
-
-  $opigno_api = _opigno_moxtra_get_opigno_api();
-
   /** @var \Drupal\user\Entity\User $entity */
-  $user_active = $entity->isActive()
-    && _opigno_moxtra_is_user_enabled($entity);
+  $user_active = $entity->isActive();
+  $connector = \Drupal::service('opigno_moxtra.connector');
 
-  if ($user_active) {
-    // Update user info in Moxtra if it is active.
-    $opigno_api->updateUser($entity);
-  }
-
-  $original_user_active = isset($entity->original)
-    && $entity->original->isActive()
-    && _opigno_moxtra_is_user_enabled($entity->original);
-
-  if ($user_active !== $original_user_active) {
-    if ($user_active) {
-      // Create & enable user in Moxtra
-      // if it is active now and was not active.
-      $opigno_api->createUsers([$entity]);
-      $opigno_api->enableUser($entity);
-    }
-    else {
-      // Disable user in Moxtra if it is not active now and was active.
-      $opigno_api->deleteUser($entity->id());
-    }
+  if ($user_active && $connector->checkSettings()) {
+    $moxtra = \Drupal::service('opigno_moxtra.moxtra_api');
+    $moxtra->setUser($entity);
   }
 }
 
@@ -760,20 +725,6 @@ function opigno_moxtra_opigno_moxtra_workspace_delete(EntityInterface $entity) {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_delete().
- *
- * Disables user in the Moxtra.
- */
-function opigno_moxtra_user_delete(EntityInterface $entity) {
-  if (!_opigno_moxtra_is_active()) {
-    return;
-  }
-
-  $opigno_api = _opigno_moxtra_get_opigno_api();
-  $result = $opigno_api->deleteUser($entity->id());
-}
-
-/**
  * Implements hook_preprocess_views_view_field().
  *
  * Replaces titles of a live meeting calendar event with links.
@@ -811,6 +762,11 @@ function opigno_moxtra_preprocess_page(&$variables) {
     'opigno_module.module_result',
   ];
 
+  $connector = \Drupal::service('opigno_moxtra.connector');
+  if (!$connector->checkSettings()) {
+    return;
+  }
+
   $route = \Drupal::routeMatch();
   $route_name = $route->getRouteName();
   if (!in_array($route_name, $training_routes)) {
@@ -835,7 +791,7 @@ function opigno_moxtra_preprocess_page(&$variables) {
 
   $user = \Drupal::currentUser();
   $user_id = $user->id();
-  if (!$user->hasPermission('view meeting entities')) {
+  if ($user->isAnonymous()) {
     return;
   }
 
@@ -855,7 +811,7 @@ function opigno_moxtra_preprocess_page(&$variables) {
     $session_key = $live_meeting->getSessionKey();
     if (!empty($session_key)) {
       $info = $moxtra_api->getMeetingInfo($owner_id, $session_key);
-      $status = $info['data']['status'];
+      $status = !empty($info['data']) ? $info['data']['status'] : FALSE;
       if ($status === 'SESSION_ENDED') {
         continue;
       }

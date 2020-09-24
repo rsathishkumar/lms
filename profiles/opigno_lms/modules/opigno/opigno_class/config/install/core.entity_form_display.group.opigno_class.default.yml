@@ -3,7 +3,6 @@ status: true
 dependencies:
   config:
     - field.field.group.opigno_class.field_class_description
-    - field.field.group.opigno_class.field_class_media_image
     - group.type.opigno_class
   module:
     - entity_browser

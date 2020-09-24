@@ -97,3 +97,24 @@ function opigno_ilt_update_8003() {
   \Drupal::entityDefinitionUpdateManager()
     ->installFieldStorageDefinition('trainer', 'opigno_ilt', 'opigno_ilt', $definition);
 }
+
+/**
+ * Creates create cronjobs.
+ */
+function opigno_ilt_update_8004() {
+
+  // Enable new module opigno_cron.
+  if (!\Drupal::moduleHandler()->moduleExists('opigno_cron')) {
+    \Drupal::service('module_installer')->install(['opigno_cron']); 
+  }
+
+  // Add new cron configuretions.
+  $config_path = drupal_get_path('module', 'opigno_ilt')
+    . '/config/install';
+  $storage = new FileStorage($config_path);
+
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('ultimate_cron.job.opigno_ilt_cron');
+  $config_storage->write('ultimate_cron.job.opigno_ilt_cron', $data);
+
+}

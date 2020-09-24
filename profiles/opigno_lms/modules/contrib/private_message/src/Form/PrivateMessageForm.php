@@ -258,7 +258,7 @@ class PrivateMessageForm extends ContentEntityForm {
     // Validate the submitted members.
     $violations = $typed_data->validate();
 
-    // Check to see if any contraint violations were found.
+    // Check to see if any constraint violations were found.
     if ($violations->count() > 0) {
       // Output any errors for found constraint violations.
       foreach ($violations as $violation) {

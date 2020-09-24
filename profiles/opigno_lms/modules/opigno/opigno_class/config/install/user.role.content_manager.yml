@@ -80,6 +80,7 @@ permissions:
   - 'tft reorder terms'
   - 'update any media'
   - 'update media'
+  - 'use text format opigno_certificate_wysiwyg'
   - 'view all answer revisions'
   - 'view published activity entities'
   - 'view published answer entities'

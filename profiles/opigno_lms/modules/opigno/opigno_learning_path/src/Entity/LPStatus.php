@@ -545,7 +545,7 @@ class LPStatus extends ContentEntityBase implements LPStatusInterface {
     $date_formatter = \Drupal::service('date.formatter');
     $expire = LPStatus::getCertificateExpireTimestamp($gid, $uid);
 
-    return $expire_text . $date_formatter->format($expire, 'custom', 'F d, Y');
+    return !empty($expire) ? $expire_text . $date_formatter->format($expire, 'custom', 'F d, Y') : '';
   }
 
   /**

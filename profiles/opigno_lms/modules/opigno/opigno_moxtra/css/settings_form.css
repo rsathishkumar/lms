@@ -157,3 +157,8 @@
   font-style: italic;
   text-decoration: none;
 }
+
+#opigno-moxtra-settings-form #edit-add {
+  display: block;
+  margin: 15px auto;
+}

@@ -99,7 +99,7 @@ export class LinkAdminComponent implements OnInit {
   setActivitiesMap(): void {
     // Initial read activities.
     let parent = this.entityService.getEntityByCid(this.selectedLink.parent, this.entities);
-    let activities = this.activityService.getRequiredActivities(parent.entityId);
+    let activities = this.activityService.getRequiredActivities(parent.contentType, parent.entityId);
 
     Observable.forkJoin([activities]).subscribe(results => {
       let activities = Object.keys(results[0]).map(function(key) { return results[0][key] });

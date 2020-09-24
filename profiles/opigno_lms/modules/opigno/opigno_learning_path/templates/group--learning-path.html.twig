@@ -61,14 +61,16 @@
             {% if content.field_learning_path_media_image[0] %}
               {{ content.field_learning_path_media_image }}
             {% else %}
-              {{ opigno_catalog_get_default_image('learning_path') }}
+              {{ opigno_catalog_get_default_image('learning_path', label) }}
             {% endif %}
           </div>
           <div class="duration d-flex px-2 py-2 bg-white mt-2">
+            <i class="icon-duration"></i>
             <div class="label">{{ 'Length'|t }}</div>
             <div class="value text-right ml-auto">{{ group.field_learning_path_duration.value }}</div>
           </div>
           <div class="category d-flex px-2 py-2 bg-white mt-2">
+            <i class="icon-category"></i>
             <div class="label">{{ 'Subject'|t }}</div>
             <div class="value text-right ml-auto">{{ learning_path_category }}</div>
           </div>

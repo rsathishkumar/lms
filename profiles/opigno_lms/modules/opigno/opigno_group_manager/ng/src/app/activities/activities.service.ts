@@ -45,9 +45,9 @@ export class ActivitiesService {
       .map(response => response.json() as Activity[]);
   }
 
-  getRequiredActivities(moduleId): Observable<Activity[]> {
+  getRequiredActivities(contentType, entityId): Observable<Activity[]> {
     return this.http
-    .get(this.apiBaseUrl + this.appService.replaceUrlParams(this.getRequiredActivitiesUrl, { '%moduleId': moduleId }))
+    .get(this.apiBaseUrl + this.appService.replaceUrlParams(this.getRequiredActivitiesUrl, { '%contentType': contentType, '%entityId': entityId }))
     .map(response => response.json() as Activity[]);
   }
 

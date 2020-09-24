@@ -64,14 +64,8 @@ function opigno_mobile_app_get_user_picture(\Drupal\user\UserInterface $user) {
  * Implements hook_preprocess_HOOK().
  */
 function opigno_mobile_app_preprocess_page(&$variables) {
-  if (!opigno_mobile_app_is_mobile_mode_route()) {
-    return;
-  }
 
-  /** @var \Drupal\Core\TempStore\PrivateTempStore $store */
-  $store = \Drupal::service('user.private_tempstore')->get('opigno_mobile_app');
-  $mobile_mode_status = $store->get('mobile_mode');
-  if ($mobile_mode_status) {
+  if (opigno_mobile_app_is_mobile_app_request() && opigno_mobile_app_is_mobile_mode_route()) {
     // Unset page contents for trainings steps pages.
     unset($variables['page']['branding']);
     unset($variables['page']['menu']);
@@ -87,13 +81,8 @@ function opigno_mobile_app_preprocess_page(&$variables) {
  * Implements hook_page_attachments().
  */
 function opigno_mobile_app_page_attachments(array &$attachments) {
-  if (!opigno_mobile_app_is_mobile_mode_route()) {
-    return;
-  }
-  /** @var \Drupal\Core\TempStore\PrivateTempStore $store */
-  $store = \Drupal::service('user.private_tempstore')->get('opigno_mobile_app');
-  $mobile_mode_status = $store->get('mobile_mode');
-  if ($mobile_mode_status) {
+
+  if (opigno_mobile_app_is_mobile_app_request() && opigno_mobile_app_is_mobile_mode_route()) {
     // Hide hardcoded header for trainings steps pages.
     $attachments['#attached']['library'][] = 'opigno_mobile_app/mobile_mode';
   }
@@ -113,4 +102,15 @@ function opigno_mobile_app_is_mobile_mode_route() {
     'tft.group',
   ];
   return in_array($route_name, $allowed_routes);
+}
+
+/**
+ * Check if app request.
+ */
+function opigno_mobile_app_is_mobile_app_request() {
+  $headers = \Drupal::request()->headers->get('user-agent');
+  if (!empty($headers) && strpos($headers, 'OpignoApp-2') !== FALSE) {
+    return TRUE;
+  }
+  return FALSE;
 }

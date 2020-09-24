@@ -116,3 +116,15 @@ function opigno_calendar_update_8005() {
   $data = $storage->read('block.block.tabs');
   $config_storage->write('block.block.tabs', $data);
 }
+
+/**
+ * Added title for calendar page to improve accessibility.
+ */
+function opigno_calendar_update_8006() {
+  $config_path = drupal_get_path('module', 'opigno_calendar') . '/config/install';
+  $storage = new FileStorage($config_path);
+
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('views.view.opigno_calendar');
+  $config_storage->write('views.view.opigno_calendar', $data);
+}

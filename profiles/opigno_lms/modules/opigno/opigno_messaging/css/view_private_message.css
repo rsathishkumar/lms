@@ -11,8 +11,8 @@
   background-color: #c3e86c;
   color: #fff;
   display: block;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 20px;
+  font-weight: 700;
   margin-bottom: 25px;
   padding: 15px 20px;
   text-decoration: inherit;
@@ -20,14 +20,16 @@
   width: 100%;
 }
 
-.view-private-message .new-message::before {
-  background: url('../img/icon-new-message.png');
-  content: '';
-  display: inline-block;
-  height: 25px;
+.view-private-message .new-message i {
+  font-size: 25px;
   margin-right: 22px;
-  vertical-align: middle;
-  width: 25px;
+  position: relative;
+  top: 4px;
+}
+
+#load-previous-messages,
+.view-private-message .pagination a {
+  color: #0a71b4;
 }
 
 .view-private-message .new-message:hover {
@@ -40,11 +42,12 @@
   color: #fff;
   display: block;
   font-size: 20px;
-  font-weight: bold;
+  font-weight: 700;
   margin-bottom: 20px;
   padding: 20px 20px;
   text-transform: uppercase;
   width: 100%;
+  line-height: 1;
 }
 
 .view-private-message .messages::before {
@@ -247,7 +250,7 @@
 
 #private-message-page .field-pm-subject,
 #private-message-page .private-message-recipients {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: normal;
 }
 
@@ -270,7 +273,7 @@
 #private-message-page .field-pm-subject .label,
 #private-message-page .private-message-recipients .label {
   color: #70706f;
-  font-weight: bold;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
@@ -278,6 +281,7 @@
 #private-message-page .private-message-recipients .content,
 #private-message-page .private-message-recipients .content a {
   color: #5bb4d8;
+  font-weight: 700;
 }
 
 #private-message-page .private-message-recipients .content article {
@@ -315,7 +319,7 @@
 
 #block-platon-content #private-message-page .private-message .message,
 #block-platon-content #private-message-page .private-message .message .date {
-  color: #70706f;
+  color: #58585a;
 }
 
 .load_previous_hidden .load-previous-position-before {

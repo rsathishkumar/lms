@@ -30,7 +30,14 @@ class MeetingAccessControlHandler extends EntityAccessControlHandler {
           // Deny access if the meeting has a members restriction
           // and the user is not a member of the meeting.
           if (!in_array($account->id(), $members)) {
+            $training = $entity->getTraining();
+            if (empty($members) && isset($training) && $training->getMember($account) !== FALSE) {
+              return AccessResult::allowed();
+            }
             return AccessResult::forbidden();
+          }
+          else {
+            return AccessResult::allowed();
           }
         }
         else {

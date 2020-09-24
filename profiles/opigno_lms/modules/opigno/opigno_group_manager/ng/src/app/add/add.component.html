@@ -21,7 +21,7 @@
 
     <div class="step-2" *ngIf="(form.bundle || form.bundle===0) && step==2">
       <div>
-        <button (click)="getAddForm()">{{ text_create_a_new }} {{ getBundleTitle(form.bundle) }}</button>
+        <button (click)="getAddForm()"><i class="icon-document-new"></i>{{ text_create_a_new }} {{ getBundleTitle(form.bundle) }}</button>
       </div>
       <div class="mt-3">{{ text_or_add_from_existing_catalogue }}</div>
       <input type="text" placeholder="{{ text_search }} {{ getBundleTitle(form.bundle) }}" [(ngModel)]="filterEntity" (paste)="updateResults()" (keydown)="updateResults()">

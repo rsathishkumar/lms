@@ -68,12 +68,12 @@ input[type=radio] {
 
 .view-private-message .new-message {
   background-color: $primary_button_color;
-  color: $primary_button_text_color;
+  //color: $primary_button_text_color;
 
   &:hover,
   &:active {
     background-color: $primary_button_hover_color;
-    color: $primary_button_hover_text_color;
+    //color: $primary_button_hover_text_color;
   }
 }
 
@@ -122,9 +122,6 @@ body.page-catalogue {
     }
 
     .block-local_actions_block .list-inline-item a.button.button-action {
-      background-color: $primary_button_color;
-      color: $primary_button_text_color;
-
       &:hover,
       &:active {
         background-color: $primary_button_hover_color;
@@ -135,7 +132,7 @@ body.page-catalogue {
     .views-exposed-form {
 
       #edit-field-learning-path-category-target-id,
-      fieldset:not(#edit-sort-by--wrapper) {
+      fieldset:not([id^="edit-sort-by--"]) {
 
         & > legend {
           background-color: $primary_theme_color;
@@ -200,7 +197,7 @@ body.page-catalogue {
   .field-pm-subject .content,
   .private-message-recipients .content,
   .private-message-recipients .content a {
-    color: $primary_theme_color;
+    color: $active_link_color;
   }
 
   @at-root #block-platon-content & {
@@ -300,6 +297,7 @@ body.admin-learning-path {
 
 #site-header #header-right .user-block .btn-group.operations .dropdown-menu>a:not(.primary):after,
 #site-header #header-right .user-block a.dropdown-item:not(.primary):after,
+#site-header #header-right .user-block button.dropdown-item:not(.primary):after,
 .btn-group.operations #site-header #header-right .user-block .dropdown-menu>a:not(.primary):after {
   background-color: $primary_theme_color;
 }
@@ -399,4 +397,32 @@ nav {
 
 #site-header {
   background: $header_background_color;
+}
+
+#catalog-filter-parent .btn-collapse {
+  background-color: $primary_theme_color;
+}
+
+body.anonymous-slider {
+  div#main #user-sidebar {
+    h1 {
+      color: $primary_theme_color;
+    }
+
+    nav.block-system_menu_block-main ul {
+      background: $primary_theme_color;
+    }
+  }
+}
+
+.group {
+  &.group--full {
+    a.bg-success {
+      background-color: $primary_button_color !important;
+
+      &:hover {
+        background-color: $primary_button_hover_color !important;
+      }
+    }
+  }
 }

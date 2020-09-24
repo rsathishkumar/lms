@@ -78,7 +78,7 @@ class AjaxController extends ControllerBase implements AjaxControllerInterface {
   protected $privateMessageService;
 
   /**
-   * Constructs n AjaxController object.
+   * Constructs a AjaxController object.
    *
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer service.

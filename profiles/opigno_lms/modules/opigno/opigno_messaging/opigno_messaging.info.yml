@@ -9,7 +9,7 @@ dependencies:
   - private_message:private_message
   - group:group
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.4'
+# Information added by Drupal.org packaging script on 2020-08-12
+version: '8.x-1.5'
 project: 'opigno_messaging'
-datestamp: 1591089838
+datestamp: 1597246064

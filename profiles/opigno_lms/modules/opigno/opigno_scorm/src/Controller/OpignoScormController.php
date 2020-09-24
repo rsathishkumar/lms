@@ -75,7 +75,7 @@ class OpignoScormController extends ControllerBase {
       $data = json_decode($data_content);
     }
 
-    if ($data) {
+    if (!empty($data)) {
       if (!empty($data->cmi->interactions)) {
         $_SESSION['scorm_answer_results'] = [
           'opigno_scorm_id' => $opigno_scorm_id,
@@ -88,7 +88,7 @@ class OpignoScormController extends ControllerBase {
       \Drupal::moduleHandler()->invokeAll('opigno_scorm_commit', [
         $scorm,
         $opigno_scorm_sco_id,
-        json_decode($_POST['data']),
+        $data,
       ]);
       return new JsonResponse(['success' => 1]);
     }

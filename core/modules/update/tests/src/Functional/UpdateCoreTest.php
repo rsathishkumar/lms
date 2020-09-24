@@ -40,7 +40,11 @@ class UpdateCoreTest extends UpdateTestBase {
 
   protected function setUp() {
     parent::setUp();
-    $admin_user = $this->drupalCreateUser(['administer site configuration', 'administer modules', 'administer themes']);
+    $admin_user = $this->drupalCreateUser([
+      'administer site configuration',
+      'administer modules',
+      'administer themes',
+      ]);
     $this->drupalLogin($admin_user);
     $this->drupalPlaceBlock('local_actions_block');
   }
@@ -98,7 +102,7 @@ class UpdateCoreTest extends UpdateTestBase {
 
     // Ensure that the update check requires a token.
     $this->drupalGet('admin/reports/updates/check');
-    $this->assertResponse(403, 'Accessing admin/reports/updates/check without a CSRF token results in access denied.');
+    $this->assertSession()->statusCodeEquals(403);
 
     foreach ([0, 1] as $minor_version) {
       foreach (['-alpha1', '-beta1', ''] as $extra_version) {
@@ -134,6 +138,7 @@ class UpdateCoreTest extends UpdateTestBase {
               $this->assertRaw('check.svg', 'Check icon was found.');
             }
             break;
+
           case 1:
             // Both stable and unstable releases are available.
             // A stable release is the latest.
@@ -813,7 +818,12 @@ class UpdateCoreTest extends UpdateTestBase {
    * Ensures that the local actions appear.
    */
   public function testLocalActions() {
-    $admin_user = $this->drupalCreateUser(['administer site configuration', 'administer modules', 'administer software updates', 'administer themes']);
+    $admin_user = $this->drupalCreateUser([
+      'administer site configuration',
+      'administer modules',
+      'administer software updates',
+      'administer themes',
+    ]);
     $this->drupalLogin($admin_user);
 
     $this->drupalGet('admin/modules');

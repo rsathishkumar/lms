@@ -8,6 +8,7 @@ use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Render\RenderContext;
 
 /**
  * Provides a resource to get view modes by entity and bundle.
@@ -91,60 +92,66 @@ class OpignoNotificationRestResource extends ResourceBase {
    * @return \Drupal\rest\ResourceResponse
    */
   public function get() {
-    $response = [
-      'items' => [],
-      'next_page' => FALSE,
-    ];
-    $request = \Drupal::request();
-    $request_query = $request->query;
-    $request_query_array = $request_query->all();
-    $limit = $request_query->get('limit') ?: $this->limit;
-    $page = $request_query->get('page') ?: 0;
-    $order_by = $request_query->get('order_by') && in_array(strtoupper($request_query->get('order_by')), ['ASC', 'DESC'])
-      ? $request_query->get('order_by') : $this->order_by;
-    $active = $request_query->get('active') ?
-      filter_var($request_query->get('active'), FILTER_VALIDATE_BOOLEAN) : $this->active;
 
-    // Find out how many notification do we have.
-    $query = \Drupal::entityQuery('opigno_notification')->condition('uid', $this->currentUser->id());
-    if ($active) {
-      $query->condition('has_read', 0, '=');
-    }
-    $notifications_count = $query->count()->execute();
-    $position = $limit * ($page + 1);
-    if ($notifications_count > $position) {
-      $next_page_query = $request_query_array;
-      $next_page_query['page'] = $page + 1;
-      $response['next_page'] = Url::createFromRequest($request)
-        ->setOption('query', $next_page_query)
-        ->toString(TRUE)
-        ->getGeneratedUrl();
-    }
-
-    // Load notifications.
-    $query = \Drupal::entityQuery('opigno_notification')
-      ->condition('uid', $this->currentUser->id())
-      ->sort('created', strtoupper($order_by))
-      ->pager($limit);
-    // Filter only unread notification otherwise get all.
-    if ($active) {
-      $query->condition('has_read', 0, '=');
-    }
-    $result = $query->execute();
-    $notifications = \Drupal::entityTypeManager()
-      ->getStorage('opigno_notification')
-      ->loadMultiple($result);
-
-    /* @var  \Drupal\opigno_notification\Entity\OpignoNotification $notification */
-    foreach ($notifications as $notification) {
-      $response['items'][] = [
-        'id' => $notification->id(),
-        'created' => $notification->getCreatedTime(),
-        'uid' => $notification->getUser(),
-        'message' => $notification->getMessage(),
-        'has_read' => $notification->getHasRead(),
+    // Wrap fully data to avaoid to early rendering.
+    $response = \Drupal::service('renderer')->executeInRenderContext(new RenderContext(), function () {
+      $response = [
+        'items' => [],
+        'next_page' => FALSE,
       ];
-    }
+      $request = \Drupal::request();
+      $request_query = $request->query;
+      $request_query_array = $request_query->all();
+      $limit = $request_query->get('limit') ?: $this->limit;
+      $page = $request_query->get('page') ?: 0;
+      $order_by = $request_query->get('order_by') && in_array(strtoupper($request_query->get('order_by')), ['ASC', 'DESC'])
+        ? $request_query->get('order_by') : $this->order_by;
+      $active = $request_query->get('active') ?
+        filter_var($request_query->get('active'), FILTER_VALIDATE_BOOLEAN) : $this->active;
+  
+      // Find out how many notification do we have.
+      $query = \Drupal::entityQuery('opigno_notification')->condition('uid', $this->currentUser->id());
+      if ($active) {
+        $query->condition('has_read', 0, '=');
+      }
+      $notifications_count = $query->count()->execute();
+      $position = $limit * ($page + 1);
+      if ($notifications_count > $position) {
+        $next_page_query = $request_query_array;
+        $next_page_query['page'] = $page + 1;
+        $response['next_page'] = Url::createFromRequest($request)
+          ->setOption('query', $next_page_query)
+          ->toString(TRUE)
+          ->getGeneratedUrl();
+      }
+  
+      // Load notifications.
+      $query = \Drupal::entityQuery('opigno_notification')
+        ->condition('uid', $this->currentUser->id())
+        ->sort('created', strtoupper($order_by))
+        ->pager($limit);
+      // Filter only unread notification otherwise get all.
+      if ($active) {
+        $query->condition('has_read', 0, '=');
+      }
+      $result = $query->execute();
+      $notifications = \Drupal::entityTypeManager()
+        ->getStorage('opigno_notification')
+        ->loadMultiple($result);
+  
+      /* @var  \Drupal\opigno_notification\Entity\OpignoNotification $notification */
+      foreach ($notifications as $notification) {
+        $response['items'][] = [
+          'id' => $notification->id(),
+          'created' => $notification->getCreatedTime(),
+          'uid' => $notification->getUser(),
+          'message' => $notification->getMessage(),
+          'has_read' => $notification->getHasRead(),
+        ];
+      }
+
+      return $response;
+    });
 
     $response = new ResourceResponse($response, 200);
     // Disable caching.

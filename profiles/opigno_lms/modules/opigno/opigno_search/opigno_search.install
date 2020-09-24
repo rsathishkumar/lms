@@ -17,8 +17,6 @@ function opigno_search_install() {
   $index->disable();
   $index->save();
   $index->enable();
-  $index->rebuildTracker();
-  $index->reindex();
   $index->save();
 }
 

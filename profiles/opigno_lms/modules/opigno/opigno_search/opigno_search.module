@@ -30,6 +30,13 @@ function opigno_search_block_form() {
     ]);
 
     $form = \Drupal::formBuilder()->buildForm('Drupal\views\Form\ViewsExposedForm', $form_state);
+    $form['#id'] = $form['#id'] . '_opigon';
+
+    if (isset($form['keys'])) {
+      $form['keys']['#title'] = t('Search keys');
+    }
+
+    $form['actions']['submit']['#value'] = t('Submit search keys');
 
     return \Drupal::service('renderer')->render($form);
   }
@@ -46,6 +53,8 @@ function opigno_search_form_alter(&$form, FormStateInterface $form_state, $form_
     case 'views-exposed-form-search-content-page-1':
       unset($form['#info']['filter-search_api_fulltext']['label']);
       $form['keys']['#type'] = 'search';
+      $form['keys']['#title'] = t('Search');
+      $form['keys']['#title_display'] = 'invisible';
       $form['#attached']['library'][] = 'opigno_search/search_form';
       $form['#method'] = 'get';
       break;

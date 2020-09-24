@@ -20,7 +20,7 @@
     getEntityFormUrl: '/group/%groupId/item-form/%bundle/%entityId',
     getActivitiesUrl: '/group/%moduleId/get-activities',
     getGuidedNavigationUrl: '/group/%groupId/get-guided-navigation',
-    getRequiredActivitiesUrl: '/group/%moduleId/get-activities-required',
+    getRequiredActivitiesUrl: '/group/%contentType/%entityId/get-activities-required',
     submitAddEntityFormUrl: '/group/%groupId/create-item/%bundle',
     addEntityUrl: '/group/%groupId/add-item',
     removeEntityUrl: '/group/%groupId/remove-item',
@@ -31,6 +31,7 @@
     updateEntityMinScoreUrl: '/group/%groupId/update-min-score',
     updateEntitiesUrl: '/group/%groupId/update-entities',
     updateGuidedNavigationUrl: '/group/%groupId/update-guided-navigation',
+    activitiesPageUrl: '/group/%groupId/inner-modules',
     text_add_your_first_item: '{{ "Add your first item"|t|e }}',
     text_guided_navigation: '{{ "Guided navigation"|t|e }}',
     text_free_navigation: '{{ "Free navigation"|t|e }}',
@@ -68,6 +69,7 @@
     text_search: '{{ "Search"|t|e }}',
     text_score_2: '{{ "Score"|t|e }}',
     text_answer_at_last_step: '{{ "Answer at last step"|t|e }}',
+    text_tree_view: '{{ "Tree view"|t|e }}'
   };
 </script>
 

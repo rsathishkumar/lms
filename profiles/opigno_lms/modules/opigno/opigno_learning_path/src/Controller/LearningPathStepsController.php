@@ -79,6 +79,7 @@ class LearningPathStepsController extends ControllerBase {
 
     $uid = $user->id();
     $gid = $group->id();
+    $is_owner = $uid === $group->getOwnerId();
 
     $is_ajax = \Drupal::request()->isXmlHttpRequest();
 
@@ -115,7 +116,7 @@ class LearningPathStepsController extends ControllerBase {
         if ($is_mandatory) {
           $name = $step['name'];
           $required = $step['required score'];
-          if ($required > 0 || $step['typology'] == 'Meeting') {
+          if ($required > 0 || ($step['typology'] == 'Meeting' && !$is_owner)) {
             if ($step['best score'] < $required || OpignoGroupManagerController::mustBeVisitedMeeting($step, $group)) {
               $course_entity = OpignoGroupManagedContent::load($step['cid']);
               $course_content_type = $this->content_type_manager->createInstance(
@@ -335,6 +336,7 @@ class LearningPathStepsController extends ControllerBase {
     $user = $this->currentUser();
     $uid = $user->id();
     $gid = $group->id();
+    $is_owner = $uid === $group->getOwnerId();
     $cid = $parent_content->id();
 
     // Get training guided navigation option.
@@ -378,7 +380,7 @@ class LearningPathStepsController extends ControllerBase {
         }
 
         if ($current_step['current attempt score'] < $required ||
-          OpignoGroupManagerController::mustBeVisitedMeeting($current_step, $group)) {
+          OpignoGroupManagerController::mustBeVisitedMeeting($current_step, $group) && !$is_owner) {
 
           $course_entity = OpignoGroupManagedContent::load($current_step['cid']);
           $course_content_type = $this->content_type_manager->createInstance(
@@ -486,7 +488,7 @@ class LearningPathStepsController extends ControllerBase {
     }
 
     // Skip live meetings and instructor-led trainings.
-    $skip_types = ['Meeting', 'ILT'];
+    $skip_types = []; //['Meeting', 'ILT'];
     for ($next_step_index = $current_step_index + 1;
       $next_step_index < $count
       && in_array($steps[$next_step_index]['typology'], $skip_types);

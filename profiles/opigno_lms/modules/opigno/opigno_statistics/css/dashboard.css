@@ -28,12 +28,12 @@
 }
 
 .users-per-day path {
-  stroke: #5bb4d8;
+  stroke: #2E98C2;
   stroke-width: 2;
   fill: none;
 }
 
 .users-per-day circle {
   stroke: none;
-  fill: #5bb4d8;
+  fill: #2E98C2;
 }

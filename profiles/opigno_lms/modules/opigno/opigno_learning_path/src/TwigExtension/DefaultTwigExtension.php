@@ -309,8 +309,11 @@ class DefaultTwigExtension extends \Twig_Extension {
    *   Current user progress.
    */
   public function get_progress() {
-    $controller = new LearningPathController();
-    $content = $controller->progress();
+    $group = \Drupal::routeMatch()->getParameter('group');
+    $account = \Drupal::currentUser();
+
+    $progress_service = \Drupal::service('opigno_learning_path.progress');
+    $content = $progress_service->getProgressAjaxContainer($group->id(), $account->id(), '', 'group-page');
     return render($content);
   }
 

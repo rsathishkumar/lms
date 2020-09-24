@@ -50,7 +50,7 @@ nav#mobile-menu {
       }
 
       a {
-        $color: #c7c7c7;
+        $color: $medium-gray-900;
         $color-hover: $blue;
         position: relative;
         display: flex;
@@ -79,7 +79,7 @@ nav#mobile-menu {
         }
 
         &.administration:before {
-          content: '\e916';
+          content: icon(settings);
         }
 
         &.help:before {

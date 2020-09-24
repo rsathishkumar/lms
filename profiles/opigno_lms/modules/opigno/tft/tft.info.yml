@@ -10,7 +10,7 @@ dependencies:
   - drupal:path
   - drupal:taxonomy
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.4'
+# Information added by Drupal.org packaging script on 2020-08-12
+version: '8.x-1.5'
 project: 'tft'
-datestamp: 1591090828
+datestamp: 1597249367

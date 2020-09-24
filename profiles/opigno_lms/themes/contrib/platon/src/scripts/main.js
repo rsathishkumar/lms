@@ -69,7 +69,7 @@ import 'iframe-resizer';
       });
     },
     searchBar(context) {
-      let $toggleButton = $('.search-trigger a', context);
+      let $toggleButton = $('.search-trigger #search-trigger', context);
       let $searchForm = $('#search-form', context);
       let $searchInput = $searchForm.find('input[type="search"]');
 
@@ -92,7 +92,7 @@ import 'iframe-resizer';
       });
     },
     trainingCatalog(context) {
-      $('body.page-catalogue .views-exposed-form fieldset#edit-sort-by--wrapper legend', context).once().click(function () {
+      $('body.page-catalogue .views-exposed-form').find('fieldset#edit-sort-by--2--wrapper legend, fieldset#edit-sort-by--wrapper legend', context).once().click(function () {
         if ($(this).hasClass('active')) {
           $(this).removeClass('active');
         }
@@ -125,26 +125,51 @@ import 'iframe-resizer';
         return;
       }
 
+      const $btn = $('<a href="#" id="lp-steps-trigger" class="btn btn-link mr-auto"><i class="icon-module-open"></i>show</a>');
+      const $content = $('#content', context);
+      const $sidebar = $('#sidebar-first', context);
       const defaultMainClass = $('#content', context).attr('class');
-      $('#sidebar-first', context).hide();
-      $('#content', context).addClass('col-lg-12');
+      const opignoTrainingSession = {
+        get: function () {
+          let opignoTraining = JSON.parse(window.sessionStorage.getItem('Opigno.training'));
+
+          if (opignoTraining === null) {
+            opignoTraining = {};
+            opignoTraining.showSidebar = false;
+          }
+
+          return opignoTraining;
+        },
+        set: function (opignoTraining) {
+          window.sessionStorage.setItem('Opigno.training', JSON.stringify(opignoTraining));
+        },
+        toggleSidebarState: function () {
+          let opignoTraining = this.get();
+          opignoTraining.showSidebar = !opignoTraining.showSidebar;
+          this.set(opignoTraining);
+        }
+      };
+
+      $sidebar.hide();
+      $content.addClass('col-lg-12');
 
       // Add trigger
-      $('#main div#edit-actions', context).prepend('<a href="#" id="lp-steps-trigger" class="btn btn-link mr-auto">show</a>');
+      $('#main div#edit-actions', context).prepend($btn);
 
       // Handle trigger clicks
-      $('a#lp-steps-trigger', context).once().click((e) => {
+      $btn.once().click((e) => {
         e.preventDefault();
+        opignoTrainingSession.toggleSidebarState();
 
-        if ($('a#lp-steps-trigger', context).hasClass('open')) {
-          $('a#lp-steps-trigger', context).removeClass('open');
-          $('#sidebar-first', context).hide();
-          $('#content', context).addClass('col-lg-12');
+        if ($btn.hasClass('open')) {
+          $btn.removeClass('open');
+          $sidebar.hide();
+          $content.addClass('col-lg-12');
         }
         else {
-          $('a#lp-steps-trigger', context).addClass('open');
-          $('#sidebar-first', context).show();
-          $('#content', context).attr('class', defaultMainClass);
+          $btn.addClass('open');
+          $sidebar.show();
+          $content.attr('class', defaultMainClass);
         }
 
         $(window).trigger('resize');
@@ -152,6 +177,13 @@ import 'iframe-resizer';
           H5P.jQuery(window).trigger('resize');
         }
       });
+
+      // Show sidebar if it was open before.
+      if (opignoTrainingSession.get().showSidebar) {
+        $btn.addClass('open');
+        $sidebar.show();
+        $content.attr('class', defaultMainClass);
+      }
     },
 
     formatTFTOperations(context) {
@@ -295,6 +327,27 @@ import 'iframe-resizer';
           });
         }
       });
+    },
+    /**
+     * Display duplicate content in different screen to avoid errors from accessibility and SEO.
+     * @param context
+     */
+    copyContent: function (context) {
+      $('[data-copy-content]', context).once().each(function () {
+        var $this = $(this);
+        var $copyContent = $($this.data().copyContent);
+
+        if ($copyContent.length) {
+          $copyContent = $copyContent.clone(true, true);
+
+          $copyContent.find('[id]').each(function () {
+            var $this = $(this);
+            $this.attr('id', $this.attr('id') + '_clone');
+          });
+
+          $this.prepend($copyContent.children());
+        }
+      });
     }
   };
 
@@ -313,6 +366,7 @@ import 'iframe-resizer';
       Drupal.platon.triggerClick(context);
       Drupal.platon.pageLoader(context);
       Drupal.platon.videoPreview(context);
+      Drupal.platon.copyContent(context);
 
       // Temp class to calc iframe height.
       $('#training-content-wrapper iframe', context).parents('.tab-pane').addClass('adapt-iframe-size');

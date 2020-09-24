@@ -1,6 +1,6 @@
 name: Image
 type: module
-description: 'Defines an image field type and provides image manipulation tools.'
+description: 'Defines a field type for image media and provides display configuration tools.'
 package: Field types
 # version: VERSION
 core: 8.x
@@ -8,7 +8,7 @@ dependencies:
   - drupal:file
 configure: entity.image_style.collection
 
-# Information added by Drupal.org packaging script on 2020-06-17
-version: '8.8.8'
+# Information added by Drupal.org packaging script on 2020-09-16
+version: '8.9.6'
 project: 'drupal'
-datestamp: 1592418797
+datestamp: 1600276320

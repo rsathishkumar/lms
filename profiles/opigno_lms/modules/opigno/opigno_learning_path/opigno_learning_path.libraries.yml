@@ -178,3 +178,16 @@ iframe_opigno_lp_manager:
 opigno_autocomplite_multiselect:
   js:
     js/opigno_autocomplite_multiselect.js: {}
+
+progress:
+  version: VERSION
+  css:
+    theme:
+      css/opigno_learning_path_progress.css: {}
+  js:
+    js/opigno_learning_path_progress.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once
+    - core/drupalSettings
+    - core/drupal.ajax

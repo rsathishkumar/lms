@@ -14,6 +14,7 @@ use Drupal\rest\ResourceResponse;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\user\Entity\User;
 
 /**
  * Provides a resource to get a JWT token.
@@ -96,7 +97,11 @@ class TokenRestResource extends ResourceBase {
       return new ResourceResponse($data, Response::HTTP_FORBIDDEN);
     }
     else {
-//      $data['message'] = $this->t('Login succeeded');
+      $account = User::load($user->id());
+      user_login_finalize($account);
+      $session = \Drupal::service('session');
+      $data['session_id'] = $session->getName() . '=' . $session->getId();
+
       $data['uid'] = $user->id();
       $data['roles'] = $user->getRoles();
       $data['token'] = $this->generateToken();

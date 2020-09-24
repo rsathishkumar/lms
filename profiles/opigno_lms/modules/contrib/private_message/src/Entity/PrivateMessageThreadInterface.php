@@ -120,7 +120,7 @@ interface PrivateMessageThreadInterface extends ContentEntityInterface {
   public function getLastAccessTime(AccountInterface $account);
 
   /**
-   * Get the PrivateMessageThreadAccessTime entites referenced by this thread.
+   * Get the PrivateMessageThreadAccessTime entities referenced by this thread.
    *
    * @return \Drupal\private_message\Entity\PrivateMessageThreadAccessTime[]
    *   An array of PrivateMessageThreadAccessTime entities

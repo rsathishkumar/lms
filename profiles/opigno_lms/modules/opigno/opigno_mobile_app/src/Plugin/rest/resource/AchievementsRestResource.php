@@ -12,6 +12,8 @@ use Drupal\rest\ResourceResponse;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Drupal\opigno_learning_path\Progress;
+use Drupal\Core\Render\RenderContext;
 
 /**
  * Provides a resource to get achievements info.
@@ -54,6 +56,13 @@ class AchievementsRestResource extends ResourceBase {
   protected $limit = 10;
 
   /**
+   * Progress bar service.
+   *
+   * @var \Drupal\opigno_learning_path\Progress
+   */
+  protected $progress;
+
+  /**
    * Constructs a new PrivateMessageRestResource object.
    *
    * @param array $configuration
@@ -81,12 +90,14 @@ class AchievementsRestResource extends ResourceBase {
     LoggerInterface $logger,
     Connection $database,
     AccountProxyInterface $current_user,
-    EntityTypeManagerInterface $entity_type_manager) {
+    EntityTypeManagerInterface $entity_type_manager,
+    Progress $progress) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $serializer_formats, $logger);
 
     $this->database = $database;
     $this->currentUser = $current_user;
     $this->entityTypeManager = $entity_type_manager;
+    $this->progress = $progress;
   }
 
   /**
@@ -101,7 +112,8 @@ class AchievementsRestResource extends ResourceBase {
       $container->get('logger.factory')->get('opigno_mobile_app'),
       $container->get('database'),
       $container->get('current_user'),
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('opigno_learning_path.progress')
     );
   }
 
@@ -116,87 +128,91 @@ class AchievementsRestResource extends ResourceBase {
    */
   public function get() {
     // Array with response data.
-    $response_data = [
-      'items' => [],
-      'next_page' => FALSE,
-    ];
-    // Get request parameters.
-    $request = \Drupal::request();
-    $request_query = $request->query;
-    $request_query_array = $request_query->all();
-    // How many items should be returned.
-    $limit = $request_query->get('limit') ?: $this->limit;
-    // Part of items.
-    $page = $request_query->get('page') ?: 0;
-
-    // Get training ids.
-    $training_ids = $this->getTrainingsIds();
-
-    $trainings_count = count($training_ids);
-    $position = $limit * ($page + 1);
-    $offset = $position - $limit;
-    // Get training per page.
-    $items_per_page = array_slice($training_ids, $offset, $limit);
-    // Build link to next page.
-    if (($trainings_count > $position) && $items_per_page) {
-      $next_page_query = $request_query_array;
-      $next_page_query['page'] = $page + 1;
-      $response_data['next_page'] = Url::createFromRequest($request)
-        ->setOption('query', $next_page_query)
-        ->toString(TRUE)
-        ->getGeneratedUrl();
-    }
-
-    // Load trainings.
-    $trainings = $this->entityTypeManager
-      ->getStorage('group')
-      ->loadMultiple($items_per_page);
-
-    if (empty($trainings)) {
-      $response =  new ResourceResponse($response_data, Response::HTTP_NO_CONTENT);
-      // Disable caching.
-      $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
-      return $response;
-    }
-
-    // Build response data for each training.
-    /* @var \Drupal\group\Entity\Group $training */
-    foreach ($trainings as $training) {
-      // Get time when user subscribe to a training.
-      /** @var \Drupal\group\Entity\GroupContent $member */
-      $member = $training->getMember($this->currentUser)->getGroupContent();
-      $registration = $member->getCreatedTime();
-      // Get time when user finished the training.
-      $validation = opigno_learning_path_completed_on($training->id(), $this->currentUser->id(), TRUE);
-      // Get time spent.
-      /** @var \Drupal\Core\Datetime\DateFormatterInterface $date_formatter */
-      $date_formatter = \Drupal::service('date.formatter');
-      $time_spent = opigno_learning_path_get_time_spent($training->id(), $this->currentUser->id());
-      // Get progress.
-      $progress = round(100 * opigno_learning_path_progress($training->id(), $this->currentUser->id()));
-      // Get progress status.
-      $progress_status = $this->getTrainingProgressStatus($training, $this->currentUser);
-      // Get score.
-      $score = round(opigno_learning_path_get_score($training->id(), $this->currentUser->id()));
-      // Get certificate link.
-      $cert_url = !$training->get('field_certificate')->isEmpty() && $progress_status == 'passed'
-        ? '/certificate/group/' . $training->id() . '/pdf' : '';
-
-      // Build response data.
-      $response_data['items'][] = [
-        'id' => $training->id(),
-        'title' => $training->label(),
-        'progress' => $progress,
-        'progress_status' => $progress_status,
-        'score' => $score,
-        'subscription' => $registration,
-        'validation_date' => $validation > 0 ? $validation : '',
-        'time_spent' => $date_formatter->formatInterval($time_spent),
-        'certificate' => $cert_url,
-
+    // Wrap fully data to avaoid to early rendering.
+    $response_data = \Drupal::service('renderer')->executeInRenderContext(new RenderContext(), function () {
+      $response_data = [
+        'items' => [],
+        'next_page' => FALSE,
       ];
-
-    }
+      // Get request parameters.
+      $request = \Drupal::request();
+      $request_query = $request->query;
+      $request_query_array = $request_query->all();
+      // How many items should be returned.
+      $limit = $request_query->get('limit') ?: $this->limit;
+      // Part of items.
+      $page = $request_query->get('page') ?: 0;
+  
+      // Get training ids.
+      $training_ids = $this->getTrainingsIds();
+  
+      $trainings_count = count($training_ids);
+      $position = $limit * ($page + 1);
+      $offset = $position - $limit;
+      // Get training per page.
+      $items_per_page = array_slice($training_ids, $offset, $limit);
+      // Build link to next page.
+      if (($trainings_count > $position) && $items_per_page) {
+        $next_page_query = $request_query_array;
+        $next_page_query['page'] = $page + 1;
+        $response_data['next_page'] = Url::createFromRequest($request)
+          ->setOption('query', $next_page_query)
+          ->toString(TRUE)
+          ->getGeneratedUrl();
+      }
+  
+      // Load trainings.
+      $trainings = $this->entityTypeManager
+        ->getStorage('group')
+        ->loadMultiple($items_per_page);
+  
+      if (empty($trainings)) {
+        $response =  new ResourceResponse($response_data, Response::HTTP_NO_CONTENT);
+        // Disable caching.
+        $response->addCacheableDependency(['#cache' => ['max-age' => 0]]);
+        return $response;
+      }
+  
+      // Build response data for each training.
+      /* @var \Drupal\group\Entity\Group $training */
+      foreach ($trainings as $training) {
+        // Get time when user subscribe to a training.
+        /** @var \Drupal\group\Entity\GroupContent $member */
+        $member = $training->getMember($this->currentUser)->getGroupContent();
+        $registration = $member->getCreatedTime();
+        // Get time when user finished the training.
+        $validation = opigno_learning_path_completed_on($training->id(), $this->currentUser->id(), TRUE);
+        // Get time spent.
+        /** @var \Drupal\Core\Datetime\DateFormatterInterface $date_formatter */
+        $date_formatter = \Drupal::service('date.formatter');
+        $time_spent = opigno_learning_path_get_time_spent($training->id(), $this->currentUser->id());
+        // Get progress.
+        $progress = $this->progress->getProgressRound($training->id(), $this->currentUser->id());
+        // Get progress status.
+        $progress_status = $this->getTrainingProgressStatus($training, $this->currentUser);
+        // Get score.
+        $score = round(opigno_learning_path_get_score($training->id(), $this->currentUser->id()));
+        // Get certificate link.
+        $cert_url = !$training->get('field_certificate')->isEmpty() && $progress_status == 'passed'
+          ? '/certificate/group/' . $training->id() . '/pdf' : '';
+  
+        // Build response data.
+        $response_data['items'][] = [
+          'id' => $training->id(),
+          'title' => $training->label(),
+          'progress' => $progress,
+          'progress_status' => $progress_status,
+          'score' => $score,
+          'subscription' => $registration,
+          'validation_date' => $validation > 0 ? $validation : '',
+          'time_spent' => $date_formatter->formatInterval($time_spent),
+          'certificate' => $cert_url,
+  
+        ];
+  
+      }
+      return $response_data;
+    });
 
     $response = new ResourceResponse($response_data, 200);
     // Disable caching.
@@ -217,7 +233,7 @@ class AchievementsRestResource extends ResourceBase {
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
   private function getTrainingProgressStatus(Group $training, AccountProxyInterface $account) {
-    $progress = round(100 * opigno_learning_path_progress($training->id(), $account->id()));
+    $progress = $this->progress->getProgressRound($training->id(), $account->id());
     $result = $this->database
       ->select('opigno_learning_path_achievements', 'a')
       ->fields('a', ['status'])

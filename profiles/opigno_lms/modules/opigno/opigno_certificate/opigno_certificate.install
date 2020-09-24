@@ -118,3 +118,10 @@ function opigno_certificate_update_80024() {
   $data = $storage->read('editor.editor.opigno_certificate_wysiwyg');
   $config_storage->write('editor.editor.opigno_certificate_wysiwyg', $data);
 }
+
+/**
+ * Disable module view_mode_selector.
+ */
+function opigno_certificate_update_80025() {
+  \Drupal::service('module_installer')->uninstall(['view_mode_selector']);
+}

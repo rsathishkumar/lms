@@ -31,7 +31,11 @@
       <div class="lp_step_summary">
         <div class="lp_step_summary_title_wrapper">
           <h3 class="lp_step_summary_title">{{ step.title }}</h3>
-          <h4 class="lp_step_summary_subtitle">{{ step.sub_title }}</h4>
+
+          {% if step.sub_title %}
+            <h4 class="lp_step_summary_subtitle">{{ step.sub_title }}</h4>
+          {% endif %}
+
           {%  if step.description %}
             <div class="lp_step_summary_description">{{ step.description|raw }}</div>
           {% endif %}

@@ -4,22 +4,22 @@
       var that = this;
       var fullScreen = {
         show: function () {
-          $('body', context).addClass('fullscreen');
+          $('body').addClass('fullscreen');
           that.goInFullscreen(document.querySelector('html'));
         },
         hide: function () {
-          $('body', context).removeClass('fullscreen');
+          $('body').removeClass('fullscreen');
           that.goOutFullscreen();
         }
       };
 
-      $(document).on('fullscreenchange', function (e) {
+      $(document).once('opignoModuleActivity').on('fullscreenchange', function (e) {
         if (!this.fullscreen) {
           fullScreen.hide();
         }
       });
 
-      $('.fullscreen-link a', context).click(function(e) {
+      $('.fullscreen-link a', context).once('opignoModuleActivity').on('click', function(e) {
         e.preventDefault();
 
         if ($('body').hasClass('fullscreen')) {

@@ -12,6 +12,7 @@ use Drupal\opigno_group_manager\Entity\OpignoGroupManagedContent;
 use Drupal\opigno_group_manager\OpignoGroupContext;
 use Drupal\user\Entity\User;
 use Drupal\opigno_learning_path\Entity\LPManagedContent;
+use Drupal\opigno_module\Entity\OpignoModule;
 
 /**
  * Class LearningPathAccess.
@@ -123,8 +124,51 @@ class LearningPathAccess {
           $access = FALSE;
         }
       }
+
+      // Added possibility to override access for groups from other modules.
+      if (!self::triggerHookAccess('status_group_validation_access', $group, $account)) {
+        $access = FALSE;
+      }
+
     }
 
+    return $access;
+  }
+
+  /**
+   * Returns step user access.
+   */
+  public static function checkStepValidation($step, $uid) {
+
+    $account = User::load($uid);
+    switch ($step['typology']) {
+      case 'Course':
+        $group = Group::load($step['id']);
+        return self::triggerHookAccess('status_course_validation_access', $group, $account);
+        break;
+      case 'Module':
+        $module = OpignoModule::load($step['id']);
+        return self::triggerHookAccess('status_module_validation_access', $module, $account);
+        break;
+    }
+
+    return TRUE;
+  }
+
+  /**
+   * Trigger hook accesses.
+   */
+  public static function triggerHookAccess($hook_name, $entity, $account) {
+    $access = TRUE;
+    $access_results = \Drupal::moduleHandler()->invokeAll($hook_name, [$entity, $account]);
+    if (is_array($access_results)) {
+      $access_results = array_filter($access_results, function($var){
+          return empty($var);
+      });
+      if (!empty($access_results)) {
+        $access = FALSE;
+      }
+    }
     return $access;
   }
 
@@ -568,6 +612,12 @@ class LearningPathAccess {
         ->execute()->fetchAll();
 
       $access = $results ? TRUE : FALSE;
+
+      // Added possibility to override access for groups from other modules.
+      if (!self::triggerHookAccess('status_course_validation_access', $group, $account)) {
+        $access = FALSE;
+      }
+
     }
 
     return $access;

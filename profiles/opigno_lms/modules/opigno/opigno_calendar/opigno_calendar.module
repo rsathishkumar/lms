@@ -44,6 +44,11 @@ function opigno_calendar_preprocess_calendar_month_col(&$variables) {
   }
 
   $entry = &$variables['item']['entry'];
+
+  if ($variables['item']['date'] === date('Y-m-d')) {
+    $variables['item']['entry']['#selected'] = TRUE;
+  }
+
   if (!is_array($entry) || isset($entry['#theme'])) {
     return;
   }
@@ -53,6 +58,7 @@ function opigno_calendar_preprocess_calendar_month_col(&$variables) {
       'opigno_calendar/month_block',
     ],
   ];
+
   if (isset($entry[0]['#theme']) && $entry[0]['#theme'] === 'calendar_empty_day') {
     $entry['#attached'] = $attached;
     return;
@@ -60,16 +66,23 @@ function opigno_calendar_preprocess_calendar_month_col(&$variables) {
 
   /** @var \Drupal\views\ViewExecutable $view */
   $view = $entry[0]['#view'];
-  if (($view->getDisplay()->getOption('css_class') !== 'opigno-calendar-views'
+  if ((!$view || $view->getDisplay()->getOption('css_class') !== 'opigno-calendar-views'
     && $view->getDisplay()->getOption('css_class') !== 'view-opigno-calendar')
     || ($view->current_display !== 'month_block' && $view->current_display !== 'page_month')
   ) {
     return;
   }
 
+  $entry = opigno_calendar_generate_entry($variables, $entry, $attached);
+}
+
+/**
+ * Build day date box.
+ */
+function opigno_calendar_generate_entry($variables, $content, $attached) {
   $date = new DateTimePlus($variables['item']['date']);
 
-  $entry = [
+  return [
     '#attached' => $attached,
     'date_box' => [
       '#theme_wrappers' => ['container'],
@@ -91,7 +104,7 @@ function opigno_calendar_preprocess_calendar_month_col(&$variables) {
           '#attributes' => [
             'class' => ['date-month'],
           ],
-          '#value' => $date->format('F'),
+          '#value' => t($date->format('F')),
         ],
         'year' => [
           '#type' => 'html_tag',
@@ -116,7 +129,7 @@ function opigno_calendar_preprocess_calendar_month_col(&$variables) {
       '#attributes' => [
         'class' => ['items'],
       ],
-      'content' => $entry,
+      'content' => $content,
     ],
   ];
 }
@@ -135,6 +148,13 @@ function opigno_calendar_theme_suggestions_alter(array &$suggestions, array $var
 }
 
 /**
+ * Implements hook_theme_registry_alter
+ */
+function opigno_calendar_theme_registry_alter(&$theme_registry) {
+  $theme_registry['calendar_month_col']['path'] = drupal_get_path('module', 'opigno_calendar') . '/templates';
+}
+
+/**
  * Implements hook_preprocess_HOOK().
  */
 function opigno_calendar_preprocess_block__opigno_calendar(&$variables) {
@@ -148,7 +168,7 @@ function opigno_calendar_preprocess_block__opigno_calendar(&$variables) {
       ]);
       if ($url->access()) {
         $variables['add_event_link'] = Markup::create(
-          "<div class='next-link d-flex justify-content-end mb-4 text-uppercase'><a class='btn btn-success color-white add_event_link' href='" . $url->toString() . "'>" . t('add event') . "</a></div>"
+          "<div class='next-link d-flex justify-content-end mb-4 text-uppercase'><a class='btn btn-success color-white add_event_link' href='" . $url->toString() . "'><i class='icon-pencil mr-2'></i>" . t('add event') . "</a></div>"
         );
       }
     }
@@ -442,5 +462,15 @@ function opigno_calendar_views_pre_render(ViewExecutable $view) {
 
       unset($view->result[$key]);
     }
+  }
+}
+
+/**
+ * Implements hook_preprocess_page_title().
+ */
+function opigno_calendar_preprocess_page_title(&$variables) {
+  if (\Drupal::routeMatch()->getRouteName() == 'view.opigno_calendar.page_month') {
+    $variables['title']['#allowed_tags'][] = 'span';
+    $variables['title']['#markup'] = '<span class="sr-only">' . $variables['title']['#markup'] . '</span>';
   }
 }

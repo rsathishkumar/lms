@@ -4,19 +4,36 @@
   padding: 0;
   height: $header-height;
   position: relative;
-  z-index: 10;
+  z-index: 100;
+
+  [data-toggle="dropdown"] {
+    text-decoration: none;
+    color: $medium-gray-200;
+
+    &:hover {
+      color: $medium-gray;
+    }
+  }
+
+  .menu-icon {
+    font-size: 34px;
+    line-height: 1.2;
+  }
 
   button.navbar-toggler {
-    @include svg-picto('picto-menu-white');
-    width: 2.5rem;
-    height: 2.5rem;
     border: 0;
-    background-size: 2rem;
+    background: none !important;
     padding: 0;
     box-shadow: none;
+    color: $white;
+    font-size: 28px;
 
     &.open {
-      @include svg-picto('picto-close-white');
+      .icon-menu {
+        &:before {
+          content: icon(close);
+        }
+      }
     }
 
     @include media-breakpoint-up(breakpoint-next($header-mobile-breakpoint)) {
@@ -47,7 +64,7 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      background-color: $red;
+      background-color: $blood-red-600;
       border: 1px solid;
       border-radius: 100%;
       color: #fff;
@@ -55,6 +72,17 @@
       position: absolute;
       top: 7px;
       transform: translate(50%, -50%);
+    }
+    .user-block {
+      .picto {
+        width: $header-user-picto-size;
+        height: $header-user-picto-size;
+      }
+
+      i {
+        font-size: $header-user-picto-size;
+        line-height: 1;
+      }
     }
 
     .user-block,
@@ -66,26 +94,12 @@
 
       a[data-toggle] {
         position: relative;
-
-        .picto {
-          width: $header-user-picto-size;
-          height: $header-user-picto-size;
-        }
       }
     }
 
     .admin-opigno-block {
       @include media-breakpoint-down(md) {
         position: static;
-      }
-
-      a[data-toggle] {
-        .picto {
-          @include svg-picto('picto-admin-opigno');
-          width: $header-user-picto-size;
-          height: $header-user-picto-size;
-          background-size: 32px;
-        }
       }
 
       h2 {
@@ -154,9 +168,11 @@
         }
       }
 
+      button.dropdown-item:not(.primary),
       a.dropdown-item:not(.primary) {
         @include make-button($light-gray, $light-blue);
 
+        + button,
         + a {
           margin-top: 0.5rem;
         }
@@ -165,13 +181,6 @@
 
     .user-ilts {
       a[data-toggle] {
-        .picto {
-          @include svg-picto('picto-ilt');
-          width: $header-user-picto-size;
-          height: $header-user-picto-size;
-          background-size: 32px;
-        }
-
         .unread {
           right: 1px;
         }
@@ -180,13 +189,6 @@
 
     .user-live-meetings {
       a[data-toggle] {
-        .picto {
-          @include svg-picto('picto-live-meeting');
-          width: $header-user-picto-size;
-          height: $header-user-picto-size;
-          background-size: 32px;
-        }
-
         .unread {
           right: 1px;
         }
@@ -195,11 +197,6 @@
 
     .user-notifications {
       a[data-toggle] {
-        .picto {
-          @include svg-picto(picto-user-notifications);
-          background-size: 26px;
-        }
-
         .unread {
           right: 9px;
         }
@@ -208,11 +205,6 @@
 
     .user-messages {
       a[data-toggle] {
-        .picto {
-          @include svg-picto(picto-user-messages);
-          background-size: 32px;
-        }
-
         .unread {
           right: 4px;
         }
@@ -254,23 +246,21 @@
           margin-bottom: 47px;
 
           .close-dropdown {
-            @include svg-picto(picto-close-black);
-            width: 15px;
             height: 1.5rem;
             padding: 0;
+            background: none;
+
+            i {
+              font-size: 16px;
+            }
           }
 
           .user-status {
             color: #9faf5b;
-            font-size: 0.625rem;
+            font-size: 0.875rem;
 
-            &::before {
-              content: '';
-              display: inline-block;
-              width: 8px;
-              height: 8px;
-              @include svg-picto(picto-user-status);
-              font-size: 1em;
+            i {
+              font-size: 0.875rem;
               margin-right: 0.5em;
             }
           }
@@ -343,19 +333,22 @@
       display: none !important;
     }
 
-    a {
-      .picto.search {
-        height: $header-picto-size;
-        min-width: $header-picto-size;
-        @include svg-picto(picto-search);
+    #search-trigger  {
+      color: $medium-gray-200;
+      text-decoration: none;
+      box-shadow: none;
+      background: none;
+
+      &:hover {
+        color: $medium-gray;
+      }
+
+      i {
+        font-size: 26px;
       }
 
       &.open {
         display: none;
-
-        .picto.search {
-          @include svg-picto(picto-search-close);
-        }
       }
     }
   }
@@ -481,41 +474,28 @@ div#aboutModal {
     align-items: flex-start;
 
     .close-dropdown {
-      @include svg-picto(picto-close-black);
-      width: 15px;
-      height: 1.5rem;
       padding: 0;
     }
   }
 
   .version span {
-    &.nok,
-    &.ok {
-      &::before {
-        content: '';
-        display: inline-block;
-        width: 1.5rem;
-        height: 1.5rem;
-        vertical-align: bottom;
-        border-radius: 100%;
-        margin-right: 0.5rem;
-      }
+    i {
+      display: inline-block;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      font-size: 8px;
+      color: $white;
+      text-align: center;
+      line-height: 1.5rem;
     }
 
-    &.ok {
-      &::before {
-        @include svg-picto(picto-ok-white);
-        background-color: #c2d66d;
-        background-size: 50%;
-      }
+    .icon-ok {
+      background-color: #c2d66d;
     }
 
-    &.nok {
-      &::before {
-        @include svg-picto(picto-close-white);
-        background-color: #ea5547;
-        background-size: 45%;
-      }
+    .icon-close {
+      background-color: #ea5547;
     }
   }
 }

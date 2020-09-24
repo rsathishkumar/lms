@@ -175,15 +175,6 @@ opigno_mobile_app.check_opigno_instance:
     _format: 'json'
   methods: [GET]
 
-opigno_mobile_app.mobile_mode_status:
-  path: '/api/v1/mobile-mode-status'
-  defaults:
-    _controller: '\Drupal\opigno_mobile_app\Controller\OpignoMobileController::configureMobileMode'
-  requirements:
-    _user_is_logged_in: 'TRUE'
-    _format: 'json'
-  methods: [GET]
-
 # ********
 # Statistics.
 # ********
@@ -218,18 +209,6 @@ opigno_mobile_app.moxtra_meetings:
   path: 'api/v1/opigno-moxtra-meetings'
   defaults:
     _controller: '\Drupal\opigno_mobile_app\Controller\OpignoMoxtraController::getMeetings'
-  requirements:
-    _permission: 'access content'
-    _format: 'json'
-  methods: [GET]
-  options:
-    _auth:
-      - jwt_auth
-
-opigno_mobile_app.moxtra_workspaces:
-  path: 'api/v1/opigno-moxtra-workspaces'
-  defaults:
-    _controller: '\Drupal\opigno_mobile_app\Controller\OpignoMoxtraController::getWorkspaces'
   requirements:
     _permission: 'access content'
     _format: 'json'

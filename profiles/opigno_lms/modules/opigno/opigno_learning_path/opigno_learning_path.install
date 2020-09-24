@@ -11,6 +11,7 @@ use Drupal\field\Entity\FieldConfig;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\Core\Config\FileStorage;
 use Drupal\opigno_learning_path\LearningPathAccess;
+use Drupal\user\Entity\Role;
 
 /**
  * Creates database table for Learning Path group user statuses.
@@ -835,4 +836,75 @@ function opigno_learning_path_update_8029() {
   $config_storage = \Drupal::service('config.storage');
   $data = $storage->read('field.storage.group.field_certificate_expire_results');
   $config_storage->write('field.storage.group.field_certificate_expire_results', $data);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Change image style for display default.
+ */
+function opigno_learning_path_update_8030() {
+  // Install configs from optional folder.
+  $config_optional_path = drupal_get_path('module', 'opigno_learning_path') . '/config/optional';
+  $storage = new FileStorage($config_optional_path);
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('core.entity_view_display.group.learning_path.default');
+  $config_storage->write('core.entity_view_display.group.learning_path.default', $data);
+}
+
+/**
+ * Creates create cronjobs.
+ */
+function opigno_learning_path_update_8031() {
+
+  // Enable new module opigno_cron.
+  if (!\Drupal::moduleHandler()->moduleExists('opigno_cron')) {
+    \Drupal::service('module_installer')->install(['opigno_cron']);
+  }
+
+  // Add new cron configuretions.
+  $config_path = drupal_get_path('module', 'opigno_learning_path')
+    . '/config/install';
+  $storage = new FileStorage($config_path);
+
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('ultimate_cron.job.opigno_learning_path_cron');
+  $config_storage->write('ultimate_cron.job.opigno_learning_path_cron', $data);
+
+}
+
+/**
+ * Add alternative text to training catalog.
+ */
+function opigno_learning_path_update_8032() {
+  // Add new cron configuretions.
+  $config_path = drupal_get_path('module', 'opigno_learning_path')
+    . '/config/install';
+  $storage = new FileStorage($config_path);
+
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('views.view.opigno_training_catalog');
+  $config_storage->write('views.view.opigno_training_catalog', $data);
+}
+
+/**
+ * Add access to contectual links.
+ */
+function opigno_learning_path_update_8033() {
+
+  // Grand users for access to contextual links.
+  $permission = 'access contextual links';
+
+  $role = Role::load('content_manager');
+  $role->grantPermission($permission);
+  $role->save();
+
+  $role = Role::load('user_manager');
+  $role->grantPermission($permission);
+  $role->save();
+
+  $permission = 'bypass group access';
+  $role = Role::load('content_manager');
+  $role->grantPermission($permission);
+  $role->save();
 }

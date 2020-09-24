@@ -159,10 +159,12 @@
 
       var achievementsPage = 0;
       var achievementsAjaxLoading = false;
+      var noResult = false;
       var $window = $(window);
       var that = this;
+
       $window.once('scroll').scroll(function () {
-        if (!achievementsAjaxLoading) {
+        if (!achievementsAjaxLoading && !noResult) {
           if ($window.scrollTop() >= that.getDocHeight() - (2 * $window.height())) {
             achievementsAjaxLoading = true;
             Drupal.platon.ajaxFullScreenLoader.show();
@@ -170,13 +172,21 @@
             Drupal.ajax({
               url: 'ajax/achievements/' + (achievementsPage + 1),
             }).execute()
-                .done(function () {
+                .done(function (response) {
                   achievementsPage += 1;
                   Drupal.platon.ajaxFullScreenLoader.hide();
+
+                  if (!response.length) {
+                    noResult = true;
+                  }
                 })
-                .always(function () {
+                .always(function (response) {
                   achievementsAjaxLoading = false;
                   Drupal.platon.ajaxFullScreenLoader.hide();
+
+                  if (!response.length) {
+                    noResult = true
+                  }
                 });
           }
         }

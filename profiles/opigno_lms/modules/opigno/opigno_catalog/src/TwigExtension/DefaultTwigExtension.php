@@ -73,22 +73,23 @@ class DefaultTwigExtension extends \Twig_Extension {
   /**
    * Returns default image.
    */
-  public function get_default_image($type) {
+  public function get_default_image($type, $title) {
     $request = \Drupal::request();
     $path = \Drupal::service('module_handler')
       ->getModule('opigno_catalog')
       ->getPath();
+    $title = t('Picture of') . ' ' . $title;
     switch ($type) {
       case 'course':
-        $img = '<img src="' . $request->getBasePath() . '/' . $path . '/img/img_course.png" alt="">';
+        $img = '<img src="' . $request->getBasePath() . '/' . $path . '/img/img_course.png" alt="' . $title . '">';
         break;
 
       case 'module':
-        $img = '<img src="' . $request->getBasePath() . '/' . $path . '/img/img_module.png" alt="">';
+        $img = '<img src="' . $request->getBasePath() . '/' . $path . '/img/img_module.png" alt="' . $title . '">';
         break;
 
       case 'learning_path':
-        $img = '<img src="' . $request->getBasePath() . '/' . $path . '/img/img_training.png" alt="">';
+        $img = '<img src="' . $request->getBasePath() . '/' . $path . '/img/img_training.png" alt="' . $title . '">';
         break;
 
       default:

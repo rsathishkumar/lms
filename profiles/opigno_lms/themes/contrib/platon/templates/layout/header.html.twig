@@ -10,14 +10,20 @@
         {% if page.admin_opigno %}
           <div class="admin-opigno-block d-none d-md-block dropdown">
             <a href="#" class="d-flex align-items-center" data-toggle="dropdown">
-              <span class="picto"></span>
+              <i class="icon-settings menu-icon"></i>
+              <span class="sr-only">{{ 'Admin menu'|t }}</span>
             </a>
             <div class="dropdown-menu dropdown-menu-right">
               <div class="info d-flex">
                 <div class="flex-1">
                   <div><strong class="text-uppercase">{{ 'administration'|t }}</strong></div>
                 </div>
-                <button class="close-dropdown">close</button>
+                <button class="close-dropdown">
+                  <i class="icon-close"></i>
+                  <span class="sr-only">
+                    {{ 'Close'|t }}
+                  </span>
+                </button>
               </div>
               <div class="px-4 d-flex menu-wrapper">
                 {{ page.admin_opigno }}
@@ -27,17 +33,23 @@
         {% endif %}
         <div class="user-ilts dropdown d-none d-md-block ml-3">
           <a href="#" class="d-flex align-items-center" data-toggle="dropdown">
-            <span class="picto"></span>
+            <i class="icon-ilt menu-icon"></i>
             {% if upcoming_ilts_count %}
               <div class="unread">{{ upcoming_ilts_count }}</div>
             {% endif %}
+            <span class="sr-only"> {{ 'Instructor-Led Trainings'|t }}</span>
           </a>
           <div class="dropdown-menu dropdown-menu-right">
             <div class="info d-flex">
               <div class="flex-1">
                 <div><strong class="text-uppercase">{{ 'Instructor-Led Training'|t }}</strong></div>
               </div>
-              <button class="close-dropdown">close</button>
+              <button class="close-dropdown">
+                <i class="icon-close"></i>
+                <span class="sr-only">
+                  {{ 'Close'|t }}
+                </span>
+              </button>
             </div>
             {% if upcoming_ilts_count %}
               <div id="ilts-wrapper">
@@ -58,17 +70,23 @@
         </div>
         <div class="user-live-meetings dropdown d-none d-md-block ml-3">
           <a href="#" class="d-flex align-items-center" data-toggle="dropdown">
-            <span class="picto"></span>
+            <i class="icon-live-meeting menu-icon"></i>
             {% if upcoming_live_meetings_count %}
               <div class="unread">{{ upcoming_live_meetings_count }}</div>
             {% endif %}
+            <span class="sr-only">{{ 'Live meetings'|t }}</span>
           </a>
           <div class="dropdown-menu dropdown-menu-right">
             <div class="info d-flex">
               <div class="flex-1">
                 <div><strong class="text-uppercase">{{ 'Live Meeting'|t }}</strong></div>
               </div>
-              <button class="close-dropdown">close</button>
+              <button class="close-dropdown">
+                <i class="icon-close"></i>
+                <span class="sr-only">
+                  {{ 'Close'|t }}
+                </span>
+              </button>
             </div>
             {% if upcoming_live_meetings_count %}
               <div id="live-meetings-wrapper">
@@ -89,17 +107,23 @@
         </div>
         <div class="user-notifications dropdown ml-3">
           <a href="{{ path('view.opigno_notifications.page_all') }}" class="d-flex align-items-center" data-toggle="dropdown">
-            <span class="picto"></span>
+            <i class="icon-user-notifications menu-icon"></i>
             {% if notifications_unread_count %}
               <div class="unread">{{ notifications_unread_count }}</div>
             {% endif %}
+            <span class="sr-only">{{ 'Notifications'|t }}</span>
           </a>
           <div class="dropdown-menu dropdown-menu-right">
             <div class="info d-flex">
               <div class="flex-1">
                 <div><strong class="text-uppercase">{{ 'notifications'|t }}</strong></div>
               </div>
-              <button class="close-dropdown">close</button>
+              <button class="close-dropdown">
+                <i class="icon-close"></i>
+                <span class="sr-only">
+                  {{ 'Close'|t }}
+                </span>
+              </button>
             </div>
             <a id="read-all-notifications" class="mark-as-read" href="#">{{ 'Mark as all read'|t }}</a>
             <div id="notifications-wrapper">{{ notifications_unread }}</div>
@@ -111,17 +135,23 @@
         </div>
         <div class="user-messages dropdown ml-3">
           <a href="{{ path('private_message.private_message_page') }}" class="d-flex align-items-center" data-toggle="dropdown">
-            <span class="picto"></span>
+            <i class="icon-user-messages menu-icon"></i>
             {% if unread_thread_count %}
               <div class="unread">{{ unread_thread_count }}</div>
             {% endif %}
+            <span class="sr-only">{{ 'Messages'|t }}</span>
           </a>
           <div class="dropdown-menu dropdown-menu-right">
             <div class="info d-flex">
               <div class="flex-1">
                 <div><strong class="text-uppercase">{{ 'messages'|t }}</strong></div>
               </div>
-              <button class="close-dropdown">close</button>
+              <button class="close-dropdown">
+                <i class="icon-close"></i>
+                <span class="sr-only">
+                  {{ 'Close'|t }}
+                </span>
+              </button>
             </div>
             <a id="read-all-messages" class="mark-as-read" href="#">{{ 'Mark as all read'|t }}</a>
             {{ private_messages }}
@@ -131,16 +161,26 @@
           </div>
         </div>
         <div class="user-block ml-3 dropdown">
-          <a href="{{ url('entity.user.canonical', {'user': user.id}) }}" class="d-flex align-items-center" data-toggle="dropdown">
-            <span class="picto" {% if user_picture %}style="background-image:url('{{ user_picture }}')"{% endif %}></span>
+          <a href="#" class="d-flex align-items-center" data-toggle="dropdown">
+            {% if user_picture %}
+              <span class="picto" style="background-image:url('{{ user_picture }}')"></span>
+            {% else %}
+              <i class="icon-user menu-icon"></i>
+            {% endif %}
+            <span class="sr-only">{{ 'My account'|t }}</span>
           </a>
           <div class="dropdown-menu dropdown-menu-right">
             <div class="info d-flex">
               <div class="flex-1">
                 <div><strong class="text-uppercase">{{ user.username }}</strong></div>
-                <div class="user-status text-uppercase">{{ 'online'|t }}</div>
+                <div class="user-status text-uppercase"><i class="icon-user-status"></i>{{ 'online'|t }}</div>
               </div>
-              <button class="close-dropdown">close</button>
+              <button class="close-dropdown">
+                <i class="icon-close"></i>
+                <span class="sr-only">
+                   {{ 'Close'|t }}
+                </span>
+              </button>
             </div>
             <a class="dropdown-item" href="{{ url('entity.user.canonical', {'user': user.id}) }}">
               <span>{{ 'User profile'|t }}</span>
@@ -152,23 +192,27 @@
               <span>{{ 'Help'|t }}</span>
             </a>
             {% if is_admin %}
-              <a class="dropdown-item about" href="#about" data-toggle="modal" data-target="#aboutModal">
+              <button type="button" class="dropdown-item about" data-toggle="modal" data-target="#aboutModal">
                 <span>{{ 'About'|t }}</span>
-              </a>
+              </button>
             {% endif %}
             <a class="dropdown-item primary text-center" href="{{ url('user.logout') }}">
               <span>{{ 'Logout'|t }}</span>
             </a>
           </div>
         </div>
-        <button class="navbar-toggler"></button>
+        <button class="navbar-toggler">
+          <i class="icon-menu"></i>
+          <span class="sr-only">{{ 'Menu'|t }}</span>
+        </button>
       </div>
     {% endif %}
   </div>
   <div class="search-trigger d-flex align-items-center">
-    <a href="#">
-      <div class="picto search">{{ 'search'|t }}</div>
-    </a>
+    <button type="button" id="search-trigger">
+      <i class="icon-search"></i>
+      <span class="sr-only">{{ 'Open search form'|t }}</span>
+    </button>
   </div>
   <div id="search-form" style="display: none;">
       {% if opigno_search_form is defined %}
@@ -188,7 +232,10 @@
             <div><strong class="text-uppercase">{{ 'About'|t }}</strong></div>
           </div>
           <button type="button" class="close-dropdown" data-dismiss="modal">
-            <span>&times;</span>
+            <i class="icon-close"></i>
+            <span class="sr-only">
+              {{ 'Close'|t }}
+            </span>
           </button>
         </div>
         <div class="modal-body">
@@ -200,10 +247,18 @@
               <p class="text mb-4">
                 {{ 'Opigno™ is a Trademark of Connect-i Sàrl, based in Préverenges, Switzerland. For more information regarding Opigno™ please consult the website'|t }} <a href="https://www.opigno.org" target="_blank">www.opigno.org</a>.
               </p>
-              <p class="version">
+              <p class="version d-flex align-items-center flex-wrap">
                 <span class="mr-3">{{ 'Version :'|t }}</span>
                 {% if opigno_lms_release %}
-                  <span class="{{ opigno_lms_updates }}">Opigno {{ opigno_lms_release }}</span> {# for green/red icon use class: ok / nok #}
+                  <span class="{{ opigno_lms_updates }}">{# for green/red icon use class: ok / nok #}
+                    {% if opigno_lms_updates == 'ok' %}
+                      <i class="icon-ok mr-2"></i>
+                    {% elseif opigno_lms_updates == 'nok' %}
+                      <i class="icon-close mr-2"></i>
+                    {% endif %}
+
+                    Opigno {{ opigno_lms_release }}
+                  </span>
                 {% else %}
                   <span>{{ 'N/A'|t }}</span>
                 {% endif %}

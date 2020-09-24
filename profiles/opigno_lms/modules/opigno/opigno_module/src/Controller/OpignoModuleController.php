@@ -465,6 +465,7 @@ class OpignoModuleController extends ControllerBase {
           ]);
         }
       }
+
       // Get group context.
       $cid = OpignoGroupContext::getCurrentGroupContentId();
       $gid = OpignoGroupContext::getCurrentGroupId();
@@ -477,6 +478,7 @@ class OpignoModuleController extends ControllerBase {
           }
         }
       }
+
       $activities_storage = static::entityTypeManager()->getStorage('opigno_activity');
 
       if (!is_null($next_activity_id)) {
@@ -1078,7 +1080,7 @@ class OpignoModuleController extends ControllerBase {
             $target_skill_name = $target_skill_entity->getName();
           }
           else {
-            $target_skill_name = 'N/A';
+            $target_skill_name = $this->t('N/A');
           }
 
           if (isset($_SESSION['successfully_finished'])) {
@@ -1149,7 +1151,7 @@ class OpignoModuleController extends ControllerBase {
           ];
         }
         else {
-          $title = t('Back to training homepage');
+          $title = $this->t('Back to training homepage');
           $route = 'entity.group.canonical';
           $route_params = [
             'group' => $gid,
@@ -1185,7 +1187,7 @@ class OpignoModuleController extends ControllerBase {
           ],
         ];
 
-        $title = 'Back to training homepage';
+        $title = $this->t('Back to training homepage');
         $route = 'entity.group.canonical';
         $route_params = [
           'group' => $gid,

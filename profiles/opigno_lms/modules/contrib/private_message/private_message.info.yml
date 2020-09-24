@@ -11,7 +11,7 @@ dependencies:
 
 configure: private_message.admin_config.config
 
-# Information added by drush on 2020-05-08
-version: '8.x-2.0-beta16+22-dev'
+# Information added by drush on 2020-05-31
+version: '8.x-2.0-beta16+23-dev'
 project: 'private_message'
-datestamp: 1588973295
+datestamp: 1590889843

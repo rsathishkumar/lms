@@ -79,32 +79,43 @@ body.section-module {
     }
   }
 
-  .home-link {
-    @include media-breakpoint-down(sm) {
-      margin-right: 0.5rem;
-    }
-
-    a {
-      @include svg-picto('picto-answer-home');
-    }
-  }
-
+  .home-link,
   .fullscreen-link {
     @include media-breakpoint-down(sm) {
       margin-left: 0.5rem;
     }
 
     a {
-      @include svg-picto('picto-answer-fullscreen');
+      font-size: 0;
+      color: $medium-gray-600;
+      text-decoration: none;
+      text-align: center;
+
+      &:hover {
+        color: $white;
+      }
+
+      i {
+        line-height: 76px;
+        font-size: 30px;
+      }
     }
   }
 
   a#lp-steps-trigger {
-    @include svg-picto('picto-module-open');
-    max-width: 48px;
+    font-size: 0;
+    color: $white;
+    text-decoration: none;
+    width: 48px;
     flex: 0 0 48px;
-    background-size: 30px;
     margin-left: 0.5rem;
+    background: none !important;
+    padding: 0;
+
+    i {
+      font-size: 24px;
+      line-height: 50px;
+    }
   }
 
   .form-actions {

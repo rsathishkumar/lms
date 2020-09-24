@@ -261,66 +261,78 @@ class LearningPathContentController extends ControllerBase {
 
   /**
    * Returns conditional activities with the module.
+   *
+   * @param string $opigno_entity_type
+   *   Entity type, like "ContentTypeModule" or "ContentTypeCourse".
+   * @param string $opigno_entity_id
+   *   Entity ID.
+   *
+   * @return \Symfony\Component\HttpFoundation\JsonResponse
+   *   Json response.
    */
-  public function getModuleRequiredActivities(OpignoModule $opigno_module) {
-    $activities = $this->getModuleActivitiesEntities($opigno_module);
-    $conditional_h5p_types = ['H5P.TrueFalse', 'H5P.MultiChoice'];
-
+  public function getModuleRequiredActivities($opigno_entity_type, $opigno_entity_id) {
     $results = [
       'conditional' => [],
-      'simple' => FALSE,
+      'simple' => TRUE,
     ];
 
-    if ($activities) {
-      // Get only H5P.TrueFalse/H5P.MultiChoice activities.
-      foreach ($activities as $key => $activity) {
-        $exclude = FALSE;
-        $activity = OpignoActivity::load($activity->id);
+    if ($opigno_entity_type == 'ContentTypeModule') {
+      if ($opigno_module = OpignoModule::load($opigno_entity_id)) {
+        $activities = $this->getModuleActivitiesEntities($opigno_module);
+        $conditional_h5p_types = ['H5P.TrueFalse', 'H5P.MultiChoice'];
 
-        if ($activity->hasField('opigno_h5p') && $h5p_content_id = $activity->get('opigno_h5p')->getValue()[0]['h5p_content_id']) {
-          $h5p_content = H5PContent::load($h5p_content_id);
-          $library = $h5p_content->getLibrary();
-          if (!in_array($library->name, $conditional_h5p_types)) {
-            $exclude = TRUE;
-          }
+        if ($activities) {
+          // Get only H5P.TrueFalse/H5P.MultiChoice activities.
+          foreach ($activities as $key => $activity) {
+            $exclude = FALSE;
+            $activity = OpignoActivity::load($activity->id);
 
-          if ($library->name == 'H5P.TrueFalse') {
-            $params = $h5p_content->getParameters();
-            $activities[$key]->answers[0] = [
-              'id' => $activity->id() . '-0',
-              'correct' => $params->correct == 'true' ? TRUE : FALSE,
-              'text' => trim(strip_tags(nl2br(str_replace(['\n', '\r'], '', $params->l10n->trueText)))),
-            ];
-            $activities[$key]->answers[1] = [
-              'id' => $activity->id() . '-1',
-              'correct' => $params->correct == 'false' ? TRUE : FALSE,
-              'text' => trim(strip_tags(nl2br(str_replace(['\n', '\r'], '', $params->l10n->falseText)))),
-            ];
-          }
+            if ($activity->hasField('opigno_h5p') && $h5p_content_id = $activity->get('opigno_h5p')->getValue()[0]['h5p_content_id']) {
+              $h5p_content = H5PContent::load($h5p_content_id);
+              $library = $h5p_content->getLibrary();
+              if (!in_array($library->name, $conditional_h5p_types)) {
+                $exclude = TRUE;
+              }
 
-          if ($library->name == 'H5P.MultiChoice') {
-            $answers = $h5p_content->getParameters()->answers;
-            if ($answers) {
-              foreach ($answers as $k => $answer) {
-                $activities[$key]->answers[$k] = [
-                  'id' => $activity->id() . '-' . $k,
-                  'correct' => $answer->correct,
-                  'text' => trim(strip_tags(nl2br(str_replace(['\n', '\r'], '', $answer->text)))),
+              if ($library->name == 'H5P.TrueFalse') {
+                $params = $h5p_content->getParameters();
+                $activities[$key]->answers[0] = [
+                  'id' => $activity->id() . '-0',
+                  'correct' => $params->correct == 'true' ? TRUE : FALSE,
+                  'text' => trim(strip_tags(nl2br(str_replace(['\n', '\r'], '', $params->l10n->trueText)))),
+                ];
+                $activities[$key]->answers[1] = [
+                  'id' => $activity->id() . '-1',
+                  'correct' => $params->correct == 'false' ? TRUE : FALSE,
+                  'text' => trim(strip_tags(nl2br(str_replace(['\n', '\r'], '', $params->l10n->falseText)))),
                 ];
               }
+
+              if ($library->name == 'H5P.MultiChoice') {
+                $answers = $h5p_content->getParameters()->answers;
+                if ($answers) {
+                  foreach ($answers as $k => $answer) {
+                    $activities[$key]->answers[$k] = [
+                      'id' => $activity->id() . '-' . $k,
+                      'correct' => $answer->correct,
+                      'text' => trim(strip_tags(nl2br(str_replace(['\n', '\r'], '', $answer->text)))),
+                    ];
+                  }
+                }
+              }
+            }
+            else {
+              $exclude = TRUE;
+            }
+
+            if ($exclude) {
+              unset($activities[$key]);
+              $results['simple'] = TRUE;
+            }
+            else {
+              $results['conditional'][] = $activities[$key];
             }
           }
-        }
-        else {
-          $exclude = TRUE;
-        }
-
-        if ($exclude) {
-          unset($activities[$key]);
-          $results['simple'] = TRUE;
-        }
-        else {
-          $results['conditional'][] = $activities[$key];
         }
       }
     }
@@ -406,8 +418,7 @@ class LearningPathContentController extends ControllerBase {
     $relationship = $db_connection
       ->select('opigno_module_relationship', 'omr')
       ->fields('omr', ['child_id', 'group_id'])
-      ->condition('omr_id', $datas->omr_id, '=')
-      ->groupBy('child_id')
+      ->condition('omr_id', $datas->omr_id)
       ->execute()
       ->fetchObject();
     if (!empty($relationship->child_id)) {

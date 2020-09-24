@@ -38,7 +38,7 @@ class ILTViewBuilder extends EntityViewBuilder {
       '#title' => 'test',
     ];
 
-    $title = 'Back to training homepage';
+    $title = $this->t('Back to training homepage');
     $route = 'entity.group.canonical';
     $route_params = [
       'group' => $gid,

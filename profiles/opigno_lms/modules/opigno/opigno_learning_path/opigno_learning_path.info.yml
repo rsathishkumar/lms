@@ -22,9 +22,10 @@ dependencies:
   - dropzonejs:dropzonejs
   - dropzonejs:dropzonejs_eb_widget
   - opigno_learning_path:opigno_alter_entity_autocomplete
+  - opigno_cron:opigno_cron
 configure: opigno_learning_path.learning_path_settings
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.10'
+# Information added by Drupal.org packaging script on 2020-08-18
+version: '8.x-1.12'
 project: 'opigno_learning_path'
-datestamp: 1591084408
+datestamp: 1597749939

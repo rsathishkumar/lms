@@ -125,39 +125,4 @@ class OpignoMobileController extends ControllerBase {
 
     return new JsonResponse($response_data, Response::HTTP_OK);
   }
-
-  /**
-   * Enable/disable mobile mode for training steps pages.
-   *
-   * @return \Symfony\Component\HttpFoundation\JsonResponse
-   * @throws \Drupal\Core\TempStore\TempStoreException
-   */
-  public function configureMobileMode() {
-    // Array with response.
-    $response_data = [];
-    $request_query = \Drupal::request()->query;
-    $mode_status = $request_query->get('mobile_mode');
-    if (!is_numeric($mode_status)) {
-      return new JsonResponse($response_data, Response::HTTP_BAD_REQUEST);
-    }
-    // Ensure that we get the number.
-    $mode_status = intval($mode_status);
-    if ($mode_status === 1) {
-      /** @var \Drupal\Core\TempStore\PrivateTempStore $store */
-      $store = \Drupal::service('user.private_tempstore')->get('opigno_mobile_app');
-      $store->set('mobile_mode', TRUE);
-      $response_data['message'] = t('Mobile mode is enabled');
-      return new JsonResponse($response_data, Response::HTTP_OK);
-    }
-    if ($mode_status === 0) {
-      /** @var \Drupal\Core\TempStore\PrivateTempStore $store */
-      $store = \Drupal::service('user.private_tempstore')->get('opigno_mobile_app');
-      $store->delete('mobile_mode');
-      $response_data['message'] = t('Mobile mode is disabled');
-      return new JsonResponse($response_data, Response::HTTP_OK);
-    }
-
-
-  }
-
 }

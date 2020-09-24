@@ -204,12 +204,12 @@ class ILTForm extends ContentEntityForm {
     $date = $form_state->getValue('date');
     if (isset($date[0]['value_wrapper']) && isset($date[0]['end_value_wrapper'])) {
       if (empty($date[0]['value_wrapper']['date']) || empty($date[0]['end_value_wrapper']['date'])) {
-        return $form_state->setError($form['date'], 'Date fields can not be empty');
+        return $form_state->setError($form['date'], $this->t('Date fields can not be empty'));
       }
       $start_date = OpignoDateRangeWidget::createDateTimeFromWrapper($date[0]['value_wrapper']);
       $end_date = OpignoDateRangeWidget::createDateTimeFromWrapper($date[0]['end_value_wrapper']);
       if (isset($start_date) && $end_date < $start_date) {
-        $form_state->setError($form['date'], 'The end date cannot be before the start date');
+        $form_state->setError($form['date'], $this->t('The end date cannot be before the start date'));
       }
     }
   }
@@ -255,8 +255,12 @@ class ILTForm extends ContentEntityForm {
     // Load added users & classes from the form_state.
     $users_ids = [];
     $classes_ids = [];
+    $owner_id = $entity->getOwnerId();
 
     $options = $form_state->getValue('members');
+    if (count($options)) {
+      $options['user_' . $owner_id] = 'user_' . $owner_id;
+    }
     foreach ($options as $option) {
       list($type, $id) = explode('_', $option);
 

@@ -173,18 +173,19 @@ class PrivateMessageRestResource extends ResourceBase {
 
     /* @var \Drupal\private_message\Entity\PrivateMessage $message */
     foreach ($items_per_page as $message) {
-      $response_data['items'][] = [
-        'thread_id' => $private_message_thread->id(),
-        'id' => $message->id(),
-        'owner' => [
-          'uid' => $message->getOwnerId(),
-          'name' => $message->getOwner()->getAccountName(),
-          'user_picture' => opigno_mobile_app_get_user_picture($message->getOwner()),
-        ],
-        'message' => $message->getMessage(),
-        'created' => $message->getCreatedTime(),
-      ];
-
+      if ($message->getOwner()) {
+        $response_data['items'][] = [
+          'thread_id' => $private_message_thread->id(),
+          'id' => $message->id(),
+          'owner' => [
+            'uid' => $message->getOwnerId(),
+            'name' => $message->getOwner()->getAccountName(),
+            'user_picture' => opigno_mobile_app_get_user_picture($message->getOwner()),
+          ],
+          'message' => $message->getMessage(),
+          'created' => $message->getCreatedTime(),
+        ];
+      }
     }
 
     $response = new ResourceResponse($response_data, Response::HTTP_OK);

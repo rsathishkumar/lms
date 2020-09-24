@@ -97,7 +97,7 @@ class OpignoDateRangeWidget extends WidgetBase {
         'data-pattern' => $this->getDatePattern(),
       ],
       '#size' => 11,
-      '#title' => 'Start date',
+      '#title' => $this->t('Start date'),
       '#default_value' => $value_date,
       '#required' => $element['#required'],
       '#element_validate' => [
@@ -145,7 +145,7 @@ class OpignoDateRangeWidget extends WidgetBase {
     ];
 
     $element['end_value_wrapper']['date'] = $element['value_wrapper']['date'];
-    $element['end_value_wrapper']['date']['#title'] = 'End date';
+    $element['end_value_wrapper']['date']['#title'] = $this->t('End date');
     $element['end_value_wrapper']['date']['#default_value'] = $end_value_date;
 
     $element['end_value_wrapper']['hours'] = $element['value_wrapper']['hours'];

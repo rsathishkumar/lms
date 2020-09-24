@@ -35,17 +35,20 @@ body.anonymous-slider {
       }
 
       button.navbar-toggler {
-        @include svg-picto('picto-menu-white');
-        width: 2.5rem;
-        height: 2.5rem;
         border: 0;
-        background-size: 2rem;
+        background: none !important;
         padding: 0;
-        box-shadow: none;
         margin-left: auto;
+        box-shadow: none;
+        color: $white;
+        font-size: 28px;
 
         &.open {
-          @include svg-picto('picto-close-white');
+          .icon-menu {
+            &:before {
+              content: icon(close);
+            }
+          }
         }
 
         @include media-breakpoint-up(breakpoint-next($header-mobile-breakpoint)) {
@@ -89,6 +92,8 @@ body.anonymous-slider {
         .slider-item {
           background-position: center;
           background-size: cover;
+          background-color: $darken-gray;
+          color: #fff;
           display: flex;
           align-items: center;
           position: absolute;
@@ -97,13 +102,28 @@ body.anonymous-slider {
           width: 100%;
           height: 100%;
 
+          &:before {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.3);
+          }
+
           .slider-markup {
             color: #fff;
             width: 40%;
             min-width: 540px;
             position: relative;
             left: 55px;
-            text-shadow: 1px 1px 8px #323232;
+            //text-shadow: 1px 1px 8px #323232;
+
+            h2 {
+              color: $white;
+            }
 
             @include media-breakpoint-down($content-mobile-breakpoint) {
               width: 100%;
@@ -157,6 +177,14 @@ body.anonymous-slider {
         position: relative;
       }
 
+      .form-item {
+        .form-element-wrapper {
+          width: 100% !important;
+          float: none !important;
+        }
+      }
+
+
       .form-wrapper {
         &.user-login,
         &.user-password,
@@ -192,7 +220,7 @@ body.anonymous-slider {
 
             a {
               position: relative;
-              font-size: 0;
+              font-size: 22px;
               padding: 0;
               min-width: 0;
               height: $size;
@@ -201,15 +229,19 @@ body.anonymous-slider {
               background-position: center;
               background-size: 45%;
               color: $white;
+              font-weight: 900;
+              text-indent: -99999px;
+              overflow: hidden;
 
               &:before {
                 top: 50%;
                 transform: translate(-50%, -50%);
                 font-size: 22px;
+                text-indent: 0;
               }
 
               &:hover {
-                color: $deeper-blue;
+                color: $medium-gray;
               }
             }
           }
@@ -217,13 +249,14 @@ body.anonymous-slider {
       }
 
       h1 {
-        color: #84d4f0;
+        color: $deep-blue;
         border-bottom: 0;
         padding-bottom: 0;
         margin-bottom: 0;
         margin-top: 2rem;
         line-height: 1;
         font-weight: 600;
+        font-size: 42px;
 
         @include media-breakpoint-down($content-mobile-breakpoint) {
           margin-top: 1rem;
@@ -256,15 +289,6 @@ body.anonymous-slider {
               color: inherit;
               text-decoration: underline;
             }
-          }
-
-          button[type="button"].close {
-            @include svg-picto('picto-close-white');
-            position: absolute;
-            margin-left: 0.5rem;
-            width: 1.5rem;
-            height: 1.5rem;
-            background-size: 1rem;
           }
         }
       }
@@ -310,7 +334,7 @@ body.anonymous-slider {
 
           .form-submit {
             background-color: darken($input-bg, 5%) !important;
-            color: #888;
+            color: $dark-gray;
             font-style: italic;
             border-right: 0;
             border-left: 0;

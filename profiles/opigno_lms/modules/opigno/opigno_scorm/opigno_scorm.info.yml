@@ -4,7 +4,7 @@ description: It implements the SCORM feature in Opigno, allowing to load and pla
 core: 8.x
 package: Opigno
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.7'
+# Information added by Drupal.org packaging script on 2020-08-12
+version: '8.x-1.8'
 project: 'opigno_scorm'
-datestamp: 1591090268
+datestamp: 1597249295

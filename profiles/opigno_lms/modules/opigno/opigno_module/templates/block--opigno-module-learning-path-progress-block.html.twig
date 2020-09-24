@@ -27,25 +27,29 @@
  * @ingroup themeable
  */
 #}
-<div {{ attributes.addClass('d-flex', 'mb-3', 'lp_progress_wrapper') }}>
-  {{ title_prefix }}
-  {% if label %}
-    <h2{{ title_attributes }}>{{ label }}</h2>
-  {% endif %}
-  {{ title_suffix }}
-  <div class="lp_progress flex-1 bg-faded">
-    <p class="lp_progress_label">{{ 'Global Training Progress'|t }}</p>
-    <p class="lp_progress_value">{{ content.progress }}%</p>
-    <div class="lp_progress_bar">
-      <div class="lp_progress_bar_completed" style="width: {{ content.progress }}%"></div>
+{% if content.ajax_conteiner %}
+    {{ content.progress }}
+{% else %}
+  <div {{ attributes.addClass('d-flex', 'mb-3', 'lp_progress_wrapper') }}>
+    {{ title_prefix }}
+    {% if label %}
+      <h2{{ title_attributes }}>{{ label }}</h2>
+    {% endif %}
+    {{ title_suffix }}
+    <div class="lp_progress flex-1 bg-faded">
+      <p class="lp_progress_label">{{ 'Global Training Progress'|t }}</p>
+      <p class="lp_progress_value">{{ content.progress }}%</p>
+      <div class="lp_progress_bar">
+        <div class="lp_progress_bar_completed" style="width: {{ content.progress }}%"></div>
+      </div>
+    </div>
+    {% if content.home_link %}
+      <div class="home-link bg-faded d-flex ml-md-3">
+        {{ content.home_link|render|raw }}
+      </div>
+    {% endif %}
+    <div class="fullscreen-link bg-faded d-flex ml-md-3">
+      <a href="#" class="w-100"><i class="icon-answer-fullscreen"></i>fullpage</a>
     </div>
   </div>
-  {% if content.home_link %}
-    <div class="home-link bg-faded d-flex ml-md-3">
-      {{ content.home_link }}
-    </div>
-  {% endif %}
-  <div class="fullscreen-link bg-faded d-flex ml-md-3">
-    <a href="#" class="w-100">fullpage</a>
-  </div>
-</div>
+{% endif %}

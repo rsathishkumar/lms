@@ -2,7 +2,6 @@
 
 namespace Drupal\opigno_moxtra;
 
-use Drupal\Component\Serialization\Json;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Messenger\MessengerInterface;
@@ -10,7 +9,6 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\user\Entity\User;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\ClientException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -19,8 +17,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class MoxtraService implements MoxtraServiceInterface {
 
   use StringTranslationTrait;
-
-  const MOXTRA_API = 'https://api.moxtra.com/v1';
 
   /**
    * Config factory.
@@ -44,18 +40,11 @@ class MoxtraService implements MoxtraServiceInterface {
   protected $messenger;
 
   /**
-   * Http client.
+   * Moxtra connector service.
    *
-   * @var \GuzzleHttp\Client
+   * @var \Drupal\opigno_moxtra\MoxtraConnector
    */
-  protected $httpClient;
-
-  /**
-   * Opigno service.
-   *
-   * @var \Drupal\opigno_moxtra\OpignoServiceInterface
-   */
-  protected $opignoService;
+  protected $moxtraConnector;
 
   /**
    * Creates a MoxtraService instance.
@@ -66,14 +55,14 @@ class MoxtraService implements MoxtraServiceInterface {
     LoggerChannelFactoryInterface $logger_factory,
     MessengerInterface $messenger,
     ClientInterface $http_client,
-    OpignoServiceInterface $opigno_service
+    MoxtraConnector $opigno_connector
   ) {
     $this->setStringTranslation($translation);
     $this->configFactory = $config_factory;
     $this->logger = $logger_factory->get('opigno_moxtra');
     $this->messenger = $messenger;
     $this->httpClient = $http_client;
-    $this->opignoService = $opigno_service;
+    $this->moxtraConnector = $opigno_connector;
   }
 
   /**
@@ -86,7 +75,7 @@ class MoxtraService implements MoxtraServiceInterface {
       $container->get('logger.factory'),
       $container->get('messenger'),
       $container->get('http_client'),
-      $container->get('opigno_moxtra.opigno_api')
+      $container->get('opigno_moxtra.connector')
     );
   }
 
@@ -100,8 +89,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getBinderListUrl($owner_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/me/binders?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/me/binders?access_token={$token}";
   }
 
   /**
@@ -114,15 +103,13 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getCreateBinderUrl($owner_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/me/binders?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/me/binders?access_token={$token}";
   }
 
   /**
    * Returns URL to update the binder.
    *
-   * @param int $owner_id
-   *   User ID.
    * @param string $binder_id
    *   Binder ID.
    *
@@ -130,8 +117,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getUpdateBinderUrl($owner_id, $binder_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/$binder_id?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/$binder_id?access_token={$token}";
   }
 
   /**
@@ -146,8 +133,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getDeleteBinderUrl($owner_id, $binder_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/$binder_id?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl(). "/v1/$binder_id?access_token={$token}";
   }
 
   /**
@@ -162,8 +149,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getSendMessageUrl($owner_id, $binder_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/$binder_id/comments?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/$binder_id/comments?access_token={$token}";
   }
 
   /**
@@ -178,8 +165,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getAddUsersUrl($owner_id, $binder_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/$binder_id/addorguser?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/$binder_id/addorguser?access_token={$token}";
   }
 
   /**
@@ -194,8 +181,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getRemoveUserUrl($owner_id, $binder_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/$binder_id/removeuser?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/$binder_id/removeuser?access_token={$token}";
   }
 
   /**
@@ -210,8 +197,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getMeetingInfoUrl($owner_id, $session_key) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/meets/$session_key?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/meets/$session_key?access_token={$token}";
   }
 
   /**
@@ -224,8 +211,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getCreateMeetingUrl($owner_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/meets/schedule?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/meets/schedule?access_token={$token}";
   }
 
   /**
@@ -240,8 +227,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getUpdateMeetingUrl($owner_id, $session_key) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/meets/$session_key?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/meets/$session_key?access_token={$token}";
   }
 
   /**
@@ -256,8 +243,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getDeleteMeetingUrl($owner_id, $session_key) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/meets/$session_key?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/meets/$session_key?access_token={$token}";
   }
 
   /**
@@ -272,8 +259,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getMeetingFilesListUrl($owner_id, $binder_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/$binder_id/files?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/$binder_id/files?access_token={$token}";
   }
 
   /**
@@ -290,8 +277,8 @@ class MoxtraService implements MoxtraServiceInterface {
    *   URL.
    */
   protected function getMeetingFileInfoUrl($owner_id, $binder_id, $file_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/$binder_id/files/$file_id?access_token=$access_token";
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/$binder_id/files/$file_id?access_token={$token}";
   }
 
   /**
@@ -299,84 +286,84 @@ class MoxtraService implements MoxtraServiceInterface {
    *
    * @param int $owner_id
    *   User ID.
-   * @param string $binder_id
-   *   Binder ID of the Binder related to the Live Meeting.
+   * @param string $session_key
+   *   Session ID of the related to the Live Meeting.
    *
    * @return string
    *   URL.
    */
-  protected function getMeetingRecordingInfoUrl($owner_id, $binder_id) {
-    $access_token = $this->opignoService->getToken($owner_id);
-    return self::MOXTRA_API . "/meets/recordings/$binder_id?access_token=$access_token";
+  protected function getMeetingRecordingInfoUrl($owner_id, $session_key) {
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/meets/recordings/$session_key?access_token={$token}";
+  }
+
+
+  /**
+   * Returns URL to add the users to the meeting.
+   *
+   * @param int $owner_id
+   *   User ID.
+   *
+   * @return string
+   *   URL.
+   */
+  protected function getAddUsersToMeetingUrl($owner_id) {
+    $token = $this->moxtraConnector->getToken($owner_id);
+    return $this->moxtraConnector->getUrl() . "/v1/meets/inviteuser?access_token={$token}";
   }
 
   /**
-   * Helper function to send a request with JSON data to the Moxtra API.
+   * Add the users to the meeting.
    *
-   * @param string $method
-   *   HTTP method.
-   * @param string $url
-   *   Request URL.
-   * @param array $request_data
-   *   Request data.
-   *
-   * @return array
-   *   Response data.
+   * @param int $owner_id
+   *   User ID.
+   * @param int $session_key
+   *   Meeting session key.
+   * @param array $users
+   *   List of options for users.
    */
-  protected function request($method, $url, array $request_data) {
-    $data = [];
+  public function AddUsersToMeeting($owner_id, $session_key, $users) {
+    $data = [
+      'session_key' => $session_key,
+      'users' => $users,
+      'message' => $this->t('Please join the Meet'),
+    ];
 
-    try {
-      $response = $this->httpClient->request($method, $url, [
-        'json' => $request_data,
-      ]);
+    $url = $this->getAddUsersToMeetingUrl($owner_id);
+    return $this->moxtraConnector->request($url, $data);
+  }
+
+  /**
+   * Check if user is manager.
+   */
+  public function isManager($account) {
+    return $this->moxtraConnector->isManager($account);
+  }
+
+  /**
+   * Create / Update Moxtra user.
+   * @param mixed $account
+   *   User account.
+   */
+  public function setUser($account = NULL) {
+    if (!empty($account)) {
+      $prefix = $this->isManager($account) ? 'm_' : '';
+      $is_moxtra_admin = $account->getEmail() == $this->moxtraConnector->getEmail();
+
+      $user_data = [
+        'unique_id' => $prefix . $account->id(),
+        'first_name' => $account->getDisplayName(),
+        'user_type' => $this->isManager($account) || $is_moxtra_admin ? 'Internal' : 'Client',
+        'admin' => $is_moxtra_admin,
+        'email' => $prefix . $account->getEmail(),
+        'timezone' => $account->getTimeZone(),
+      ];
+
+      $uri = implode('/', [$this->moxtraConnector->getUrl(), 'v1', $this->moxtraConnector->getOrgId(), 'user']);
+      $uri .= '?access_token=' . $token = $this->moxtraConnector->getToken(1);
+
+      $this->moxtraConnector->request($uri, $user_data);
     }
-    catch (ClientException $exception) {
-      $this->logger->error($exception);
-      $response = $exception->getResponse();
-    }
-    catch (\Exception $exception) {
-      $this->logger->error($exception);
-    }
-
-    if (isset($response)) {
-      $data['http_code'] = $response->getStatusCode();
-      $response_body = $response->getBody()->getContents();
-      if (!empty($response_body) && $response_body !== 'null') {
-        $json_data = Json::decode($response_body);
-        if (is_array($json_data) && !empty($json_data)) {
-          $data = array_merge($data, $json_data);
-        }
-      }
-
-      if ($data['http_code'] == 400) {
-        if (isset($data['message'])
-          && $data['message'] == 'cann\'t expel owner') {
-          // Ignore 'cann't expel owner' error.
-          $data['http_code'] = 200;
-        }
-      }
-
-      if ($data['http_code'] == 404) {
-        // Ignore 'User not found in member list.' error.
-        $data['http_code'] = 200;
-      }
-
-      if ($data['http_code'] == 409) {
-        // Ignore 'all invitees are already members' error.
-        $data['http_code'] = 200;
-      }
-
-      if ($data['http_code'] != 200) {
-        $this->logger->error($this->t('Error while contacting the Moxtra server.<br/><pre>Response: @response</pre>', [
-          '@response' => print_r($data, TRUE),
-        ]));
-
-        $this->messenger->addError($this->t('Error while contacting the Moxtra server. Try again or contact the administrator.'));
-      }
-    }
-
-    return $data;
   }
 
   /**
@@ -390,7 +377,7 @@ class MoxtraService implements MoxtraServiceInterface {
     ];
 
     $url = $this->getCreateBinderUrl($owner_id);
-    return $this->request('POST', $url, $data);
+    return $this->moxtraConnector->request($url, $data);
   }
 
   /**
@@ -402,7 +389,7 @@ class MoxtraService implements MoxtraServiceInterface {
     ];
 
     $url = $this->getUpdateBinderUrl($owner_id, $binder_id);
-    return $this->request('POST', $url, $data);
+    return $this->moxtraConnector->request($url, $data);
   }
 
   /**
@@ -410,7 +397,7 @@ class MoxtraService implements MoxtraServiceInterface {
    */
   public function deleteWorkspace($owner_id, $binder_id) {
     $url = $this->getDeleteBinderUrl($owner_id, $binder_id);
-    return $this->request('DELETE', $url, []);
+    return $this->moxtraConnector->request($url, [], 'DELETE');
   }
 
   /**
@@ -422,7 +409,7 @@ class MoxtraService implements MoxtraServiceInterface {
     ];
 
     $url = $this->getSendMessageUrl($owner_id, $binder_id);
-    return $this->request('POST', $url, $data);
+    return $this->moxtraConnector->request($url, $data);
   }
 
   /**
@@ -443,7 +430,7 @@ class MoxtraService implements MoxtraServiceInterface {
     ];
 
     $url = $this->getAddUsersUrl($owner_id, $binder_id);
-    $response = $this->request('POST', $url, $data);
+    $response = $this->moxtraConnector->request($url, $data);
 
     if (!empty($response) && $response['http_code'] == 200) {
       $owner = User::load($owner_id);
@@ -471,7 +458,7 @@ class MoxtraService implements MoxtraServiceInterface {
     ];
 
     $url = $this->getRemoveUserUrl($owner_id, $binder_id);
-    $response = $this->request('POST', $url, $data);
+    $response = $this->moxtraConnector->request($url, $data);
     if (!empty($response) && $response['http_code'] == 200) {
       $owner = User::load($owner_id);
       /** @var \Drupal\user\Entity\User $user */
@@ -491,7 +478,7 @@ class MoxtraService implements MoxtraServiceInterface {
    */
   public function getMeetingInfo($owner_id, $session_key) {
     $url = $this->getMeetingInfoUrl($owner_id, $session_key);
-    return $this->request('GET', $url, []);
+    return $this->moxtraConnector->request($url, [], 'GET');
   }
 
   /**
@@ -502,10 +489,11 @@ class MoxtraService implements MoxtraServiceInterface {
       'name' => $title,
       'starts' => $starts,
       'ends' => $ends,
+      'auto_recording' => TRUE,
     ];
 
     $url = $this->getCreateMeetingUrl($owner_id);
-    return $this->request('POST', $url, $data);
+    return $this->moxtraConnector->request($url, $data);
   }
 
   /**
@@ -515,6 +503,7 @@ class MoxtraService implements MoxtraServiceInterface {
     $data = [
       'name' => $title,
       'starts' => $starts,
+      'auto_recording' => TRUE,
     ];
 
     if (isset($ends)) {
@@ -522,7 +511,7 @@ class MoxtraService implements MoxtraServiceInterface {
     }
 
     $url = $this->getUpdateMeetingUrl($owner_id, $session_key);
-    return $this->request('POST', $url, $data);
+    return $this->moxtraConnector->request($url, $data);
   }
 
   /**
@@ -530,7 +519,7 @@ class MoxtraService implements MoxtraServiceInterface {
    */
   public function deleteMeeting($owner_id, $session_key) {
     $url = $this->getDeleteMeetingUrl($owner_id, $session_key);
-    return $this->request('DELETE', $url, []);
+    return $this->moxtraConnector->request($url, [], 'DELETE');
   }
 
   /**
@@ -538,7 +527,7 @@ class MoxtraService implements MoxtraServiceInterface {
    */
   public function getMeetingFilesList($owner_id, $binder_id) {
     $url = $this->getMeetingFilesListUrl($owner_id, $binder_id);
-    return $this->request('GET', $url, []);
+    return $this->moxtraConnector->request($url, [], 'GET');
   }
 
   /**
@@ -546,7 +535,7 @@ class MoxtraService implements MoxtraServiceInterface {
    */
   public function getMeetingFileInfo($owner_id, $binder_id, $file_id) {
     $url = $this->getMeetingFileInfoUrl($owner_id, $binder_id, $file_id);
-    return $this->request('GET', $url, []);
+    return $this->moxtraConnector->request($url, [], 'GET');
   }
 
   /**
@@ -554,7 +543,7 @@ class MoxtraService implements MoxtraServiceInterface {
    */
   public function getMeetingRecordingInfo($owner_id, $binder_id) {
     $url = $this->getMeetingRecordingInfoUrl($owner_id, $binder_id);
-    return $this->request('GET', $url, []);
+    return $this->moxtraConnector->request($url, [], 'GET');
   }
 
 }

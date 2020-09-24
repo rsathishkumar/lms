@@ -244,3 +244,47 @@ function opigno_mobile_app_update_8011() {
   $role->grantPermission('restful get private_message_last_for_threads_resource');
   $role->save();
 }
+
+
+/**
+ * Enable Rest Resource private_message_last_for_threads_resource.
+ */
+function opigno_mobile_app_update_8013() {
+  // Install resource.
+  $config_path = drupal_get_path('module', 'opigno_mobile_app')
+    . '/config/install';
+  $storage = new FileStorage($config_path);
+
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('rest.resource.color_rest_resource');
+  $config_storage->write('rest.resource.color_rest_resource', $data);
+
+  // Grand users for access to Rest resource.
+  $permission = 'restful post color_rest_resource';
+
+  $role = Role::load(RoleInterface::AUTHENTICATED_ID);
+  $role->grantPermission($permission);
+  $role->save();
+
+  $role = Role::load(RoleInterface::ANONYMOUS_ID);
+  $role->grantPermission($permission);
+  $role->save();;
+}
+
+
+/**
+ * Enable Rest restful get color_rest_resource.
+ */
+function opigno_mobile_app_update_8014() {
+
+  // Grand users for access to Rest resource.
+  $permission = 'restful get color_rest_resource';
+
+  $role = Role::load(RoleInterface::AUTHENTICATED_ID);
+  $role->grantPermission($permission);
+  $role->save();
+
+  $role = Role::load(RoleInterface::ANONYMOUS_ID);
+  $role->grantPermission($permission);
+  $role->save();;
+}

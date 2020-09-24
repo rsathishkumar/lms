@@ -219,6 +219,8 @@ display:
           id: status
           expose:
             operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
           group: 1
       sorts:
         date_daterange_value:
@@ -744,6 +746,8 @@ display:
       defaults:
         arguments: false
         header: false
+        title: false
+      title: Calendar
     cache_metadata:
       max-age: 0
       contexts:

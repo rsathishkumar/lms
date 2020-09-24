@@ -154,8 +154,8 @@ class StepsBlock extends BlockBase {
     $expired = LPStatus::isCertificateExpired($group, $uid);
 
     $score = opigno_learning_path_get_score($gid, $uid);
-    $progress = opigno_learning_path_progress($gid, $uid);
-    $progress = round(100 * $progress);
+    $progress_service = \Drupal::service('opigno_learning_path.progress');
+    $progress = $progress_service->getProgressRound($gid, $uid);
 
     $is_passed = opigno_learning_path_is_passed($group, $uid, $expired);
 

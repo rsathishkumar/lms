@@ -91,7 +91,7 @@ class UserController extends ControllerBase {
       $user_picture = ImageStyle::load('medium')->buildUrl($user_picture->getFileUri());
     }
     else {
-      $user_picture = base_path() . drupal_get_path('theme', 'platon') . '/images/picto-profile-default.svg';
+      $user_picture = base_path() . drupal_get_path('module', 'opigno_statistics') . '/img/picto-profile-default.svg';
     }
 
     $created_timestamp = $user->getCreatedTime();
@@ -931,7 +931,7 @@ class UserController extends ControllerBase {
     $rows = array_map(function ($step) use ($modules, $uid, $gid) {
       $module = NULL;
       foreach ($modules as $mod) {
-        if ($mod->entity_id === $step['id']) {
+        if ($mod->entity_id == $step['id'] && $mod->typology == $step["typology"]) {
           $module = $mod;
           break;
         }
@@ -1522,6 +1522,7 @@ class UserController extends ControllerBase {
             $this->t('Skill'),
             $this->t('Score'),
             $this->t('Progress'),
+            $this->t('Level'),
           ],
           '#rows' => $rows,
         ],
@@ -1629,9 +1630,9 @@ class UserController extends ControllerBase {
     $content[] = $this->buildUserInfo($user);
     $content[] = $this->buildBadges($user);
 
-    if ($moduleHandler->moduleExists('opigno_skills_system')
-      && \Drupal::service('library.discovery')->getLibraryByName('opigno_skills_system', 'opigno_skills_using_vis')) {
-      if (!empty($skills = $this->buildSkillsList($user))) {
+    if ($moduleHandler->moduleExists('opigno_skills_system') && !empty($skills = $this->buildSkillsList($user))) {
+      $library_exists = file_exists('libraries/vis/dist/vis.js') && file_exists('libraries/vis/dist/vis.css');
+      if ($library_exists && \Drupal::service('library.discovery')->getLibraryByName('opigno_skills_system', 'opigno_skills_using_vis')) {
         $content['#attached']['library'][] = 'opigno_skills_system/opigno_skills_using_vis';
         $content['#attached']['library'][] = 'opigno_skills_system/opigno_skills_entity';
 
@@ -1668,6 +1669,10 @@ class UserController extends ControllerBase {
         }
 
         $content['#attached']['drupalSettings']['opigno_skills_tree'] = $skills;
+      }
+      else {
+        $message = $this->t('"almende/vis" library is not installed. Please install it from <a href="@library">here</a> and place in <em>libraries/</em> folder', ['@library' => 'https://github.com/almende/vis.git']);
+        $this->messenger()->addWarning($message);
       }
     }
 

@@ -211,18 +211,12 @@
 }
 
 .lp_timeline_step_label {
-  color: #b3b3b3;
+  color: #71716a;
   display: block;
   font-size: 16px;
   text-align: center;
   margin-bottom: 30px;
 }
-
-/*@media (min-width: 768px) {*/
-/*  .lp_timeline_step_label {*/
-/*    top: -100px;*/
-/*  }*/
-/*}*/
 
 .lp_timeline_step_label_title,
 .lp_timeline_step_label_completed_on {
@@ -236,12 +230,13 @@
 
 .lp_timeline_info {
   background-color: #eee;
-  color: #9d9c9c;
+  color: #58585a;
   cursor: pointer;
 }
 
 .lp_timeline_info_text {
   display: inline;
+  color: #58585a;
 }
 
 .lp_timeline_info_tooltip {

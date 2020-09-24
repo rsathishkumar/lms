@@ -24,6 +24,7 @@ trait GroupOMATrait {
    *   Array with text and url.
    */
   private function getTrainingStartLink(Group $group, AccountInterface $account) {
+    
     $start_link = [
       'text' => '',
       'url' => ''
@@ -81,7 +82,7 @@ trait GroupOMATrait {
       'text' => $text,
       'url' => $host . '/' . $url->getInternalPath(),
     ];
-
+    
     return $start_link;
   }
 
@@ -105,7 +106,8 @@ trait GroupOMATrait {
           if ($file_entity = $img_entity->get('entity')->getTarget()) {
             // Build info.
             $uri = $file_entity->get('uri')->getString();
-            $url = file_create_url($uri);
+            $style = $this->entityTypeManager->getStorage('image_style')->load('catalog_thumbnail');
+            $url = $style->buildUrl($uri);
             $info = [
               'url' => $url,
             ];

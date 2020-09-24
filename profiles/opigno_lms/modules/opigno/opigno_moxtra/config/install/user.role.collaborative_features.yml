@@ -2,7 +2,7 @@ langcode: en
 status: true
 dependencies: {  }
 id: collaborative_features
-label: 'Collaborative features'
+label: 'Live meeting manager'
 weight: -8
 is_admin: null
 permissions:

@@ -1,12 +1,12 @@
 name: Language
 type: module
-description: 'Allows users to configure languages and apply them to content.'
+description: 'Allows users to configure available languages.'
 package: Multilingual
 # version: VERSION
 core: 8.x
 configure: entity.configurable_language.collection
 
-# Information added by Drupal.org packaging script on 2020-06-17
-version: '8.8.8'
+# Information added by Drupal.org packaging script on 2020-09-16
+version: '8.9.6'
 project: 'drupal'
-datestamp: 1592418797
+datestamp: 1600276320

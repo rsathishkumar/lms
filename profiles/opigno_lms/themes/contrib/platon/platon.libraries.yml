@@ -2,7 +2,7 @@ global:
   version: VERSION
   css:
     theme:
-      https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,900&subset=latin,latin-ext: { type: external }
+      https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,900&subset=latin,latin-ext: { type: external }
       dist/main.css: {}
       color/color.css: {}
   js:
@@ -16,7 +16,7 @@ global_dev:
   version: VERSION
   css:
     theme:
-      https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,900&subset=latin,latin-ext: { type: external }
+      https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,900&subset=latin,latin-ext: { type: external }
       http://opigno-d8:8080/main.css: { type: external }
   js:
     http://opigno-d8:8080/vendor.js: { type: external }

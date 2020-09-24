@@ -10,6 +10,7 @@ use Drupal\opigno_group_manager\Controller\OpignoGroupManagerController;
 use Drupal\opigno_group_manager\Entity\OpignoGroupManagedContent;
 use Drupal\opigno_learning_path\Entity\LPStatus;
 use Drupal\opigno_learning_path\LearningPathAccess;
+use Drupal\opigno_learning_path\LearningPathContent;
 use Drupal\opigno_module\Entity\OpignoModule;
 
 /**
@@ -103,230 +104,6 @@ class LearningPathController extends ControllerBase {
   }
 
   /**
-   * Returns progress.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   */
-  public function progress() {
-    /** @var \Drupal\group\Entity\GroupInterface $group */
-    $group = \Drupal::routeMatch()->getParameter('group');
-    $user = \Drupal::currentUser();
-
-    $id = $group->id();
-    $uid = $user->id();
-
-    $date_formatter = \Drupal::service('date.formatter');
-
-    $expiration_message = '';
-    $expiration_set = LPStatus::isCertificateExpireSet($group);
-    if ($expiration_set) {
-      if ($expiration_message = LPStatus::getCertificateExpireTimestamp($group->id(), $uid)) {
-        $expiration_message = ' ' . $date_formatter->format($expiration_message, 'custom', 'F d, Y');
-      }
-    }
-
-    $latest_cert_date = LPStatus::getTrainingStartDate($group, $uid);
-
-    // If training certification not expired
-    // or expiration not set.
-    $progress = opigno_learning_path_progress($id, $uid, $latest_cert_date);
-    $progress = round(100 * $progress);
-
-    $is_passed = opigno_learning_path_is_passed($group, $uid);
-    if ($is_passed || $progress == 100) {
-      $score = opigno_learning_path_get_score($id, $uid);
-
-      $completed = opigno_learning_path_completed_on($id, $uid);
-      $completed = $completed > 0
-        ? $date_formatter->format($completed, 'custom', 'F d, Y')
-        : '';
-
-      $state = $is_passed ? $this->t('Passed') : $this->t('Failed');
-      // Expire message if necessary.
-      if ($expiration_set) {
-        // Expiration set, create expiration message.
-        if ($expiration_message) {
-          $expiration_message = ' - ' . $this->t('Valid until') . $expiration_message;
-        }
-      }
-
-      $summary = [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_progress_summary'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => $is_passed ? ['lp_progress_summary_passed'] : ['lp_progress_summary_failed'],
-          ],
-          '#value' => '',
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'h3',
-          '#attributes' => [
-            'class' => ['lp_progress_summary_title'],
-          ],
-          '#value' => $state . $expiration_message,
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => ['lp_progress_summary_score'],
-          ],
-          '#value' => $this->t('Average score : @score%', [
-            '@score' => $score,
-          ]),
-        ],
-        !empty($completed) ? [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => ['lp_progress_summary_date'],
-          ],
-          '#value' => $this->t('Completed on @date', [
-            '@date' => $completed,
-          ]),
-        ] : [],
-      ];
-    }
-    elseif ($expiration_set && LPStatus::isCertificateExpired($group, $uid)) {
-      $summary = [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_progress_summary'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => ['lp_progress_summary_expired'],
-          ],
-          '#value' => '',
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'h3',
-          '#attributes' => [
-            'class' => ['lp_progress_summary_title'],
-          ],
-          '#value' => $this->t('Expired on') . ' ' . $expiration_message,
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => ['lp_progress_summary_score'],
-          ],
-          '#value' => $this->t('Please start this training again to get new certification'),
-        ],
-      ];
-    }
-
-    $content = [];
-    $content[] = [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['col-sm-9', 'mb-3'],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_progress'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => ['lp_progress_label'],
-          ],
-          '#value' => $this->t('Global Training Progress'),
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => ['lp_progress_value'],
-          ],
-          '#value' => $progress . '%',
-        ],
-        [
-          '#type' => 'container',
-          '#attributes' => [
-            'class' => ['lp_progress_bar'],
-          ],
-          [
-            '#type' => 'html_tag',
-            '#tag' => 'div',
-            '#attributes' => [
-              'class' => ['lp_progress_bar_completed'],
-              'style' => "width: $progress%",
-            ],
-            '#value' => '',
-          ],
-        ],
-      ],
-      isset($summary) ? $summary : [],
-      '#attached' => [
-        'library' => [
-          'opigno_learning_path/training_content',
-          'core/drupal.dialog.ajax',
-        ],
-      ],
-    ];
-
-    $continue_route = 'opigno_learning_path.steps.start';
-    $edit_route = 'entity.group.edit_form';
-    $members_route = 'opigno_learning_path.membership.overview';
-
-    $route_args = ['group' => $group->id()];
-    $continue_url = Url::fromRoute($continue_route, $route_args);
-    $edit_url = Url::fromRoute($edit_route, $route_args);
-    $members_url = Url::fromRoute($members_route, $route_args);
-
-    $admin_continue_button = Link::fromTextAndUrl('', $continue_url)->toRenderable();
-    $admin_continue_button['#attributes']['class'][] = 'lp_progress_admin_continue';
-    $admin_continue_button['#attributes']['class'][] = 'use-ajax';
-    $edit_button = Link::fromTextAndUrl('', $edit_url)->toRenderable();
-    $edit_button['#attributes']['class'][] = 'lp_progress_admin_edit';
-    $members_button = Link::fromTextAndUrl('', $members_url)->toRenderable();
-    $members_button['#attributes']['class'][] = 'lp_progress_admin_edit';
-
-    $continue_button_text = $this->t('Continue Training');
-    $continue_button = Link::fromTextAndUrl($continue_button_text, $continue_url)->toRenderable();
-    $continue_button['#attributes']['class'][] = 'lp_progress_continue';
-    $continue_button['#attributes']['class'][] = 'use-ajax';
-
-    $buttons = [];
-    if ($group->access('update', $user)) {
-      $buttons[] = $admin_continue_button;
-      $buttons[] = $edit_button;
-    }
-    elseif ($group->access('administer members', $user)) {
-      $buttons[] = $admin_continue_button;
-      $buttons[] = $members_button;
-    }
-    else {
-      $buttons[] = $continue_button;
-    }
-
-    $content[] = [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['col-sm-3', 'mb-3'],
-      ],
-      $buttons,
-    ];
-
-    return $content;
-  }
-
-  /**
    * Returns training content.
    */
   public function trainingContent() {
@@ -400,9 +177,12 @@ class LearningPathController extends ControllerBase {
     });
 
     $steps_array = [];
+    $steps = array_values($steps);
     if ($steps) {
       foreach ($steps as $key => $step) {
         $sub_title = '';
+        $link = NULL;
+        $free_link = NULL;
         $score = $this->build_step_score_cell($step);
         $state = $this->build_step_state_cell($step);
         unset($start_date);
@@ -431,10 +211,10 @@ class LearningPathController extends ControllerBase {
             }
             else {
               // Get link to module.
-              $parent_content_id = $course_steps[$course_step_key - 1]['cid'];
+              $course_parent_content_id = $course_steps[$course_step_key - 1]['cid'];
               $link = Link::createFromRoute($course_step['name'], 'opigno_learning_path.steps.next', [
                 'group' => $group->id(),
-                'parent_content' => $parent_content_id,
+                'parent_content' => $course_parent_content_id,
               ])
                 ->toString();
             }
@@ -467,6 +247,7 @@ class LearningPathController extends ControllerBase {
           }
 
           $step['course_steps'] = $course_steps;
+          $steps[$key]['course_steps'] = $course_steps;
         }
         elseif ($step['typology'] === 'Module') {
           $step['module'] = OpignoModule::load($step['id']);
@@ -481,6 +262,12 @@ class LearningPathController extends ControllerBase {
             ->load($step['id']);
           $start_date = $meeting->getStartDate();
           $end_date = $meeting->getEndDate();
+          if ($freeNavigation) {
+            $free_link = Link::createFromRoute($title, 'opigno_moxtra.meeting', [
+              'opigno_moxtra_meeting' => $step['id'],
+            ])
+              ->toString();
+          }
         }
         elseif ($step['typology'] === 'ILT') {
           /** @var \Drupal\opigno_ilt\ILTInterface $ilt */
@@ -489,6 +276,12 @@ class LearningPathController extends ControllerBase {
             ->load($step['id']);
           $start_date = $ilt->getStartDate();
           $end_date = $ilt->getEndDate();
+          if ($freeNavigation) {
+            $free_link = Link::createFromRoute($title, 'entity.opigno_ilt.canonical', [
+              'opigno_ilt' => $step['id'],
+            ])
+              ->toString();
+          }
         }
 
         if (isset($start_date) && isset($end_date)) {
@@ -531,13 +324,32 @@ class LearningPathController extends ControllerBase {
           }
           else {
             // Get link to module.
-            if (!empty($steps[$key - 1]['cid'])) {
-              $parent_content_id = $steps[$key - 1]['cid'];
-              $link = Link::createFromRoute($title, 'opigno_learning_path.steps.next', [
-                'group' => $group->id(),
-                'parent_content' => $parent_content_id,
-              ])
-                ->toString();
+            if (!empty($free_link)) {
+              $link = $free_link;
+            }
+            elseif (!empty($steps[$key - 1]['cid'])) {
+              // Get previous step cid.
+              if ($steps[$key - 1]['typology'] == 'Course') {
+                // If previous step is course get it's last step.
+                if (!empty($steps[$key - 1]['course_steps'])) {
+                  $course_last_step = end($steps[$key - 1]['course_steps']);
+                  if (!empty($course_last_step['cid'])) {
+                    $parent_content_id = $course_last_step['cid'];
+                  }
+                }
+              }
+              else {
+                // If previous step isn't a course.
+                $parent_content_id = $steps[$key - 1]['cid'];
+              }
+
+              if (!empty($parent_content_id)) {
+                $link = Link::createFromRoute($title, 'opigno_learning_path.steps.next', [
+                  'group' => $group->id(),
+                  'parent_content' => $parent_content_id,
+                ])
+                  ->toString();
+              }
             }
           }
         }

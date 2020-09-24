@@ -19,6 +19,7 @@ use Drupal\opigno_module\Entity\OpignoModule;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Drupal\opigno_module\OpignoModuleBadges;
+use Drupal\opigno_learning_path\Progress;
 
 /**
  * Class LearningPathAchievementController.
@@ -33,17 +34,26 @@ class LearningPathAchievementController extends ControllerBase {
   protected $database;
 
   /**
+   * Progress bar service.
+   *
+   * @var \Drupal\opigno_learning_path\Progress
+   */
+  protected $progress;
+
+
+  /**
    * {@inheritdoc}
    */
-  public function __construct(Connection $database) {
+  public function __construct(Connection $database, Progress $progress) {
     $this->database = $database;
+    $this->progress = $progress;
   }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static($container->get('database'));
+    return new static($container->get('database'), $container->get('opigno_learning_path.progress'));
   }
 
   /**
@@ -528,7 +538,7 @@ class LearningPathAchievementController extends ControllerBase {
     $user = $this->currentUser();
     $steps = opigno_learning_path_get_steps($course->id(), $user->id());
     $rows = array_map(function ($step) use ($training, $course, $user) {
-      // var_dump($step);
+
       return [
         'data-training' => $training->id(),
         'data-course' => $course->id(),
@@ -537,12 +547,12 @@ class LearningPathAchievementController extends ControllerBase {
           ['data' => $this->build_step_name($step)],
           ['data' => $this->build_step_score($step)],
           ['data' => $this->build_step_state($step)],
-          [
-            'data' => Link::createFromRoute(t('details'), 'opigno_module.module_result', [
+          !empty($step['id']) && !empty($step['best_attempt']) ? [
+            'data' => Link::createFromRoute($this->t('details'), 'opigno_module.module_result', [
               'opigno_module' => $step['id'],
               'user_module_status' => $step['best_attempt'],
             ])->toRenderable(),
-          ],
+          ] : [],
         ],
       ];
     }, $steps);
@@ -564,24 +574,8 @@ class LearningPathAchievementController extends ControllerBase {
     }, $module_steps);
 
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'id' => 'course_steps_' . $course->id(),
-        'class' => [
-          'lp_course_steps_wrapper',
-          'ml-md-7',
-          'mr-md-5',
-          'mb-5',
-        ],
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'h4',
-        '#attributes' => [
-          'class' => ['lp_course_steps_title'],
-        ],
-        '#value' => t('Course Content'),
-      ],
+      '#theme' => 'opigno_learning_path_training_course_content',
+      '#course_id' => $course->id(),
       [
         '#type' => 'table',
         '#attributes' => [
@@ -719,8 +713,8 @@ class LearningPathAchievementController extends ControllerBase {
         $is_module = $step['typology'] === 'Module';
         $is_course = $step['typology'] === 'Course';
 
-        $time_spent = ($step['attempted'] && $step['time spent'] > 0) ? $date_formatter->formatInterval($step['time spent']) : '&dash;';
-        $completed = ($step['attempted'] && $step['completed on'] > 0) ? $date_formatter->format($step['completed on'], 'custom', 'F d Y') : '&dash;';
+        $time_spent = ($step['attempted'] && $step['time spent'] > 0) ? $date_formatter->formatInterval($step['time spent']) : 0;
+        $completed = ($step['attempted'] && $step['completed on'] > 0) ? $date_formatter->format($step['completed on'], 'custom', 'F d Y') : '';
 
         if ($is_module) {
           $module = OpignoModule::load($step['id']);
@@ -764,432 +758,41 @@ class LearningPathAchievementController extends ControllerBase {
         }
 
         $content = [
-          '#type' => 'container',
-          '#attributes' => [
-            'class' => ['lp_step'],
-          ],
-          [
+          '#theme' => 'opigno_learning_path_training_step',
+          '#step' => $step,
+          '#is_module' => $is_module,
+          ($is_module ? [
+            '#theme' => 'opigno_learning_path_training_module',
+            '#status' => isset($status[$step['status']]) ? $status[$step['status']] : $status['pending'],
+            '#group_id' => $group->id(),
+            '#step' => $step,
+            '#time_spent' => $time_spent,
+            '#completed' => $completed,
+            '#badges' => $badges,
+            '#approved' => [
+              'value' => $approved,
+              'percent' => $approved_percent,
+            ],
+          ] : []),
+          ($is_course ? [
             '#type' => 'container',
             '#attributes' => [
-              'class' => ['lp_step_title_wrapper'],
-            ],
-            ($step['mandatory']
-              ? [
-                '#type' => 'html_tag',
-                '#tag' => 'span',
-                '#attributes' => [
-                  'class' => ['lp_step_required'],
-                ],
-                '#value' => '',
-              ]
-              : []),
-            [
-              '#type' => 'html_tag',
-              '#tag' => 'h3',
-              '#attributes' => [
-                'class' => ['lp_step_title'],
-              ],
-              '#value' => $step['name'],
+              'class' => ['lp_step_summary_wrapper'],
             ],
             [
-              '#type' => 'html_tag',
-              '#tag' => 'span',
-              '#attributes' => [
-                'class' => ['view_trigger'],
-                'data-open' => t('Show details'),
-                'data-close' => t('Hide details'),
+              '#theme' => 'opigno_learning_path_training_course',
+              '#passed' => [
+                'value' => $passed,
+                'percent' => $passed_percent
               ],
+              '#score' => $score,
+              '#step' => $step,
+              '#completed' => $completed,
+              '#badges' => $badges,
+              '#time_spent' => $time_spent,
             ],
-          ],
-          [
-            '#type' => 'container',
-            '#attributes' => [
-              'class' => array_merge(['lp_step_content'], $is_module
-                ? ['lp_step_content_module']
-                : []),
-            ],
-            ($is_module ? [
-              '#type' => 'container',
-              '#attributes' => [
-                'class' => ['lp_step_summary_wrapper'],
-              ],
-              [
-                '#type' => 'container',
-                '#attributes' => [
-                  'class' => ['lp_step_summary', 'px-3'],
-                ],
-                [
-                  '#type' => 'container',
-                  '#attributes' => [
-                    'class' => ['row'],
-                  ], [
-                    '#type' => 'container',
-                    '#attributes' => [
-                      'class' => [
-                        'col-lg-4',
-                        'col-md-2',
-                        'd-sm-flex',
-                        'd-md-block',
-                        'd-lg-flex',
-                        'align-items-center',
-                        'mb-4',
-                        'mb-md-0',
-                        'col-step-item',
-                      ],
-                    ], [
-                      '#type' => 'html_tag',
-                      '#tag' => 'div',
-                      '#attributes' => [
-                        'class' => [
-                          'lp_step_summary_title',
-                          'h4',
-                          'mb-0',
-                          'mb-md-3',
-                          'mb-lg-0',
-                          'text-uppercase',
-                          'lp-step-title',
-                        ],
-                      ],
-                      '#value' => isset($status[$step['status']])
-                      ? $status[$step['status']]['title'] : $status['pending']['title'],
-                    ], [
-                      '#type' => 'html_tag',
-                      '#tag' => 'div',
-                      '#attributes' => [
-                        'class' => [
-                          'lp_step_summary_icon',
-                          isset($status[$step['status']]) ? $status[$step['status']]['class'] : $status['pending']['class'],
-                          'ml-3',
-                          'ml-md-0',
-                          'ml-lg-3',
-                          'lp-step-icon'
-                        ],
-                      ],
-                    ],
-                  ], [
-                    '#type' => 'container',
-                    '#attributes' => [
-                      'class' => ['col-lg-4', 'col-md-5', 'mb-4', 'mb-md-0', 'col-step-item',],
-                    ], [
-                      '#type' => 'html_tag',
-                      '#tag' => 'div',
-                      '#attributes' => [
-                        'class' => ['ml-0', 'ml-md-5', 'mr-3', 'pull-left', 'lp-step-title'],
-                      ],
-                      '#value' => '<div class="h4 color-blue mb-0"> ' . round(100 * $step['progress']) . '%</div><div> ' . t('Completion') . '</div>',
-                    ], [
-                      '#type' => 'container',
-                      '#attributes' => [
-                        'class' => [
-                          'lp_step_summary_completion_chart',
-                          'donut-wrapper',
-                          'ml-3',
-                          'lp-step-icon',
-                        ],
-                      ], [
-                        '#type' => 'html_tag',
-                        '#tag' => 'canvas',
-                        '#attributes' => [
-                          'class' => ['donut'],
-                          'data-value' => round(100 * $step['progress']),
-                          'data-width' => 7,
-                          'data-color' => '#5bb4d8',
-                          'data-track-color' => '#fff',
-                          'width' => 67,
-                          'height' => 67,
-                        ],
-                        '#value' => '',
-                      ],
-                    ],
-                  ], [
-                    '#type' => 'container',
-                    '#attributes' => [
-                      'class' => ['col-lg-4', 'col-md-5', 'col-step-item'],
-                    ], [
-                      '#type' => 'html_tag',
-                      '#tag' => 'div',
-                      '#attributes' => [
-                        'class' => [
-                          'ml-0',
-                          'ml-md-5',
-                          'lp_step_summary_approved',
-                          'mr-3',
-                          'pull-left',
-                          'lp-step-title'
-                        ],
-                      ],
-                      '#value' => '<div class="h4 color-blue mb-0">' . $approved . '</div><div> ' . t('Activities') . ' <br />' . t('done') . '</div>',
-                    ], [
-                      '#type' => 'container',
-                      '#attributes' => [
-                        'class' => [
-                          'lp_step_summary_approved_chart',
-                          'donut-wrapper',
-                          'ml-3',
-                          'mr-auto',
-                          'lp-step-icon'
-                        ],
-                      ], [
-                        '#type' => 'html_tag',
-                        '#tag' => 'canvas',
-                        '#attributes' => [
-                          'class' => ['donut'],
-                          'data-value' => $approved_percent,
-                          'data-width' => 7,
-                          'data-color' => '#5bb4d8',
-                          'data-track-color' => '#fff',
-                          'width' => 67,
-                          'height' => 67,
-                        ],
-                        '#value' => '',
-                      ],
-                    ],
-                  ],
-                ],
-                [
-                  '#type' => 'container',
-                  '#attributes' => [
-                    'class' => [
-                      'w-100',
-                      'mt-4',
-                      'd-flex',
-                      'justify-content-center',
-                    ],
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => [''],
-                    ],
-                    '#value' => '<div class="text-italic">' . t('Time spent') . '</div><div class="color-blue h5">' . $time_spent . '</div>',
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['ml-3', 'ml-md-5'],
-                    ],
-                    '#value' => '<div class="text-italic">' . t('Completed on') . '</div><div class="color-blue h5">' . $completed . '</div>',
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['ml-3', 'ml-md-5'],
-                    ],
-                    '#value' => '<div class="text-italic">' . t('Badges earned') . '</div><div class="color-blue h5">' . $badges . '</div>',
-                  ],
-                ],
-              ],
-              [
-                '#type' => 'html_tag',
-                '#tag' => 'div',
-                '#attributes' => [
-                  'class' => ['lp_step_summary_clickable'],
-                  'data-training' => $group->id(),
-                  'data-module' => $step['id'],
-                ],
-                '#value' => t('more details'),
-              ],
-              [
-                '#type' => 'container',
-                '#attributes' => [
-                  'id' => 'module_panel_' . $group->id() . '_' . $step['id'],
-                  'class' => ['lp_module_panel'],
-                ],
-              ],
-            ] : []),
-            ($is_course ? [
-              '#type' => 'container',
-              '#attributes' => [
-                'class' => ['lp_step_summary_wrapper'],
-              ],
-              [
-                '#type' => 'container',
-                '#attributes' => [
-                  'class' => [
-                    'px-3',
-                    'd-md-flex',
-                    'justify-content-center',
-                    'flex-wrap',
-                  ],
-                ],
-                [
-                  '#type' => 'html_tag',
-                  '#tag' => 'div',
-                  '#attributes' => [
-                    'class' => ['float-left', 'mr-3', 'mr-md-0'],
-                  ],
-                  '#value' => '<div class="h4 ' . (($passed_percent === 100) ? 'color-green' : 'color-red') . ' mb-0">' . $passed . '</div><div>' . t('Module') . '<br />' . t('passed') . '</div>',
-                ],
-                [
-                  '#type' => 'container',
-                  '#attributes' => [
-                    'class' => [
-                      'lp_step_summary_course_step_passed_chart',
-                      'donut-wrapper',
-                      'ml-3',
-                      'mb-3',
-                      'mb-md-0',
-                      ($passed_percent === 100) ? 'passed' : 'not_passed',
-                    ],
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'canvas',
-                    '#attributes' => [
-                      'class' => ['donut'],
-                      'data-value' => $passed_percent,
-                      'data-width' => 7,
-                      'data-color' => ($passed_percent === 100) ? '#c2e76b' : '#ff5440' ,
-                      'data-track-color' => '#eeeeee',
-                      'width' => 67,
-                      'height' => 67,
-                    ],
-                    '#value' => '',
-                  ],
-                ],
-                [
-                  '#type' => 'html_tag',
-                  '#tag' => 'div',
-                  '#attributes' => [
-                    'class' => ['ml-md-5', 'float-left', 'mr-3', 'mr-md-0'],
-                  ],
-                  '#value' => '<div class="h4 color-blue mb-0">' . round(100 * $step['progress']) . '%</div><div>' . t('Completion') . '</div>',
-                ],
-                [
-                  '#type' => 'container',
-                  '#attributes' => [
-                    'class' => [
-                      'lp_step_summary_completion_chart',
-                      'donut-wrapper',
-                      'ml-3',
-                      'mb-3',
-                      'mb-md-0',
-                    ],
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'canvas',
-                    '#attributes' => [
-                      'class' => ['donut'],
-                      'data-value' => round(100 * $step['progress']),
-                      'data-width' => 7,
-                      'data-color' => '#5bb4d8',
-                      'data-track-color' => '#eeeeee',
-                      'width' => 67,
-                      'height' => 67,
-                    ],
-                    '#value' => '',
-                  ],
-                ],
-                [
-                  '#type' => 'html_tag',
-                  '#tag' => 'div',
-                  '#attributes' => [
-                    'class' => ['ml-md-5', 'float-left', 'mr-3', 'mr-md-0'],
-                  ],
-                  '#value' => '<div class="h4 color-blue mb-0">' . $score . '</div><div>' . t('Score') . '</div>',
-                ],
-                [
-                  '#type' => 'container',
-                  '#attributes' => [
-                    'class' => [
-                      'lp_step_summary_approved_chart',
-                      'donut-wrapper',
-                      'ml-3',
-                      'mb-3',
-                      'mb-md-0',
-                    ],
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'canvas',
-                    '#attributes' => [
-                      'class' => ['donut'],
-                      'data-value' => $score_percent,
-                      'data-width' => 7,
-                      'data-color' => '#5bb4d8',
-                      'data-track-color' => '#eeeeee',
-                      'width' => 67,
-                      'height' => 67,
-                    ],
-                    '#value' => '',
-                  ],
-                ],
-                [
-                  '#type' => 'container',
-                  '#attributes' => [
-                    'class' => ['ml-md-5'],
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['text-italic'],
-                    ],
-                    '#value' => t('Time spent'),
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['h4', 'color-blue'],
-                    ],
-                    '#value' => $time_spent,
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['text-italic'],
-                    ],
-                    '#value' => t('Completed on'),
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['h4', 'color-blue'],
-                    ],
-                    '#value' => $completed,
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['text-italic'],
-                    ],
-                    '#value' => t('Badges earned'),
-                  ],
-                  [
-                    '#type' => 'html_tag',
-                    '#tag' => 'div',
-                    '#attributes' => [
-                      'class' => ['h4', 'color-blue'],
-                    ],
-                    '#value' => $badges,
-                  ],
-                ],
-              ],
-              [
-                '#type' => 'html_tag',
-                '#tag' => 'hr',
-                '#attributes' => [
-                  'class' => [
-                    'lp_course_steps_wrapper',
-                    'ml-3',
-                    'ml-md-7',
-                    'mr-3',
-                    'mr-md-5',
-                    'my-4',
-                  ],
-                ],
-              ],
-              $this->build_course_steps($group, Group::load($step['id'])),
-            ] : []),
-          ],
+            $this->build_course_steps($group, Group::load($step['id'])),
+          ] : []),
         ];
 
         return $content;
@@ -1302,82 +905,19 @@ class LearningPathAchievementController extends ControllerBase {
       }, $results);
     }
 
-    $timeline = [];
-    $timeline[] = [
-      '#type' => 'html_tag',
-      '#tag' => 'span',
-      '#attributes' => [
-        'class' => ['lp_timeline_begin'],
-      ],
-      '#value' => '',
-    ];
-
+    $items = [];
     foreach ($steps as $step) {
-      $completed_on = $step['completed on'] > 0
-        ? $date_formatter->format($step['completed on'], 'custom', 'F d, Y')
-        : '';
-
-      $status = opigno_learning_path_get_step_status($step, $user->id(), TRUE, $latest_cert_date);
-      $timeline[] = [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_timeline_step', $status],
-        ],
-        [
-          '#type' => 'container',
-          '#attributes' => [
-            'class' => ['lp_timeline_step_label'],
-          ],
-          [
-            '#type' => 'html_tag',
-            '#tag' => 'span',
-            '#attributes' => [
-              'class' => ['lp_timeline_step_label_title'],
-            ],
-            '#value' => mb_strimwidth($step['name'], 0, 42, '...'),
-          ],
-          [
-            '#type' => 'html_tag',
-            '#tag' => 'span',
-            '#attributes' => [
-              'class' => ['lp_timeline_step_label_completed_on'],
-            ],
-            '#value' => $completed_on,
-          ],
-        ],
-        [
-          '#type' => 'container',
-          '#attributes' => [
-            'class' => ['lp_status', $status],
-          ],
-        ]
+      $items[] = [
+        'label' => $step['name'],
+        'completed_on' => $step['completed on'] > 0 ?
+          $date_formatter->format($step['completed on'], 'custom', 'F d, Y') : '',
+        'status' => opigno_learning_path_get_step_status($step, $user->id(), TRUE, $latest_cert_date),
       ];
     }
 
-    $timeline[] = [
-      '#type' => 'html_tag',
-      '#tag' => 'span',
-      '#attributes' => [
-        'class' => ['lp_timeline_end'],
-      ],
-      '#value' => '',
-    ];
-
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['lp_timeline_wrapper', 'px-3', 'px-md-5', 'pb-5'],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => [
-            'lp_timeline',
-            'lp_timeline_not_empty',
-          ],
-        ],
-        $timeline,
-      ],
+      '#theme' => 'opigno_learning_path_training_timeline',
+      '#steps' => $items,
     ];
   }
 
@@ -1399,289 +939,7 @@ class LearningPathAchievementController extends ControllerBase {
     $user = $this->currentUser();
     $uid = $user->id();
 
-    // Get training latest certification timestamp.
-    $latest_cert_date = LPStatus::getTrainingStartDate($group, $user->id());
-
-    $score = round(opigno_learning_path_get_score($gid, $uid, FALSE, $latest_cert_date));
-    $progress = round(100 * opigno_learning_path_progress($gid, $uid, $latest_cert_date));
-
-    /** @var \Drupal\Core\Datetime\DateFormatterInterface $date_formatter */
-    $date_formatter = \Drupal::service('date.formatter');
-
-    /** @var \Drupal\group\Entity\GroupContent $member */
-    $member = $group->getMember($user)->getGroupContent();
-    $registration = $member->getCreatedTime();
-    $registration = $date_formatter->format($registration, 'custom', 'F d, Y');
-
-    $validation = opigno_learning_path_completed_on($gid, $uid, TRUE);
-    $validation = $validation > 0
-      ? $date_formatter->format($validation, 'custom', 'F d, Y')
-      : '';
-
-    $time_spent = opigno_learning_path_get_time_spent($gid, $uid);
-    $time_spent = $date_formatter->formatInterval($time_spent);
-
-    $result = FALSE;
-    $expiration_message = '';
-    $expiration_set = LPStatus::isCertificateExpireSet($group);
-    $expired = FALSE;
-    if ($expiration_set) {
-      if ($expiration_timestamp = LPStatus::getCertificateExpireTimestamp($group->id(), $uid)) {
-        if (!LPStatus::isCertificateExpired($group, $uid)) {
-          $expiration_message = $this->t('Valid until');
-        }
-        else {
-          $expired = TRUE;
-          $expiration_message = $this->t('Expired on');
-        }
-
-        $expiration_message = $expiration_message . ' ' . $date_formatter->format($expiration_timestamp, 'custom', 'F d, Y');
-      }
-    }
-    else {
-      $result = $this->database
-        ->select('opigno_learning_path_achievements', 'a')
-        ->fields('a', ['status'])
-        ->condition('uid', $user->id())
-        ->condition('gid', $group->id())
-        ->execute()
-        ->fetchField();
-    }
-
-    if ($result !== FALSE) {
-      // Use cached result.
-      $is_attempted = TRUE;
-      $is_passed = $result === 'completed';
-    }
-    else {
-      // Check the actual data.
-      $is_attempted = opigno_learning_path_is_attempted($group, $uid);
-      $is_passed = opigno_learning_path_is_passed($group, $uid);
-    }
-
-    if ($is_passed || $is_attempted) {
-      $summary = [
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'class' => ['lp_step_summary_text'],
-          ],
-          '#value' => t('Score: @score%', [
-            '@score' => $score,
-          ]),
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'class' => ['lp_step_summary_text'],
-          ],
-          '#value' => t('Registration date: @date', [
-            '@date' => $registration,
-          ]),
-        ],
-        ($is_passed
-          ? [
-            '#type' => 'html_tag',
-            '#tag' => 'span',
-            '#attributes' => [
-              'class' => ['lp_step_summary_text'],
-            ],
-            '#value' => t('Validation date: @date', [
-              '@date' => $validation,
-            ]),
-          ]
-          : []),
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'class' => ['lp_step_summary_text'],
-          ],
-          '#value' => t('Time spent: @time on the training', [
-            '@time' => $time_spent,
-          ]),
-        ],
-      ];
-    }
-    else {
-      $summary = [
-        '#type' => 'html_tag',
-        '#tag' => 'span',
-        '#attributes' => [
-          'class' => ['lp_step_summary_text'],
-        ],
-        '#value' => t('Not yet started'),
-      ];
-    }
-
-    if ($is_passed) {
-      $state_class = 'lp_summary_step_state_passed';
-    }
-    elseif ($progress == 100 && !opigno_learning_path_is_passed($group, $uid)) {
-      $state_class = 'lp_summary_step_state_failed';
-    }
-    elseif ($is_attempted) {
-      $state_class = 'lp_summary_step_state_in_progress';
-    }
-    elseif ($expired) {
-      $state_class = 'lp_summary_step_state_expired';
-    }
-    else {
-      $state_class = 'lp_summary_step_state_not_started';
-    }
-
-    $cert_text = $this->t('Download certificate');
-    $has_cert = !$group->get('field_certificate')->isEmpty();
-
-    if ($is_passed && $has_cert) {
-      $cert_url = Url::fromUri("internal:/certificate/group/$gid/pdf");
-
-      $cert_title = Link::fromTextAndUrl($cert_text, $cert_url)->toRenderable();
-      $cert_title['#attributes']['class'][] = 'lp_summary_certificate_text';
-
-      $cert_icon = Link::fromTextAndUrl('', $cert_url)->toRenderable();
-      $cert_icon['#attributes']['class'][] = 'lp_summary_certificate_icon';
-    }
-    else {
-      $cert_title = [
-        '#type' => 'html_tag',
-        '#tag' => 'span',
-        '#attributes' => [
-          'class' => ['lp_summary_certificate_text'],
-        ],
-        '#value' => $cert_text,
-      ];
-      $cert_icon = [
-        '#type' => 'html_tag',
-        '#tag' => 'span',
-        '#attributes' => [
-          'class' => ['lp_summary_certificate_icon'],
-        ],
-        '#value' => '',
-      ];
-    }
-
-    $validation_message = !empty($validation) ? t('Validation date: @date<br />', ['@date' => $validation]) : '';
-
-    return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['lp_summary', 'd-flex', 'flex-wrap', 'py-5'],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_summary_content'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => [
-              'lp_step_summary_title',
-              'h4',
-              'mb-0',
-              'text-uppercase',
-            ],
-          ],
-          '#value' => t('Training Progress'),
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['lp_step_summary_progress'],
-          ],
-          '#value' => t('@score%', ['@score' => $progress]),
-        ],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_summary_content', "mobile--{$state_class}"],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => [
-              'lp_step_summary_title',
-              'h4',
-              'mb-0',
-              'text-uppercase',
-            ],
-          ],
-          '#value' => t('Training Score'),
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['lp_step_summary_score'],
-          ],
-          '#value' => t('@score%', ['@score' => $score]),
-        ],
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'div',
-        '#attributes' => [
-          'class' => [$state_class],
-        ],
-        '#value' => '',
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => array_merge(['lp_summary_certificate'],
-            $is_passed && $has_cert ? [] : ['lp_summary_certificate_inactive']),
-        ],
-        $cert_title,
-        $cert_icon,
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['mt-4', 'w-100', 'd-flex', 'justify-content-center', 'lp-step-summary'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['lp_step_summary_registration', 'font-italic'],
-          ],
-          '#value' => t('Registration date: @date', ['@date' => $registration]),
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => [
-              'lp_step_summary_validation',
-              'ml-3',
-              'ml-md-5',
-              'font-italic',
-            ],
-          ],
-          '#value' => $validation_message . $expiration_message,
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => [
-              'lp_step_summary_time_spent',
-              'ml-3',
-              'ml-md-5',
-              'font-italic',
-            ],
-          ],
-          '#value' => t('Time spent: @time', ['@time' => $time_spent]),
-        ],
-      ],
-    ];
+    return $this->progress->getProgressAjaxContainer($gid, $uid, '', 'achievements-page');
   }
 
   /**
@@ -1699,99 +957,18 @@ class LearningPathAchievementController extends ControllerBase {
    */
   protected function build_training(GroupInterface $group) {
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['lp_wrapper'],
+      '#theme' => 'opigno_learning_path_training',
+      '#label' => $group->label(),
+      'timeline' =>  $this->build_training_timeline($group),
+      'info' => [
+        '#theme' => 'opigno_learning_path_training_timeline_info',
+        '#label' => t('Timeline'),
+        '#text' => t('In your timeline are shown only successfully passed mandatory steps from your training'),
       ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'h2',
-        '#attributes' => [
-          'class' => [
-            'lp_title',
-            'px-3',
-            'px-md-5',
-            'pt-5',
-            'pb-4',
-            'mb-0',
-            'h4',
-            'text-uppercase',
-          ],
-        ],
-        '#value' => t('Training : @name', [
-          '@name' => $group->label(),
-        ]),
-      ],
-      $this->build_training_timeline($group),
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_timeline_info', 'px-3', 'px-md-5', 'py-3'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'class' => ['lp_timeline_icon'],
-          ],
-          '#value' => '',
-        ],
-        [
-          '#type' => 'container',
-          '#attributes' => [
-            'class' => ['lp_timeline_info_text'],
-          ],
-          [
-            '#type' => 'html_tag',
-            '#tag' => 'span',
-            '#value' => t('Timeline'),
-          ],
-          [
-            '#type' => 'html_tag',
-            '#tag' => 'span',
-            '#attributes' => [
-              'class' => ['lp_timeline_info_tooltip'],
-            ],
-            '#value' => t('In your timeline are shown only successfully passed mandatory steps from your training'),
-          ],
-        ],
-      ],
-      $this->build_training_summary($group),
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'id' => 'training_steps_' . $group->id(),
-          'class' => ['lp_details'],
-        ],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_details_show'],
-          'data-training' => $group->id(),
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'class' => ['lp_details_show_text'],
-          ],
-          '#value' => t('Show details'),
-        ],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_details_hide'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'class' => ['lp_details_hide_text'],
-          ],
-          '#value' => t('Hide details'),
-        ],
+      'summary' => $this->build_training_summary($group),
+      'details' => [
+        '#theme' => 'opigno_learning_path_training_details',
+        '#group_id' => $group->id(),
       ],
     ];
   }
@@ -1982,26 +1159,8 @@ class LearningPathAchievementController extends ControllerBase {
         'id' => 'achievements-wrapper',
       ],
       [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['lp_info', 'mb-4', 'py-4', 'pr-3', 'pr-md-5'],
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'span',
-          '#attributes' => [
-            'class' => ['lp_icon_info'],
-          ],
-          '#value' => '',
-        ],
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'p',
-          '#attributes' => [
-            'class' => ['lp_info_text'],
-          ],
-          '#value' => t('Consult your results and download the certificates for the trainings.'),
-        ],
+        '#theme' => 'opigno_learning_path_message',
+        '#markup' => t('Consult your results and download the certificates for the trainings.'),
       ],
       '#attached' => [
         'library' => [

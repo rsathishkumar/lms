@@ -30,6 +30,7 @@ permissions:
   - 'restful patch opigno_notification_resource'
   - 'restful patch private_message_thread_update_resource'
   - 'restful post token_rest_resource'
+  - 'restful post color_rest_resource'
   - 'search content'
   - 'skip comment approval'
   - 'take modules'

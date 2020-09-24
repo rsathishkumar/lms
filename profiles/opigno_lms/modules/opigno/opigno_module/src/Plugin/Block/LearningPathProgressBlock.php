@@ -31,6 +31,7 @@ class LearningPathProgressBlock extends BlockBase {
     $build = [];
     $home_link = NULL;
     $user = \Drupal::currentUser();
+    $progress = 0;
 
     if ($gid = OpignoGroupContext::getCurrentGroupId()) {
       if ($group = \Drupal::entityTypeManager()->getStorage('group')->load($gid)) {
@@ -38,12 +39,17 @@ class LearningPathProgressBlock extends BlockBase {
         $home_link = render($home_link);
       }
     }
-    $latest_cert_date = LPStatus::getTrainingStartDate($group, $user->id());
-    $progress = ($user && isset($group)) ? round(opigno_learning_path_progress($group->id(), $user->id(), $latest_cert_date) * 100) : 0;
+
+    if ($user && isset($group)) {
+      $progress_service = \Drupal::service('opigno_learning_path.progress');
+      $progress = $progress_service->getProgressAjaxContainer($gid, $user->id(), '', 'module-page');
+      $progress = render($progress);
+    }
 
     $build = [
-      'home_link' => render($home_link),
+      'home_link' => $home_link,
       'progress' => $progress,
+      'ajax_conteiner' => TRUE,
     ];
 
     return $build;

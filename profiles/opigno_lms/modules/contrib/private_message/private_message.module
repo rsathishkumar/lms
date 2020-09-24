@@ -111,7 +111,7 @@ function private_message_entity_extra_field_info() {
 }
 
 /**
- * Implements hook_ENTITY_TYPYE_view().
+ * Implements hook_ENTITY_TYPE_view().
  *
  * @see hook_entity_view()
  */
@@ -147,7 +147,7 @@ function private_message_private_message_thread_view(array &$build, EntityInterf
 }
 
 /**
- * Implements hook_ENTITY_TYPYE_view().
+ * Implements hook_ENTITY_TYPE_view().
  *
  * Adds new elements to the User entity.
  *
@@ -179,7 +179,7 @@ function private_message_user_view(array &$build, EntityInterface $entity, Entit
 }
 
 /**
- * Implements hook_ENTITY_TYPYE_view().
+ * Implements hook_ENTITY_TYPE_view().
  *
  * Adds new elements to the Node entity.
  *
@@ -190,7 +190,7 @@ function private_message_node_view(array &$build, EntityInterface $entity, Entit
 }
 
 /**
- * Implements hook_ENTITY_TYPYE_view().
+ * Implements hook_ENTITY_TYPE_view().
  *
  * Adds new elements to the Comment entity.
  *
@@ -201,7 +201,7 @@ function private_message_comment_view(array &$build, EntityInterface $entity, En
 }
 
 /**
- * Implements hook_ENTITY_TYPYE_view().
+ * Implements hook_ENTITY_TYPE_view().
  *
  * Adds new elements to the Profile entity.
  *
@@ -371,7 +371,7 @@ function private_message_theme() {
  * @param array $variables
  *   An associative array containing:
  *   - elements: An array of elements to display in view mode.
- *   - private_message_thread: The private messsage thread object.
+ *   - private_message_thread: The private message thread object.
  *   - view_mode: View mode; e.g., 'full', 'teaser', etc.
  */
 function template_preprocess_private_message_thread(array &$variables) {
@@ -400,7 +400,7 @@ function template_preprocess_private_message_thread(array &$variables) {
  * @param array $variables
  *   An associative array containing:
  *   - elements: An array of elements to display in view mode.
- *   - private_message: The private messsage object.
+ *   - private_message: The private message object.
  *   - view_mode: View mode; e.g., 'full', 'teaser', etc.
  */
 function template_preprocess_private_message(array &$variables) {
@@ -463,7 +463,7 @@ function private_message_preprocess_container(&$vars) {
       $vars['attributes']['class'][] = 'private_message_members_widget_default_wrapper';
     }
     elseif (strpos('edit-message-wrapper', $vars['element']['#id']) === 0) {
-      // Add a custom class to the private message message widget container.
+      // Add a custom class to the private message members widget container.
       $vars['attributes']['class'][] = 'private_message_message_widget_default_wrapper';
     }
   }

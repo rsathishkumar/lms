@@ -76,12 +76,6 @@ entity.opigno_moxtra_meeting_result.collection:
   base_route: system.admin_content
   route_name: entity.opigno_moxtra_meeting_result.collection
 
-entity.opigno_moxtra_workspace.collection:
-  title: 'Collaborative Workspaces'
-  weight: 12
-  base_route: system.admin_content
-  route_name: entity.opigno_moxtra_workspace.collection
-
 entity.opigno_moxtra_meeting.settings:
   route_name: opigno_moxtra.live_meeting.settings
   title: 'Settings'

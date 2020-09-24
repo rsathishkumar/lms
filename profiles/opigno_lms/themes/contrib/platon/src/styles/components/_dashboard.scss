@@ -8,24 +8,21 @@ app-root.dashboard {
   }
 
   button.manage-dashboard {
-    background-color: #e596c0!important;
+    background-color: #cf4320 !important;
     color: #fff!important;
     text-transform: uppercase;
+    font-size: 16px;
+    font-weight: 600;
 
     &:hover {
-      background-color: #ee6fbb!important;
+      background-color: darken(#cf4320, 5%) !important;
     }
 
-    &::before {
-      @extend .picto-pencil;
-      content: '';
-      height: 1em;
-      width: 1em;
-      display: inline-block;
-      margin-right: 0.25em;
-      vertical-align: top;
+    i {
       position: relative;
       top: 2px;
+      margin-right: 0.3em;
+      font-size: 20px;
     }
   }
 
@@ -56,13 +53,14 @@ app-root.dashboard {
     button.close-dashboard {
       float: right;
       background-color: transparent!important;
-      @extend .picto-close-black;
-      background-repeat: no-repeat;
-      background-position: center;
       width: 1rem;
       height: 1.375rem;
       font-size: 0;
       padding: 0;
+
+      i {
+        font-size: 16px;
+      }
     }
 
     section.layout {
@@ -235,16 +233,13 @@ app-root.dashboard {
     }
 
     .handle {
-      @extend .picto-plus-white;
+      color: $white;
     }
   }
 
   .handle {
-    @extend .picto-plus-grey;
     float: none;
-    background-size: 20px;
-    background-repeat: no-repeat;
-    background-position: 20px 50%;
+    background: none !important;
     position: absolute;
     top: 0;
     left: 0;
@@ -254,8 +249,18 @@ app-root.dashboard {
     height: auto;
     z-index: 1;
 
-    .dashboard-column & {
-      background-image: none;
+    &:before {
+      @include icon-base();
+      content: icon(plus);
+      position: absolute;
+      font-size: 20px;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+
+      .dashboard-column & {
+        display: none;
+      }
     }
   }
 
@@ -270,19 +275,21 @@ app-root.dashboard {
   }
 
   button.remove {
-    @extend .picto-close-black;
     position: relative;
     z-index: 1;
-    background-size: 14px;
-    background-repeat: no-repeat;
-    background-position: center;
     font-size: 0;
-    background-color: transparent !important;
+    background: none !important;
     width: 14px;
     height: 14px;
     padding: 0.5rem;
     margin-right: 0.5rem;
     box-sizing: content-box;
+
+    &:before {
+      @include icon-base();
+      content: icon(close);
+      font-size: 16px;
+    }
   }
 }
 
@@ -296,8 +303,9 @@ app-root.dashboard {
   }
 
   h2 {
-    background-color: #5bb4d8;
+    background-color: $blue;
     color: #fff;
+    font-weight: 700;
     font-size: 20px;
     text-transform: uppercase;
     padding: $block-padding;
@@ -315,13 +323,9 @@ app-root.dashboard {
 
 div[id^="block-dashboard-views-block-"] {
   h2 {
-    &::before {
-      content: '';
-      background-size: contain;
-      display: inline-block;
-      width: 22px;
-      height: 22px;
-      vertical-align: top;
+    i {
+      font-size: 120%;
+      vertical-align: text-bottom;
       margin-right: 0.75rem;
     }
   }
@@ -398,7 +402,7 @@ div#block-dashboard-views-block-latest-active-trainings-block {
 
           .bar {
             height: 2px;
-            background-color: #efa693;
+            background-color: #CF4320;
           }
         }
       }
@@ -408,13 +412,4 @@ div#block-dashboard-views-block-latest-active-trainings-block {
       margin-top: 10px;
     }
   }
-}
-
-div#block-dashboard-views-block-opigno-notifications-block-unread-dashboard h2::before {
-  @include svg-picto(picto-dashboard-notifications);
-}
-
-div#block-dashboard-views-block-latest-active-trainings-block h2::before,
-div#block-dashboard-views-block-private-message-block-dashboard h2::before {
-  @include svg-picto(picto-dashboard-trainings);
 }

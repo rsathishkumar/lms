@@ -8,7 +8,7 @@ dependencies:
   - search_api:search_api_db
   - config_rewrite
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.5'
+# Information added by Drupal.org packaging script on 2020-08-12
+version: '8.x-1.6'
 project: 'opigno_search'
-datestamp: 1591090348
+datestamp: 1597249311

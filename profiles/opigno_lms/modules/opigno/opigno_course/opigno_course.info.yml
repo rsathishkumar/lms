@@ -9,7 +9,7 @@ dependencies:
   - opigno_module:opigno_module_group
   - opigno_class:opigno_class
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.4'
+# Information added by Drupal.org packaging script on 2020-08-12
+version: '8.x-1.5'
 project: 'opigno_course'
-datestamp: 1591089673
+datestamp: 1597244559

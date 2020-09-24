@@ -9,6 +9,7 @@ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Render\Markup;
 use Drupal\opigno_learning_path\LearningPathAccess;
 use Drupal\opigno_statistics\StatisticsPageTrait;
 use Drupal\Core\Access\AccessResult;
@@ -124,67 +125,9 @@ class DashboardForm extends FormBase {
     }
 
     return [
-      '#type' => 'container',
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'h3',
-        '#attributes' => [
-          'class' => ['users-per-day-title'],
-        ],
-        '#value' => $this->t('Number of active users per day'),
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['popover-help'],
-            'data-toggle' => 'popover',
-            'data-content' => t('This chart persents the number of unique user login per day.'),
-          ],
-          '#value' => '?',
-        ],
-      ],
-      [
-        '#type' => 'inline_template',
-        '#template' => '<svg class="users-per-day" viewBox="-20 -20 500 220">
-  {% for i in 0..h_lines %}
-    {% set y = height - height * i / h_lines %}
-    <line x1="{{ padding }}" y1="{{ y }}" x2="{{ padding + day_x_step * (max_day - min_day) }}" y2="{{ y }}"></line>
-    <text x="0" y="{{ y }}">{{ (max_count * i / h_lines)|round }}</text>
-  {% endfor %}
-
-  {% for i in min_day..max_day %}
-    {% set x = -5 + padding + day_x_step * (i - min_day) %}
-    {% set y = padding + height %}
-    <text x="{{ x }}" y="{{ y }}">{{ i }}</text>
-  {% endfor %}
-
-  <path d="
-  {% set y = height - height * data[min_day] / max_count %}
-  M{{ padding }},{{ y }}
-  {% for i in (min_day + 1)..max_day %}
-    {% set x = padding + day_x_step * (i - min_day) %}
-    {% set y = height - height * data[i] / max_count %}
-    L{{ x }},{{ y }}
-  {% endfor %}
-  "></path>
-
-  {% for i in min_day..max_day %}
-    {% set x = padding + day_x_step * (i - min_day) %}
-    {% set y = height - height * data[i] / max_count %}
-    <circle cx="{{ x }}" cy="{{ y }}" r="4"></circle>
-  {% endfor %}
-</svg>',
-        '#context' => [
-          'data' => $data,
-          'min_day' => 1,
-          'max_day' => 31,
-          'day_x_step' => 15,
-          'height' => 175,
-          'h_lines' => 5,
-          'max_count' => max(max($data), 5),
-          'padding' => 20,
-        ],
-      ],
+      '#theme' => 'opigno_statistics_chart__user_per_day',
+      '#max_count' => max(max($data), 5),
+      '#data' => $data,
     ];
   }
 
@@ -279,36 +222,10 @@ class DashboardForm extends FormBase {
    */
   protected function buildUserMetric($label, $value, $help_text = NULL) {
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['user-metric'],
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'div',
-        '#attributes' => [
-          'class' => ['user-metric-value'],
-        ],
-        '#value' => $value,
-        ($help_text) ? [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['popover-help'],
-            'data-toggle' => 'popover',
-            'data-content' => $help_text,
-          ],
-          '#value' => '?',
-        ] : NULL,
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'div',
-        '#attributes' => [
-          'class' => ['user-metric-label'],
-        ],
-        '#value' => $label,
-      ],
+      '#theme' => 'opigno_statistics_user_metric',
+      '#label' => $label,
+      '#value' => $value,
+      '#help_text' => $help_text,
     ];
   }
 
@@ -359,54 +276,24 @@ class DashboardForm extends FormBase {
     $query->groupBy('u.uid');
     $active_users = $query->countQuery()->execute()->fetchField();
 
-    $users_block = $this->buildUserMetric(
-      $this->t('Users'),
-      $users,
-      t('This is the total number of users on your Opigno instance')
-    );
-    $new_users_block = $this->buildUserMetric(
-      $this->t('New users'),
-      $new_users,
-      t('This is the number of new users who registered to your Opigno instance during the last 7 days.')
-    );
-    $active_users_block = $this->buildUserMetric(
-      $this->t('Recently active users'),
-      $active_users,
-      t('This is the number of users who logged in to your Opigno instance during the last 7 days.')
-    );
-
     return [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['user-metrics'],
-      ],
-      [
-        '#type' => 'html_tag',
-        '#tag' => 'h3',
-        '#attributes' => [
-          'class' => ['user-metrics-title'],
-        ],
-        '#value' => $this->t('Users metrics'),
-        [
-          '#type' => 'html_tag',
-          '#tag' => 'div',
-          '#attributes' => [
-            'class' => ['popover-help'],
-            'data-toggle' => 'popover',
-            'data-content' => t('The data below is related to your global Opigno platform (for all trainings).'),
-          ],
-          '#value' => '?',
-        ],
-      ],
-      [
-        '#type' => 'container',
-        '#attributes' => [
-          'class' => ['user-metrics-content'],
-        ],
-        'users' => $users_block,
-        'new_users' => $new_users_block,
-        'active_users' => $active_users_block,
-      ],
+      '#theme' => 'opigno_statistics_user_metrics',
+      '#help_text' => t('The data below is related to your global Opigno platform (for all trainings).'),
+      'users' => $this->buildUserMetric(
+        $this->t('Users'),
+        $users,
+        t('This is the total number of users on your Opigno instance')
+      ),
+      'new_users' => $this->buildUserMetric(
+        $this->t('New users'),
+        $new_users,
+        t('This is the number of new users who registered to your Opigno instance during the last 7 days.')
+      ),
+      'active_users' => $this->buildUserMetric(
+        $this->t('Recently active users'),
+        $active_users,
+        t('This is the number of users who logged in to your Opigno instance during the last 7 days.')
+      ),
     ];
   }
 
@@ -470,7 +357,7 @@ class DashboardForm extends FormBase {
       // Set links only for existing trainings, empty link otherwise.
       if (in_array($row->gid, $gids)) {
         $details_link = Link::createFromRoute(
-          '',
+          Markup::create('<span class="sr-only">' . t('Details @name', ['@name' => $row->name]) . '</span>'),
           'opigno_statistics.training',
           [
             'group' => $row->gid,
@@ -520,6 +407,8 @@ class DashboardForm extends FormBase {
     $max_year = !empty($years) ? max(array_keys($years)) : NULL;
     $year_select = [
       '#type' => 'select',
+      '#title' => $this->t('Year'),
+      '#title_display' => 'invisible',
       '#options' => $years,
       '#default_value' => 'none',
       '#ajax' => [
@@ -563,6 +452,8 @@ class DashboardForm extends FormBase {
     $max_month = !empty($months) ? max(array_keys($months)) : NULL;
     $month_select = [
       '#type' => 'select',
+      '#title' => $this->t('Month'),
+      '#title_display' => 'invisible',
       '#options' => $months,
       '#default_value' => 'none',
       '#ajax' => [
@@ -597,6 +488,15 @@ class DashboardForm extends FormBase {
       '#type' => 'container',
       '#attributes' => [
         'id' => 'statistics-trainings-progress',
+      ],
+      // H2 Need for correct structure.
+      [
+        '#type' => 'html_tag',
+        '#tag' => 'h2',
+        '#value' => $this->t('Dashboard of statistics'),
+        '#attributes' => [
+          'class' => ['sr-only']
+        ]
       ],
       'year' => $year_select,
     ];

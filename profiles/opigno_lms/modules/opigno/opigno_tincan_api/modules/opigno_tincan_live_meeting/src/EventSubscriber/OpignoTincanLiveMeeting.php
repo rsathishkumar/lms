@@ -108,7 +108,7 @@ class OpignoTincanLiveMeeting implements EventSubscriberInterface {
     $session_key = $meeting->getSessionKey();
 
     $info = $this->moxtraService->getMeetingInfo($owner_id, $session_key);
-    $status = $info['data']['status'];
+    $status = !empty($info['data']) ? $info['data']['status'] : FALSE;
 
     // Live meeting is ended.
     if ($status == 'SESSION_ENDED') {

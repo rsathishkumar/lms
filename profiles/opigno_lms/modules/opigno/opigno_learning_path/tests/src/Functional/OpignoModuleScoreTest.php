@@ -48,7 +48,7 @@ class OpignoModuleScoreTest extends LearningPathBrowserTestBase {
 
     $this->drupalGet('/group/' . $training->id());
     $this->assertSession()->pageTextContains('100%');
-    $this->drupalGet('/achievements');
+    $this->drupalGet('/achievements', ['query' => ['preload-progress' => 'true']]);
     $content = $this->getSession()->getPage()->find('css', '.lp_step_summary_score');
     $this->assertEquals('100%', $content->getText(), 'Best score displays on achievements');
     $this->drupalGet('/statistics/training/' . $training->id());
@@ -61,7 +61,7 @@ class OpignoModuleScoreTest extends LearningPathBrowserTestBase {
 
     $this->drupalGet('/group/' . $training->id());
     $this->assertSession()->pageTextContains('100%');
-    $this->drupalGet('/achievements');
+    $this->drupalGet('/achievements', ['query' => ['preload-progress' => 'true']]);
     $content = $this->getSession()->getPage()->find('css', '.lp_step_summary_score', 'Best score still displays on achievements when user get a worse result');
     $this->assertEquals('100%', $content->getText());
     $this->drupalGet('/statistics/training/' . $training->id());
@@ -80,7 +80,7 @@ class OpignoModuleScoreTest extends LearningPathBrowserTestBase {
 
     $this->drupalGet('/group/' . $training->id());
     $this->assertSession()->pageTextContains('50%');
-    $this->drupalGet('/achievements');
+    $this->drupalGet('/achievements', ['query' => ['preload-progress' => 'true']]);
     $content = $this->getSession()->getPage()->find('css', '.lp_step_summary_score');
     $this->assertEquals('50%', $content->getText(), 'Newest score displays on achievements');
     $this->drupalGet('/statistics/training/' . $training->id());

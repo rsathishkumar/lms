@@ -5,7 +5,7 @@ core: 8.x
 package: Opigno
 configure: opigno_dashboard.dashboard_admin_settings_form
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.6'
+# Information added by Drupal.org packaging script on 2020-08-18
+version: '8.x-1.8'
 project: 'opigno_dashboard'
-datestamp: 1591089694
+datestamp: 1597749427

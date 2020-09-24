@@ -195,6 +195,29 @@ class OpignoActivity extends RevisionableContentEntityBase implements OpignoActi
   }
 
   /**
+   * Get list of activity modules.
+   *
+   * @return array
+   */
+  public function getModules() {
+    /* @var $db_connection \Drupal\Core\Database\Connection */
+    $db_connection = \Drupal::service('database');
+    $query = $db_connection->select('opigno_module_relationship', 'om');
+    $query->fields('om', ['omr_id']);
+    $query->condition('om.child_id', $this->id());
+    $results =  $query->execute()->fetchAll();
+    $om_ids = [];
+
+    foreach ($results as $result) {
+      $om_ids[] = $result->omr_id;
+    }
+
+    $module_storage = static::entityTypeManager()->getStorage('opigno_module');
+    $modules = $module_storage->loadMultiple($om_ids);
+    return $modules;
+  }
+
+  /**
    * Returns user answer.
    *
    * @param \Drupal\opigno_module\Entity\OpignoModuleInterface $opigno_module

@@ -9,7 +9,7 @@ use Drupal\Core\Messenger\MessengerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Definest he admin uninstall form for the Private Message module.
+ * Defines the admin uninstall form for the Private Message module.
  */
 class AdminUninstallForm extends ConfirmFormBase {
 

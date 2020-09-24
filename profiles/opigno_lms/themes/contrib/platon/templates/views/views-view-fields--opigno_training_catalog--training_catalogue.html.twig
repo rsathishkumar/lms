@@ -34,7 +34,7 @@
 
 <div class="fields-content {% if opigno_catalog_is_member(row.id) %}is-member{% else %}is-not-member{% endif %}">
   <a href="{{ path('entity.group.canonical', {'group': row.id}) }}" class="not-take-link-wrapper">
-    {% for field in fields -%}
+    {% for key, field in fields -%}
       {% if field.class !='opigno-lp-take-link' %}
         {{ field.separator }}
         {%- if field.wrapper_element -%}
@@ -49,14 +49,7 @@
         {%- endif %}
         {%- if field.element_type -%}
           <{{ field.element_type }}{{ field.element_attributes }}>
-            {% if field.class == 'opigno-lp-progress' %}
-              <span class="text">{{ field.content }}</span>
-              <div class="chart mb-2">
-                <div class="bar" style="width: {{ field.content }};"></div>
-              </div>
-            {% else %}
               {{ field.content }}
-            {%- endif %}
           </{{ field.element_type }}>
         {%- else -%}
           {{ field.content }}

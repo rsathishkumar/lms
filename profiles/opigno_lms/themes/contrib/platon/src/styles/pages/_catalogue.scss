@@ -3,7 +3,7 @@ body.page-catalogue {
   div#main-content {
     .views-exposed-form {
       #edit-field-learning-path-category-target-id,
-      fieldset:not(#edit-sort-by--wrapper) {
+      fieldset:not([id^="edit-sort-by--"]) {
         background-color: $very-light-gray;
 
         > legend {
@@ -84,7 +84,8 @@ body.page-catalogue {
         width: 100%;
       }
 
-      fieldset#edit-sort-by--wrapper {
+      fieldset#edit-sort-by--wrapper,
+      fieldset#edit-sort-by--2--wrapper {
         margin-bottom: 1rem;
         background-color: transparent;
 
@@ -126,18 +127,15 @@ body.page-catalogue {
           padding: 0 0 0.5rem;
 
           &::after {
-            content: '';
-            @extend .picto-dropdown-down;
-            display: inline-block;
-            vertical-align: middle;
-            width: 9px;
-            height: 5px;
+            @include icon-base;
+            content: icon(chevron-down);
+            font-size: 14px;
             margin-left: 0.5rem;
           }
 
           &.active {
             &::after {
-              @extend .picto-dropdown-up;
+              content: icon(chevron-up);
             }
 
             + .fieldset-wrapper {
@@ -214,7 +212,7 @@ body.page-catalogue {
             }
 
             .views-field-opigno-lp-progress {
-              color: #b3b3b2;
+              color: $gray-600;
               text-align: right;
               padding-bottom: 0.5rem;
 
@@ -226,7 +224,7 @@ body.page-catalogue {
 
                 .bar {
                   height: 2px;
-                  background-color: #efa693;
+                  background-color: $orange-800;
                 }
               }
             }
@@ -271,7 +269,7 @@ body.page-catalogue {
                 background-color: #fff;
 
                 .views-field-field-learning-path-category {
-                  color: #b3b3b2;
+                  color: $medium-gray-800;
                   padding-top: 0.5rem;
                 }
 
@@ -302,8 +300,8 @@ body.page-catalogue {
                 display: block;
                 text-decoration: none;
                 text-transform: uppercase;
-                background-color: #dadada;
-                color: #70706f;
+                background-color: $medium-gray-100;
+                color: $dark-gray;
 
                 +.ajax-progress {
                   display: none !important;
@@ -445,11 +443,16 @@ body.page-catalogue {
       a.button.button-action {
         display: block;
         padding: 1rem;
-        background-color: $green;
-        color: #fff;
+        background-color: $medium-gray-100;
+        color: $dark-gray;
         text-align: center;
         text-decoration: none;
         text-transform: uppercase;
+
+        &:hover {
+          color: $white;
+          background-color: $green;
+        }
       }
     }
 
@@ -457,40 +460,22 @@ body.page-catalogue {
       a {
         background-color: transparent!important;
         font-size: 0;
-        width: 30px;
-        height: 30px;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 23px;
+        padding: 0;
+        text-decoration: none;
+        color: $medium-gray-800;
 
         &:focus {
           outline: none;
           box-shadow: none!important;
         }
 
-        &.line {
-          @extend .picto-display-line;
-          background-size: 24px;
-
-          .view.style-line & {
-            @extend .picto-display-line-hover;
-          }
-
-          &:hover {
-            @extend .picto-display-line-hover;
-          }
+        i {
+          font-size: 24px;
         }
 
-        &.block {
-          @extend .picto-display-block-hover;
-
-          .view.style-line & {
-            @extend .picto-display-block;
-          }
-
-          &:hover {
-            @extend .picto-display-block-hover;
-          }
+        &:hover,
+        .view.style-line & {
+          color: $leaf-green;
         }
       }
     }
@@ -530,7 +515,7 @@ body.page-catalogue {
   #catalog-filter {
     width: 100%;
 
-    #edit-opigno-group-membership--wrapper {
+    [id^="edit-opigno-group-membership--"] {
       & > legend {
         display: none;
 

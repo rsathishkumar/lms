@@ -34,14 +34,22 @@ body[class*="page-moxtra-workspace-"][class*="-learning-path"] {
         }
 
         a.edit-link {
-          @include svg-picto('picto-moxtra-edit');
-          background-size: 1.25rem;
           max-width: 50px;
           flex: 0 0 50px;
           background-color: #95d5f4;
+          color: $white;
           margin-left: 0.5rem;
+          text-align: center;
+          font-size: 0;
+          text-decoration: none;
+
+          i {
+            font-size: 28px;
+            line-height: 48px;
+          }
 
           &:hover {
+            color: $white;
             background-color: darken(#95d5f4, 10%);
           }
         }
@@ -61,8 +69,6 @@ body[class*="page-moxtra-workspace-"][class*="-learning-path"] {
       padding: 1rem 1.5rem 1rem 0;
 
       a {
-        // @include make-button(#fff, $light-blue);
-        // color: $body-color;
         display: block;
         padding: 0.75rem 2rem;
         background-color: $green;
@@ -94,6 +100,15 @@ body[class*="page-moxtra-meeting-"][class*="-index"] {
           padding: 0.5rem 1.5rem 0.5rem 1rem;
           text-decoration: none;
 
+          &:before {
+            @include icon-base();
+            margin-right: 0.75rem;
+            line-height: 14px;
+            font-size: 22px;
+            position: relative;
+            top: 4px;
+          }
+
           &:hover {
             background-color: $blue;
           }
@@ -101,37 +116,32 @@ body[class*="page-moxtra-meeting-"][class*="-index"] {
           &[href*="/moxtra/workspace/"],
           &[href*="/moxtra/meeting/"] {
             &::before {
-              @include svg-picto('picto-moxtra-view', false);
-              content: '';
-              display: inline-block;
-              vertical-align: middle;
-              width: 1.5rem;
-              height: 1rem;
-              margin-right: 0.75rem;
+              content: icon(moxtra-view);
             }
 
             &[href*="/edit"] {
               &::before {
-                @include svg-picto('picto-moxtra-edit', false);
+                content: icon(pencil);
               }
             }
 
             &[href*="/delete"] {
               &::before {
-                @include svg-picto('picto-moxtra-delete', false);
+                content: icon(close);
+                font-size: 18px;
+                top: 2px;
               }
             }
 
             &[href*="/index"] {
               &::before {
-                @include svg-picto('picto-moxtra-take', false);
+                content: icon(play);
               }
             }
 
             &[href*="/score"] {
               &::before {
-                @include svg-picto('picto-moxtra-score', false);
-                background-size: 1.15rem;
+                content: icon(a);
               }
             }
           }
@@ -154,22 +164,13 @@ body[class*="page-moxtra-meeting-"][class*="-index"] {
       }
     }
 
-    .meeting-ended::after {
-      @include svg-picto('picto-meeting-ended');
-      content: '';
-      display: block;
-      width: 133px;
-      height: 133px;
-      margin: 2rem auto 0;
-    }
-
-    .start-meeting a::after {
-      @include svg-picto('picto-meeting-start');
-      content: '';
-      display: block;
-      width: 133px;
-      height: 133px;
-      margin: 2rem auto 0;
+    .meeting-ended,
+    .start-meeting {
+      i {
+        display: block;
+        font-size: 113px;
+        margin: 2rem auto 0;
+      }
     }
 
     .form-actions {
@@ -190,4 +191,8 @@ body[class*="page-moxtra-meeting-"][class*="-index"] {
       }
     }
   }
+}
+
+iframe#meet {
+  height: 599px !important;
 }

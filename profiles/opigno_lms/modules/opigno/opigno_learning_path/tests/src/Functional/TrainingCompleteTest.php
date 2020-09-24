@@ -80,7 +80,7 @@ class TrainingCompleteTest extends LearningPathBrowserTestBase {
     $this->assertTrue($is_complated, 'The training is completed.');
 
     // Check achievements.
-    $this->drupalGet('/achievements');
+    $this->drupalGet('/achievements', ['query' => ['preload-progress' => 'true']]);
     // Check if Training has passed status on the achievements page.
     $content = $this->getSession()->getPage()->find('css', '.lp_summary_step_state_passed');
     $this->assertNotEmpty($content, 'Training status is "Passed" on achievements page');

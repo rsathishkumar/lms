@@ -503,15 +503,15 @@ class TFTController extends ControllerBase {
    */
   public function downloadFile(MediaInterface $media) {
     // Check if the user has access to group entity.
-    if (!empty($tid = $media->get('tft_folder')->getValue())) {
-      $tid = reset($tid)['target_id'];
+    $tid = $media->get('tft_folder')->getString();
+    if (!empty($tid)) {
       if (!_tft_term_access($tid)) {
         throw new AccessDeniedHttpException();
       }
     }
 
-    if (!empty($fids = $media->get('tft_file')->getValue())) {
-      $fid = reset($fids)['target_id'];
+    $fid = $media->get('tft_file')->getString();
+    if (!empty($fid)) {
       $file = File::load($fid);
 
       if (!$file) {
@@ -545,9 +545,9 @@ class TFTController extends ControllerBase {
       return new BinaryFileResponse($file->getFileUri(), 200, $headers);
     }
     elseif (!empty($link = $media->get('opigno_moxtra_recording_link')->getValue())) {
-      if (\Drupal::hasService('opigno_moxtra.opigno_api')) {
-        /** @var \Drupal\opigno_moxtra\OpignoServiceInterface $opigno_api */
-        $opigno_api = \Drupal::service('opigno_moxtra.opigno_api');
+      if (\Drupal::hasService('opigno_moxtra.connector')) {
+        /** @var \Drupal\opigno_moxtra\MoxtraConnector $opigno_api */
+        $opigno_api = \Drupal::service('opigno_moxtra.connector');
         $token = $opigno_api->getToken($media->getOwnerId());
         $url = $link[0]['uri'] . "&access_token=$token";
         return new TrustedRedirectResponse($url);

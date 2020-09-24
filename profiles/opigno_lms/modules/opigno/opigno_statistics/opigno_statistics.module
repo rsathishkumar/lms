@@ -16,6 +16,49 @@ use Drupal\Core\Database\Database;
 /**
  * Implements hook_ENTITY_TYPE_access().
  */
+function opigno_statistics_theme() {
+  return [
+    'opigno_statistics_circle_indicator' => [
+      'variables' => [
+        'width' => NULL,
+        'height' => NULL,
+        'cx' => NULL,
+        'cy' => NULL,
+        'radius' => NULL,
+        'x' => NULL,
+        'y' => NULL,
+        'val_rad' => NULL,
+      ]
+    ],
+    'opigno_statistics_chart__user_per_day' => [
+      'variables' => [
+        'max_count' => NULL,
+        'data' => NULL,
+      ],
+    ],
+    'opigno_statistics_user_metric' => [
+      'variables' => [
+        'label' => NULL,
+        'value' => NULL,
+        'help_text' => NULL,
+      ],
+    ],
+    'opigno_statistics_user_metrics' => [
+      'render element' => 'elements'
+    ],
+    'opigno_statistics_circle_indicator_value' => [
+      'variables' => [
+        'label' => NULL,
+        'value' => NULL,
+        'help_text' => NULL,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_access().
+ */
 function opigno_statistics_group_access(Group $group, $operation, AccountInterface $account) {
   // Update user activity.
   $timestamp = strtotime("midnight", \Drupal::time()->getRequestTime());

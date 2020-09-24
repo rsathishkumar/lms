@@ -297,6 +297,12 @@ class LearningPathContent {
     // Load group courses substeps.
     array_walk($group_steps, function ($step, $key) use ($uid, &$steps, $onlyCM, $latest_cert_date) {
       $step['position'] = $key;
+
+      // Check access for each step.
+      if (!LearningPathAccess::checkStepValidation($step, $uid)) {
+        return;
+      }
+
       if ($step['typology'] === 'Course') {
         $course_steps = opigno_learning_path_get_steps($step['id'], $uid, $onlyCM, $latest_cert_date);
 

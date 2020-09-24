@@ -181,3 +181,17 @@ function opigno_course_update_8007() {
   $data = $storage->read('entity_browser.browser.media_entity_browser_badge_images');
   $config_storage->write('entity_browser.browser.media_entity_browser_badge_images', $data);
 }
+
+/**
+ * Implements hook_update_N().
+ *
+ * Change image style for display default.
+ */
+function opigno_course_update_8008() {
+  // Install configs from optional folder.
+  $config_optional_path = drupal_get_path('module', 'opigno_course') . '/config/optional';
+  $storage = new FileStorage($config_optional_path);
+  $config_storage = \Drupal::service('config.storage');
+  $data = $storage->read('core.entity_view_display.group.opigno_course.default');
+  $config_storage->write('core.entity_view_display.group.opigno_course.default', $data);
+}

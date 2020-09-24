@@ -5,11 +5,12 @@ dependencies:
     - field.field.group.opigno_course.badge_active
     - field.field.group.opigno_course.badge_criteria
     - field.field.group.opigno_course.badge_description
-    - field.field.group.opigno_course.badge_name
     - field.field.group.opigno_course.badge_media_image
+    - field.field.group.opigno_course.badge_name
     - field.field.group.opigno_course.field_course_description
     - field.field.group.opigno_course.field_course_media_image
     - group.type.opigno_course
+    - image.style.catalog_thumbnail
   module:
     - media
     - text
@@ -30,7 +31,7 @@ content:
     weight: 2
     label: hidden
     settings:
-      image_style: ''
+      image_style: catalog_thumbnail
       image_link: ''
     third_party_settings: {  }
     region: content
@@ -46,11 +47,13 @@ hidden:
   badge_active: true
   badge_criteria: true
   badge_description: true
-  badge_name: true
   badge_media_image: true
+  badge_name: true
   changed: true
   created: true
   entity_print_view_epub: true
   entity_print_view_pdf: true
   entity_print_view_word_docx: true
+  langcode: true
+  search_api_excerpt: true
   uid: true

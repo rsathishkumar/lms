@@ -191,4 +191,12 @@ export class AppService {
 
     return a;
   }
+
+  closeManageDashboard() {
+    this.managePanel = false;
+
+    setTimeout(() => {
+      window['Drupal'].attachBehaviors(document.querySelector('.dashboard'), window['Drupal'].settings);
+    });
+  }
 }

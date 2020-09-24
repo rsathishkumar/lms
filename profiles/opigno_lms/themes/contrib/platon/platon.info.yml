@@ -25,7 +25,7 @@ libraries-override:
         # Moved to styles/components/form/_multiselect.scss
         css/multiselect.css: false
 
-# Information added by Drupal.org packaging script on 2020-06-02
-version: '8.x-1.7'
+# Information added by Drupal.org packaging script on 2020-08-12
+version: '8.x-1.8'
 project: 'platon'
-datestamp: 1591090987
+datestamp: 1597249399

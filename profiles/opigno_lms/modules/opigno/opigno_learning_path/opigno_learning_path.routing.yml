@@ -428,17 +428,19 @@ opigno_learning_path.modules.get_activities:
       opigno_module:
         type: entity:opigno_module
 
-opigno_learning_path.modules.get_activities_conditional:
-  path: 'group/{opigno_module}/get-activities-required'
+opigno_learning_path.entities.get_activities_conditional:
+  path: 'group/{opigno_entity_type}/{opigno_entity_id}/get-activities-required'
   methods: [GET]
   defaults:
     _controller: '\Drupal\opigno_learning_path\Controller\LearningPathContentController::getModuleRequiredActivities'
   requirements:
-    _entity_access: 'opigno_module.view'
+    _permission: 'access administration pages'
   options:
     parameters:
-      opigno_module:
-        type: entity:opigno_module
+      opigno_entity_type:
+        type: string
+      opigno_entity_id:
+        type: string
 
 opigno_learning_path.modules.update_activity:
   path: 'group/{opigno_module}/update-activity'
@@ -741,3 +743,16 @@ opigno_learning_path.achievements.training_module_panel_ajax:
        type: entity:opigno_module
       account:
        type: entity:user
+opigno_learning_path.progress:
+  path: '/ajax/progress/build/{group}/{account}/{latest_cert_date}/{class}'
+  defaults:
+    _controller: '\Drupal\opigno_learning_path\Controller\LearningPathProgress::getHTML'
+  requirements:
+    _access: 'TRUE'
+  options:
+    parameters:
+      group:
+       type: entity:group
+      account:
+       type: entity:user
+

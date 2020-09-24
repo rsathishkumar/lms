@@ -53,7 +53,10 @@
     <div id="page-branding">
       {{ page.branding }}
       {% if page.menu %}
-        <button class="navbar-toggler"></button>
+        <button class="navbar-toggler">
+          <i class="icon-menu"></i>
+          <span class="sr-only">{{ 'Menu'|t }}</span>
+        </button>
       {% endif %}
     </div>
   {% endif %}
@@ -67,9 +70,7 @@
   </div>
 
   <aside id="user-sidebar">
-    <div class="d-none d-md-block">
-      {{ page.menu }}
-    </div>
+    <div class="d-none d-md-block" data-copy-content="#menu-wrapper"></div>
 
     <div class="form-wrapper user-login" data-target="{{ path('user.login') }}" {% if route_name == 'user.pass' or route_name == 'user.register' %}style="display: none;"{% endif %}>
       <h1>{{ 'LOGIN'|t }}</h1>

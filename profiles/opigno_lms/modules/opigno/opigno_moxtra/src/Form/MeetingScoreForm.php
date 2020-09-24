@@ -77,7 +77,7 @@ class MeetingScoreForm extends FormBase {
     $owner_id = $entity->getOwnerId();
     $session_key = $entity->getSessionKey();
     $info = $this->moxtraService->getMeetingInfo($owner_id, $session_key);
-    $status = $info['data']['status'];
+    $status = !empty($info['data']) ? $info['data']['status'] : FALSE;
     if ($status !== 'SESSION_ENDED') {
       $message = $this->t('The meeting has to be ended in order to save the presences.');
       $this->messenger()->addError($message);
@@ -126,9 +126,9 @@ class MeetingScoreForm extends FormBase {
     });
 
     // Get the user IDs of the actual participants of the meeting.
-    $participants = array_map(function ($participant) {
-      return $participant['unique_id'];
-    }, $info['data']['participants']);
+    $participants = !empty($info['data']) ? array_map(function ($participant) {
+      return empty($participant['unique_id']) ?  1 : str_replace('m_', '', $participant['unique_id']);
+    }, $info['data']['participants']) : [];
 
     foreach ($users as $user) {
       $id = $user->id();

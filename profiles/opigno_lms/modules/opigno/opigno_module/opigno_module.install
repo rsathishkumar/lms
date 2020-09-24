@@ -1437,6 +1437,10 @@ function opigno_module_update_8027() {
  * Add learning path progress block to top region
  */
 function opigno_module_update_8029() {
+  if (\Drupal::entityTypeManager()->getStorage('block')->load('learningpathprogress')) {
+    return;
+  }
+
   $values = array(
     'id' => 'learningpathprogress',
     'plugin' => 'opigno_module_learning_path_progress_block',

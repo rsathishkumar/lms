@@ -153,7 +153,7 @@ class PrivateMessageNotifier implements PrivateMessageNotifierInterface {
         $eligible_to_receive = TRUE;
       }
 
-      // If the user is elegible to receive notfication, user and system
+      // If the user is eligible to receive notification, user and system
       // settings are  used to determine whether or not the notification should
       // be sent.
       if ($eligible_to_receive) {

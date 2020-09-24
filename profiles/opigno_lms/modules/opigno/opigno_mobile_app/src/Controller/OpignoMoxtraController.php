@@ -12,7 +12,7 @@ use Drupal\group\GroupMembershipLoader;
 use Drupal\opigno_ilt\Entity\ILT;
 use Drupal\opigno_moxtra\Entity\Meeting;
 use Drupal\opigno_moxtra\MoxtraServiceInterface;
-use Drupal\opigno_moxtra\OpignoServiceInterface;
+use Drupal\opigno_moxtra\MoxtraConnector;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -70,9 +70,9 @@ class OpignoMoxtraController extends ControllerBase {
   /**
    * Opigno service.
    *
-   * @var \Drupal\opigno_moxtra\OpignoServiceInterface
+   * @var \Drupal\opigno_moxtra\MoxtraConnector
    */
-  protected $opignoService;
+  protected $moxtraConnector;
 
   /**
    * Moxtra service.
@@ -97,7 +97,7 @@ class OpignoMoxtraController extends ControllerBase {
    *   The entity type manager service.
    * @param \Drupal\group\GroupMembershipLoader $groupMembershipLoader
    *   The group membership loader.
-   * @param \Drupal\opigno_moxtra\OpignoServiceInterface $opigno_service
+   * @param \Drupal\opigno_moxtra\MoxtraConnector $moxtra_connector
    *   Opigno API service.
    * @param \Drupal\opigno_moxtra\MoxtraServiceInterface $moxtra_service
    *   Moxtra API service.
@@ -109,7 +109,7 @@ class OpignoMoxtraController extends ControllerBase {
     EntityTypeManagerInterface $entity_type_manager,
     Connection $database,
     GroupMembershipLoader $groupMembershipLoader,
-    OpignoServiceInterface $opigno_service,
+    MoxtraConnector $moxtra_connector,
     MoxtraServiceInterface $moxtra_service) {
     $this->serializer = $serializer;
     $this->serializerFormats = $serializer_formats;
@@ -117,7 +117,7 @@ class OpignoMoxtraController extends ControllerBase {
     $this->entityTypeManager = $entity_type_manager;
     $this->database = $database;
     $this->groupMembershipLoader = $groupMembershipLoader;
-    $this->opignoService = $opigno_service;
+    $this->moxtraConnector = $moxtra_connector;
     $this->moxtraService = $moxtra_service;
   }
 
@@ -243,117 +243,6 @@ class OpignoMoxtraController extends ControllerBase {
   }
 
   /**
-   * Get Moxtra workspaces for current user.
-   *
-   * @return JsonResponse $response.
-   *   Return JsonResponse object.
-   *
-   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
-   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
-   */
-  public function getWorkspaces() {
-    $response_data = [
-      'items' => [],
-      'next_page' => FALSE,
-    ];
-
-    // Check if Moxtra is enabled.
-    if (!$this->checkMoxtraEnabled()) {
-      $response_data['message'] = 'Moxtra is disabled';
-      return new JsonResponse($response_data, Response::HTTP_OK);
-    }
-
-    $user = $this->currentUser();
-
-    // Get request parameters.
-    $request = \Drupal::request();
-    $request_query = $request->query;
-    $request_query_array = $request_query->all();
-
-    // Get "limit" parameter from request.
-    $limit = $request_query->get('limit') ?: 10;
-    // Get "page" parameter from request.
-    $page = $request_query->get('page') ?: 0;
-
-    // Get workspaces ids.
-    $ids = $this->getWorkspacesIds($user);
-
-    // Load workspaces entities.
-    $workspaces = [];
-    if (!empty($ids)) {
-      $workspaces = $this->entityTypeManager->getStorage('opigno_moxtra_workspace')->loadMultiple($ids);
-      // Check user access to a workspace.
-      $workspaces = array_filter($workspaces, function ($entity) use ($user) {
-        $access = $this->entityTypeManager
-          ->getAccessControlHandler($entity->getEntityTypeId())
-          ->access($entity, 'view', $user, TRUE);
-        return $access->isAllowed();
-      });
-    }
-
-    // Get next link and items per page.
-    if (!empty($workspaces)) {
-      $count = count($workspaces);
-      $position = $limit * ($page + 1);
-      $offset = $position - $limit;
-      // Get number of items per page.
-      $workspaces = array_slice($workspaces, $offset, $limit);
-      // Build link to next page.
-      if ($count > $position) {
-        $next_page_query = $request_query_array;
-        $next_page_query['page'] = $page + 1;
-        $response_data['next_page'] = Url::createFromRequest($request)
-          ->setOption('query', $next_page_query)
-          ->toString(TRUE)
-          ->getGeneratedUrl();
-      }
-    }
-
-    foreach ($workspaces as $workspace) {
-      /* @var \Drupal\opigno_moxtra\Entity\Workspace $workspace */
-      // Get link to a workspace.
-      $url = Url::fromRoute('opigno_moxtra.workspace', ['opigno_moxtra_workspace' => $workspace->id()]);
-      $link = $request->getSchemeAndHttpHost() . '/' . $url->getInternalPath();
-
-      $response_data['items'][] = [
-        'id' => $workspace->id(),
-        'title' => $workspace->get('name')->value,
-        'owner' => [
-          'uid' => $workspace->getOwnerId(),
-          'name' => $workspace->getOwner()->getAccountName(),
-          'user_picture' => opigno_mobile_app_get_user_picture($workspace->getOwner()),
-        ],
-        'link' => $link,
-      ];
-    }
-
-    return new JsonResponse($response_data, Response::HTTP_OK);
-  }
-
-  /**
-   * Helper function to get Workspaces ids.
-   *
-   * @param $account
-   *
-   * @return array $ids
-   *   Array of workspace ids.
-   */
-  private function getWorkspacesIds($account) {
-    // Get workspace ids.
-    $query = $this->database->select('opigno_moxtra_workspace', 'w');
-    $query->leftJoin(
-      'opigno_moxtra_workspace__members',
-      'wm',
-      'w.id = wm.entity_id'
-    );
-    $query->condition('wm.members_target_id', $account->id());
-    $query->fields('w', ['id']);
-    $ids = $query->execute()->fetchAllAssoc('id');
-
-    return $ids ? array_keys($ids) : [];
-  }
-
-  /**
    * Helper function to get meetings ids by trainings where user is a member.
    *
    * @param \Drupal\Core\Session\AccountProxyInterface $account
@@ -399,7 +288,7 @@ class OpignoMoxtraController extends ControllerBase {
     $org_id = $config->get('org_id');
 
     $user = $this->currentUser();
-    $access_token = $this->opignoService->getToken($user->id());
+    $access_token = $this->moxtraConnector->getToken($user->id());
     $responce_data = [
       'cliend_id' => $client_id,
       'org_id' => $org_id,
