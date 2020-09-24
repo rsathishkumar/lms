@@ -6,7 +6,9 @@ use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\group\Entity\Group;
 use Drupal\opigno_learning_path\Controller\LearningPathController;
+use Drupal\opigno_learning_path\Entity\LPStatus;
 use Drupal\opigno_learning_path\LearningPathAccess;
+use Drupal\opigno_learning_path\Progress;
 
 /**
  * Class DefaultTwigExtension.
@@ -107,7 +109,7 @@ class DefaultTwigExtension extends \Twig_Extension {
     $required_trainings = LearningPathAccess::hasUncompletedRequiredTrainings($group, $account);
 
     $completed = opigno_learning_path_completed_on($group->id(), $account->id());
-    $progress = opigno_learning_path_progress($group->id(), $account->id());
+    $progress = $this->getProgress($group->id(), $account->id());
 
     if (
       $module_commerce_enabled
@@ -172,6 +174,20 @@ class DefaultTwigExtension extends \Twig_Extension {
     $l = Link::fromTextAndUrl($text, $url)->toRenderable();
 
     return render($l);
+  }
+
+  public function getProgress($group_id, $account_id) {
+    $group = Group::load($group_id);
+    $latest_cert_date = LPStatus::getTrainingStartDate($group, $account_id);
+
+    $activities = opigno_learning_path_get_activities($group_id, $account_id, $latest_cert_date);
+
+    $total = count($activities);
+    $attempted = count(array_filter($activities, function ($activity) {
+      return $activity['answers'] > 0;
+    }));
+
+    return $total > 0 ? $attempted / $total : 0;
   }
 
 }

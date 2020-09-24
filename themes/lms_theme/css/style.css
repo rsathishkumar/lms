@@ -236,9 +236,8 @@ nav.block-system_menu_block-main ul:not(.contextual-links) li a:hover {
 app-root.dashboard button.manage-dashboard {
   background-color: #008583 !important;
   position: absolute;
-  right: 0;
+  right: 15px;
   top: 0;
-  margin-top: 25px;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
@@ -884,6 +883,18 @@ form .form-wrapper>.js-text-format-wrapper .js-form-type-textarea>label {
 
 .views-exposed-form .form-inline .form-group {
   flex-direction:inherit;
+}
+
+.learning-path-progress {
+  position: relative;
+}
+
+.learning-path-progress .progress-value {
+  text-align: left;
+}
+
+.learning-path-progress.progress-bar-mini .progress-bar {
+  margin: 0px;
 }
 
 @media (max-width: 1199px) {
