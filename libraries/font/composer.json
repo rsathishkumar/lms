@@ -2,6 +2,7 @@
   "name": "drupal-ckeditor-libraries-group/font",
   "description": "CKEditor 4 font plugin",
   "type": "drupal-library",
+  "keywords": ["ckeditor", "plugin", "font"],
   "homepage": "https://ckeditor.com/cke4/addon/font",
   "license": [
     "GPL-2.0-or-later",
