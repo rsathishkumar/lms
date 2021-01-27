@@ -2,7 +2,7 @@ name: Opigno LMS
 type: profile
 description: 'Install Opigno with commonly used features pre-configured.'
 core: 8.x
-# version: 8.x-2.18
+# version: 8.x-2.19
 distribution:
   name: "Opigno LMS"
 dependencies:
@@ -126,7 +126,7 @@ themes:
   - platon
   - seven
 
-# Information added by Drupal.org packaging script on 2020-11-27
-version: '8.x-2.18'
+# Information added by Drupal.org packaging script on 2021-01-22
+version: '8.x-2.19'
 project: 'opigno_lms'
-datestamp: 1606482385
+datestamp: 1611304158
